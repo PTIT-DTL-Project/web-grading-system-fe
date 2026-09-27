@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Presigned PUT upload test</title>
+  <style>
+    body { font-family: sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    label { display: block; margin-top: 1rem; font-weight: bold; }
+    textarea, input[type="file"] { width: 100%; margin-top: 0.25rem; }
+    textarea { height: 96px; font-family: monospace; font-size: 12px; }
+    button { margin-top: 1rem; padding: 0.5rem 1.5rem; font-size: 1rem; }
+    #bar-wrap { margin-top: 1rem; height: 20px; background: #eee; border-radius: 4px; overflow: hidden; }
+    #bar { height: 100%; width: 0%; background: #1976d2; }
+    #log { margin-top: 1rem; padding: 0.75rem; background: #f5f5f5; border-radius: 4px;
+           font-family: monospace; font-size: 13px; white-space: pre-wrap; min-height: 120px; }
+    .hint { color: #555; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>Presigned PUT upload test</h1>
+  <p class="hint">Paste a presigned URL, pick a file, PUT it. Progress timestamps show exactly where a stall/abort happens.</p>
+
+  <label for="url">Presigned URL</label>
+  <textarea id="url" placeholder="https://..."></textarea>
+
+  <label for="file">File</label>
+  <input type="file" id="file" />
+
+  <label>
+    <input type="checkbox" id="simpleType" checked />
+    Use <code>text/plain</code> content-type (fewer preflight headers).
+    Uncheck to send the file's real type. Note: cross-origin PUT always
+    preflights — if it fails instantly, read the exact reason in DevTools
+    Console + Network tab (look for the OPTIONS request).
+  </label>
+
+  <button id="go">PUT upload</button>
+
+  <div id="bar-wrap"><div id="bar"></div></div>
+  <div id="log">waiting…</div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const startedAt = { t: 0 };
+    const fmtMB = (n) => (n / 1048576).toFixed(2) + " MB";
+    const elapsed = () => ((performance.now() - startedAt.t) / 1000).toFixed(1) + "s";
+
+    function logLine(msg) {
+      const el = $("log");
+      if (el.textContent === "waiting…") el.textContent = "";
+      el.textContent += "[" + elapsed() + "] " + msg + "\n";
+    }
+
+    $("go").addEventListener("click", () => {
+      const url = $("url").value.trim();
+      const file = $("file").files[0];
+      if (!url) { alert("Paste a presigned URL first."); return; }
+      if (!file) { alert("Pick a file first."); return; }
+
+      $("bar").style.width = "0%";
+      $("log").textContent = "";
+      startedAt.t = performance.now();
+      logLine("starting PUT of " + file.name + " (" + fmtMB(file.size) + ")");
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", url, true);
+      xhr.setRequestHeader("Content-Type",
+        $("simpleType").checked ? "text/plain;charset=UTF-8" : (file.type || "application/octet-stream"));
+
+      let lastLogged = 0;
+      xhr.upload.onprogress = (e) => {
+        if (!e.lengthComputable) return;
+        const pct = (e.loaded / e.total) * 100;
+        $("bar").style.width = pct.toFixed(1) + "%";
+        const now = performance.now();
+        if (now - lastLogged > 2000) { // log every ~2s, not every event
+          lastLogged = now;
+          const speed = (e.loaded / ((now - startedAt.t) / 1000) / 1024).toFixed(0);
+          logLine("progress " + fmtMB(e.loaded) + " / " + fmtMB(e.total) +
+            " (" + pct.toFixed(1) + "%, " + speed + " KB/s)");
+        }
+      };
+
+      xhr.onload = () => {
+        $("bar").style.width = "100%";
+        logLine("DONE status=" + xhr.status + " total=" + elapsed());
+      };
+      xhr.onerror = () => logLine("ERROR (network/CORS abort) total=" + elapsed());
+      xhr.ontimeout = () => logLine("TIMEOUT total=" + elapsed());
+      xhr.onabort = () => logLine("ABORTED total=" + elapsed());
+
+      xhr.send(file);
+    });
+  </script>
+</body>
+</html>
