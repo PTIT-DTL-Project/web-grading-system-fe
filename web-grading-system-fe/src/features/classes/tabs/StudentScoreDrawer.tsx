@@ -1,6 +1,7 @@
 "use client"
 
-import { Button, Drawer, InputNumber, Space, Typography, message } from 'antd'
+import { Button, Drawer, InputNumber, Space, Tooltip, Typography, message } from 'antd'
+import { QuestionCircleOutlined } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 import { getStudentScores, setStudentScores } from '../../../shared/api/endpoints/classes'
 import type { StudentScoreEntryResponse, ScoreComponentType } from '../../../shared/types/score'
@@ -116,6 +117,18 @@ export function StudentScoreDrawer({ classId, studentCode, studentName, visible,
               />
             </Space>
           ))}
+          {entries.some((e) => e.type === 'EXERCISE') && (
+            <Space align="baseline" style={{ width: '100%', justifyContent: 'space-between', opacity: 0.7 }}>
+              <Tooltip title={t('components.autoGraded')}>
+                <Typography.Text style={{ minWidth: 120 }}>
+                  {t(`components.typeLabel.EXERCISE`)}
+                  <QuestionCircleOutlined style={{ marginLeft: 4, fontSize: 12, cursor: 'help' }} />
+                  {' '}({(entries.find((e) => e.type === 'EXERCISE')?.weight ?? 0) * 100}%)
+                </Typography.Text>
+              </Tooltip>
+              <Typography.Text type="secondary">{t('components.autoGraded')}</Typography.Text>
+            </Space>
+          )}
           <Space style={{ marginTop: 'auto', width: '100%' }}>
             <Button onClick={onClose} style={{ flex: 1 }}>{t('common.cancel')}</Button>
             <Button type="primary" loading={loading} onClick={handleSave} style={{ flex: 1 }}>{t('common.save')}</Button>
