@@ -1,5 +1,6 @@
 import { PlusOutlined } from '@ant-design/icons'
-import { App, Button, Popconfirm, Tag } from 'antd'
+import { App, Button, Popconfirm, Tag, Tooltip } from 'antd'
+import { QuestionCircleOutlined } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -89,9 +90,12 @@ export function ClassesPage() {
             {t('classes.statusActive')}
           </Tag>
         ) : (
-          <Tag style={{ color: '#5A5A5A', backgroundColor: '#F5F5F5', border: 'none', borderRadius: '12px', padding: '4px 12px', fontSize: '12px', fontWeight: 500 }}>
-            {t('classes.statusArchived')}
-          </Tag>
+          <Tooltip title={t('classes.archivedBanner')}>
+            <Tag style={{ color: '#5A5A5A', backgroundColor: '#F5F5F5', border: 'none', borderRadius: '12px', padding: '4px 12px', fontSize: '12px', fontWeight: 500 }}>
+              {t('classes.statusArchived')}
+              <QuestionCircleOutlined style={{ marginLeft: 4, fontSize: 12, cursor: 'help' }} />
+            </Tag>
+          </Tooltip>
         ),
     },
     {

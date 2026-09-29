@@ -101,10 +101,7 @@ export function StudentScoreDrawer({ classId, studentCode, studentName, visible,
           {nonExerciseEntries.map(entry => (
             <Space key={entry.type} align="baseline" style={{ width: '100%', justifyContent: 'space-between' }}>
             <Typography.Text style={{ minWidth: 120 }}>
-              {entry.type === 'ATTENDANCE' && t('components.typeAttendance')}
-              {entry.type === 'FINAL_EXAM' && t('components.typeFinalExam')}
-              {entry.type === 'ASSIGNMENT' && t('components.typeAssignment')}
-              {entry.type === 'EXERCISE' && t('components.typeExercise')}
+              {t(`components.typeLabel.${entry.type}`)}
               {' '}({entry.weight * 100}%)
             </Typography.Text>
             {entry.type === 'EXERCISE' ? (

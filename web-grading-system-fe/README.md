@@ -28,10 +28,10 @@ npm run dev        # http://localhost:5173
 gitignored):
 
 ```
-# Local dev (uncomment this line and comment the tunnel line below):
-# VITE_API_PROXY_TARGET=http://localhost:30195     # Traefik NodePort (this machine)
-# Public tunnel (Vercel + vercel.json rewrite):
-VITE_API_PROXY_TARGET=https://web-dev1-api.vucongtuanduong.dpdns.org
+# Local dev (default):
+VITE_API_PROXY_TARGET=http://localhost:30195     # Traefik NodePort (this machine)
+# Public tunnel (for contributors without a local gateway — uncomment if needed):
+# VITE_API_PROXY_TARGET=https://web-dev1-api.vucongtuanduong.dpdns.org
 # Gateway booted locally:
 # VITE_API_PROXY_TARGET=http://localhost:8080
 ```
@@ -42,12 +42,13 @@ pointing axios straight at another origin would be blocked on the `X-User-Id` he
 
 ## Vercel deployment
 
-- **Root Directory** in the Vercel project settings must be set to `web-grading-system-fe`
-  (or `frontend-src/web-grading-system-fe` if the repo root is the project root).
+- **Root Directory** in the Vercel project settings must be set to `frontend-src/web-grading-system-fe`.
 - `vercel.json` declares `outputDirectory: "dist"` and two rewrites:
   - `/api/:path*` → `https://web-dev1-api.vucongtuanduong.dpdns.org/api/:path*`
-    (the Cloudflare Zero Trust tunnel → Traefik gateway)
+    (public hostname routed through the Cloudflare Zero Trust tunnel → Traefik gateway)
   - `/(.*)` → `/index.html` (SPA fallback for `createBrowserRouter`)
+- The `/api` rewrite includes `Cache-Control: no-store` headers so Vercel's CDN
+  does not cache responses carrying `X-User-Id`.
 - The app uses relative `/api/v1/**` paths (`baseURL: ''` in `src/shared/api/http.ts`).
   Vercel's rewrite makes those transparently reach the gateway without CORS.
 - No `VITE_API_BASE_URL` env var is needed — the rewrite handles routing.
@@ -79,7 +80,8 @@ features/   auth · classes · student   (screens live here)
 | 3 | Lecturer class detail: roster + CSV import, score components, score entry, transcript | pending |
 | 4 | Student endpoints in `course-service` (`/api/v1/student/classes*`) | pending |
 | 5 | Student screens: my classes, roster, my scores | pending |
-| 6 | Hardening + docs | pending |
+| 6 | Vercel deployment + CDN cache hardening | **done** |
+| 7 | Hardening + docs | pending |
 
 Out of scope for now: assignment/plan authoring, submissions + results, Docker image
-library, deployment (Dockerfile/CI/Helm/ArgoCD), Keycloak.
+library, Keycloak.

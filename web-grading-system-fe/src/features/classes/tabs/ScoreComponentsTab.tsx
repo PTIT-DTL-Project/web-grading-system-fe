@@ -156,14 +156,12 @@ export function ScoreComponentsTab({ classId, archived = false, refreshToken, on
                 style={{ width: 120 }}
               />
               <Typography.Text type="secondary">{t('components.weightPercent', { weight: (row.weight * 100).toFixed(0) })}</Typography.Text>
-              {!archived && (
-                <Button type="text" danger onClick={() => handleDelete(row.type)}>
-                  Xóa
-                </Button>
-              )}
+              <Button type="text" danger onClick={() => handleDelete(row.type)} disabled={archived}>
+                {t('common.delete')}
+              </Button>
             </Space>
           ))}
-          <div style={{ marginTop: 16, padding: '12px 16px', background: colors.surface, borderRadius: 8, border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ marginTop: 16, padding: 16, background: colors.surface, borderRadius: 8, border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Button onClick={handleAdd} disabled={archived || types.length === 0}>
               {t('components.add')}
             </Button>

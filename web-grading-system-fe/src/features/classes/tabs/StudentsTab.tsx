@@ -1,6 +1,6 @@
 "use client"
 
-import { Alert, Button, Space, Table, Typography, Upload, message } from 'antd'
+import { Button, Space, Table, Typography, Upload, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { importStudents } from '../../../shared/api/endpoints/classes'
@@ -8,6 +8,7 @@ import { useStudents } from '../useStudents'
 import type { ClassStudentResponse } from '../../../shared/types/class'
 import { useApiErrorMessage } from '../../../shared/api/errors'
 import { colors } from '../../../shared/theme/tokens'
+import { ErrorState } from '../../../shared/ui/ErrorState'
 
 interface StudentsTabProps {
   classId: string
@@ -79,10 +80,20 @@ export function StudentsTab({ classId, archived = false, refreshToken, onSaved }
       </div>
 
       {hasError && rows.length === 0 && (
-        <Alert type="error" showIcon message={errorMessage} action={<Button onClick={reload}>{t('common.retry')}</Button>} />
+        <ErrorState
+          title={t('students.loadFailed')}
+          message={errorMessage}
+          onRetry={reload}
+        />
       )}
       {hasError && rows.length > 0 && (
-        <Alert type="warning" showIcon message={errorMessage} action={<Button onClick={reload}>{t('common.retry')}</Button>} style={{ marginBottom: 16 }} />
+        <div style={{ marginBottom: 16 }}>
+          <ErrorState
+            title={t('students.loadFailed')}
+            message={errorMessage}
+            onRetry={reload}
+          />
+        </div>
       )}
 
       {!hasError && rows.length === 0 && !loading && (

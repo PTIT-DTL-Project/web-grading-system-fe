@@ -1,4 +1,5 @@
 import { Button, Input, Select, Space, Tag } from 'antd'
+import { useTranslation } from 'react-i18next'
 import type { ListFilters } from '../hooks/useList'
 
 export interface FilterConfig<F extends ListFilters> {
@@ -31,6 +32,7 @@ interface FilterRule {
 }
 
 export function FilterBar<F extends ListFilters>({ filters, onFilterChange, config, onSubmit, onClear, showActions }: FilterBarProps<F>) {
+  const { t } = useTranslation()
   const hasSubmitMode = config.some((c) => c.submitOnEnter || c.type === 'builder')
 
   return (
@@ -97,7 +99,10 @@ export function FilterBar<F extends ListFilters>({ filters, onFilterChange, conf
                     placeholder={selectedField.label}
                     value={rules.find((r) => r.field === selectedField.name)?.value || ''}
                     onChange={(e) => handleRuleValueChange(selectedField.name, e.target.value)}
-                    onPressEnter={handleSubmitRule}
+                    onPressEnter={() => {
+                      const val = rules.find((r) => r.field === selectedField.name)?.value
+                      if (val) handleSubmitRule()
+                    }}
                     style={{ width: 200 }}
                     allowClear
                   />
@@ -128,7 +133,13 @@ export function FilterBar<F extends ListFilters>({ filters, onFilterChange, conf
               placeholder={placeholder || label}
               value={value}
               onChange={(e) => onFilterChange(key, e.target.value as F[typeof key])}
-              onPressEnter={submitOnEnter || hasSubmitMode ? onSubmit : undefined}
+              onPressEnter={
+                submitOnEnter || hasSubmitMode
+                  ? () => {
+                      if (value) onSubmit?.()
+                    }
+                  : undefined
+              }
               style={{ width: 260 }}
               allowClear
             />
@@ -152,10 +163,10 @@ export function FilterBar<F extends ListFilters>({ filters, onFilterChange, conf
       {showActions && hasSubmitMode && (
         <Space>
           <Button type="primary" onClick={onSubmit}>
-            Lọc
+            {t('common.filter')}
           </Button>
           <Button onClick={onClear}>
-            Xóa lọc
+            {t('common.clearFilters')}
           </Button>
         </Space>
       )}

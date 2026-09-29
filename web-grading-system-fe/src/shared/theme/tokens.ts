@@ -18,7 +18,7 @@ export const colors = {
   /** Text/icons drawn on top of the primary red. */
   textOnPrimary: '#FFFFFF',
   /** Default divider/border on light surfaces. */
-  border: '#F0F02F0',
+  border: '#F0F0F0',
   /** Status color for ACTIVE classes — green (success/positive). */
   statusActive: '#23C181',
   /** Status color for ARCHIVED classes — neutral gray (inactive). */
