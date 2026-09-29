@@ -1,0 +1,17 @@
+{
+  "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [
+        { "key": "x-vercel-enable-rewrite-caching", "value": "0" },
+        { "key": "Cache-Control", "value": "no-store" },
+        { "key": "CDN-Cache-Control", "value": "no-store" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://web-dev1-api.vucongtuanduong.dpdns.org/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
