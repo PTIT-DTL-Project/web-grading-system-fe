@@ -28,14 +28,29 @@ npm run dev        # http://localhost:5173
 gitignored):
 
 ```
-VITE_API_PROXY_TARGET=http://localhost:30195     # Traefik NodePort (this machine)
-# VITE_API_PROXY_TARGET=https://web-dev1-api.vucongtuanduong.dpdns.org
-# VITE_API_PROXY_TARGET=http://localhost:8080    # gateway booted locally
+# Local dev (uncomment this line and comment the tunnel line below):
+# VITE_API_PROXY_TARGET=http://localhost:30195     # Traefik NodePort (this machine)
+# Public tunnel (Vercel + vercel.json rewrite):
+VITE_API_PROXY_TARGET=https://web-dev1-api.vucongtuanduong.dpdns.org
+# Gateway booted locally:
+# VITE_API_PROXY_TARGET=http://localhost:8080
 ```
 
 The dev server proxies `/api` to that target so the browser only ever sees
 `localhost:5173` — same-origin, therefore no CORS. The gateway itself has no CORS filter;
 pointing axios straight at another origin would be blocked on the `X-User-Id` header.
+
+## Vercel deployment
+
+- **Root Directory** in the Vercel project settings must be set to `web-grading-system-fe`
+  (or `frontend-src/web-grading-system-fe` if the repo root is the project root).
+- `vercel.json` declares `outputDirectory: "dist"` and two rewrites:
+  - `/api/:path*` → `https://web-dev1-api.vucongtuanduong.dpdns.org/api/:path*`
+    (the Cloudflare Zero Trust tunnel → Traefik gateway)
+  - `/(.*)` → `/index.html` (SPA fallback for `createBrowserRouter`)
+- The app uses relative `/api/v1/**` paths (`baseURL: ''` in `src/shared/api/http.ts`).
+  Vercel's rewrite makes those transparently reach the gateway without CORS.
+- No `VITE_API_BASE_URL` env var is needed — the rewrite handles routing.
 
 ## Identity (pre-Keycloak)
 
