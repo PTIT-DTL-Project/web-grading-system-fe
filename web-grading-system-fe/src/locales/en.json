@@ -129,7 +129,6 @@
   },
   "scores": {
     "title": "Enter scores",
-    "autoNote": "Computed automatically",
     "unavailable": "Not available",
     "saved": "Scores saved",
     "loadFailed": "Could not load scores"

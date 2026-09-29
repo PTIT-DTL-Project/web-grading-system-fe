@@ -129,7 +129,6 @@
   },
   "scores": {
     "title": "Nhập điểm",
-    "autoNote": "Được tự động tính toán",
     "unavailable": "Không khả dụng",
     "saved": "Đã lưu điểm",
     "loadFailed": "Không tải được điểm"
