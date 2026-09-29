@@ -48,13 +48,10 @@
     "confirmArchive": "Archive this class? This cannot be undone from the UI.",
     "archived": "Class archived",
     "created": "Class created",
-    "loadFailed": "Could not load your classes",
     "empty": "No classes yet",
     "emptyHint": "Create your first class to get started",
     "total": "Total classes: {{total}}",
     "filter": "Filter",
-    "clearFilters": "Clear filters",
-    "addFilter": "Add filter",
     "all": "All",
     "archivedBanner": "This class is archived",
     "readOnlyMessage": "Score components and student data are read-only."
@@ -114,11 +111,7 @@
       "finalExamWeight": "FINAL_EXAM weight must be at least {{weight}}",
       "sumNotOne": "Weights must sum to 1.000 (current: {{sum}})",
       "weightRange": "Weight must be between 0.001 and 1.000"
-    },
-    "typeAttendance": "Attendance",
-    "typeExercise": "Exercise",
-    "typeFinalExam": "Final exam",
-    "typeAssignment": "Assignment"
+    }
   },
   "transcript": {
     "title": "Class transcript",

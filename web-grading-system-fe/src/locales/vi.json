@@ -48,13 +48,10 @@
     "confirmArchive": "Lưu trữ lớp này? Không thể hoàn tác từ giao diện.",
     "archived": "Đã lưu trữ lớp học",
     "created": "Đã tạo lớp học",
-    "loadFailed": "Không tải được danh sách lớp học",
     "empty": "Chưa có lớp học nào",
     "emptyHint": "Tạo lớp học đầu tiên để bắt đầu",
     "total": "Tổng số lớp: {{total}}",
     "filter": "Bộ lọc",
-    "clearFilters": "Xóa lọc",
-    "addFilter": "Thêm bộ lọc",
     "all": "Tất cả",
     "archivedBanner": "Lớp học này đã được lưu trữ",
     "readOnlyMessage": "Thành phần điểm và dữ liệu sinh viên ở chế độ chỉ đọc."
@@ -114,11 +111,7 @@
       "finalExamWeight": "Trọng số FINAL_EXAM phải ít nhất {{weight}}",
       "sumNotOne": "Tổng trọng số phải bằng 1.000 (hiện tại: {{sum}})",
       "weightRange": "Trọng số phải từ 0.001 đến 1.000"
-    },
-    "typeAttendance": "Điểm chuyên cần",
-    "typeExercise": "Điểm bài tập",
-    "typeFinalExam": "Điểm thi cuối kỳ",
-    "typeAssignment": "Điểm assignment"
+    }
   },
   "transcript": {
     "title": "Bảng điểm",

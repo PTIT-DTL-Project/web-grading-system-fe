@@ -104,12 +104,6 @@ export function StudentScoreDrawer({ classId, studentCode, studentName, visible,
               {t(`components.typeLabel.${entry.type}`)}
               {' '}({entry.weight * 100}%)
             </Typography.Text>
-            {entry.type === 'EXERCISE' ? (
-              <Typography.Text type="secondary">
-                {entry.score !== null && entry.score !== undefined ? entry.score : t('components.unavailable')}
-                {entry.score !== null && entry.score !== undefined && <Typography.Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>({t('scores.autoNote')})</Typography.Text>}
-              </Typography.Text>
-            ) : (
               <InputNumber
                 min={0}
                 max={10}
@@ -120,8 +114,7 @@ export function StudentScoreDrawer({ classId, studentCode, studentName, visible,
                 style={{ width: 120 }}
                 disabled={loading}
               />
-            )}
-          </Space>
+            </Space>
           ))}
           <Space style={{ marginTop: 'auto', width: '100%' }}>
             <Button onClick={onClose} style={{ flex: 1 }}>{t('common.cancel')}</Button>
