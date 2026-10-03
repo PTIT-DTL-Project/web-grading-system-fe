@@ -1,23 +1,62 @@
-import { Button, Card, Form, Input, Radio, Typography } from 'antd'
-import { IdcardOutlined } from '@ant-design/icons'
+import { Button, Card, Typography } from 'antd'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router'
-import { isValidUuid, setIdentity, type Role } from '../../shared/auth/identity'
+import { Navigate } from 'react-router'
+import { getIdentity } from '../../shared/auth/identity'
+import { redirectToKeycloakLogin } from '../../shared/auth/keycloak'
 import { colors } from '../../shared/theme/tokens'
 
-interface LoginFormValues {
-  role: Role
-  userId: string
-}
-
+/**
+ * Sign-in entry point. There is no password form here: the browser never sees
+ * a credential — `redirectToKeycloakLogin()` navigates to Keycloak's own
+ * hosted login page (authorization code + PKCE, D7/R3).
+ *
+ * An already authenticated session must never sit on this route: keycloak-js
+ * returns the callback to `location.href` (here `/login`) and only strips the
+ * query, so without the guard below this page re-fires `login()` after every
+ * successful sign-in and the browser ping-pongs with Keycloak forever.
+ *
+ * Review: 2026-10-03, Phase 3 (D7, D10 — forced-change branch removed);
+ * 2026-10-03, infinite-redirect fix (authenticated guard).
+ */
 export function LoginPage() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const [error, setError] = useState<string | null>(null)
 
-  const onFinish = (values: LoginFormValues) => {
-    setIdentity({ role: values.role, userId: values.userId })
-    navigate('/', { replace: true })
-  }
+  // StrictMode mounts effects twice in dev: without this guard the second run
+  // would fire a second authorize redirect (and a second PKCE verifier).
+  const loginStarted = useRef(false)
+
+  const startLogin = useCallback(() => {
+    setError(null)
+    // login() navigates away and therefore never settles; a rejection is the
+    // only signal we get when the redirect was blocked — show it and leave the
+    // button below as the way out (it stays clickable in that case).
+    void redirectToKeycloakLogin().catch((e: unknown) => {
+      console.error('Keycloak login redirect failed:', e)
+      setError(t('auth.networkError'))
+    })
+  }, [t])
+
+  // The session already exists here (AuthGate settles keycloak.init() before
+  // the router mounts, so this is a synchronous, reliable read).
+  const authenticated = getIdentity() !== null
+
+  useEffect(() => {
+    // Guard INSIDE the effect too: returning <Navigate> below does not cancel
+    // an effect scheduled by this same commit, so the redirect would fire once
+    // before navigation anyway. Review: 2026-10-03, infinite-redirect fix.
+    if (loginStarted.current || authenticated) return
+    loginStarted.current = true
+    startLogin()
+  }, [startLogin, authenticated])
+
+  // Already signed in → leave /login immediately (route `/` resolves the role
+  // landing page). Without this the post-callback URL, which is still /login,
+  // starts a new authorize round-trip against the live SSO session: an
+  // endless /login ↔ Keycloak loop. Review: 2026-10-03, infinite-redirect fix.
+  if (authenticated) return <Navigate to="/" replace />
+
 
   return (
     <div
@@ -49,45 +88,16 @@ export function LoginPage() {
             {t('auth.subtitle')}
           </Typography.Paragraph>
 
-          <Form<LoginFormValues>
-            layout="vertical"
-            requiredMark={false}
-            onFinish={onFinish}
-            initialValues={{ role: 'LECTURER', userId: '' }}
-          >
-            <Form.Item name="role" label={t('auth.role')}>
-              <Radio.Group
-                optionType="button"
-                buttonStyle="solid"
-                options={[
-                  { label: t('auth.lecturer'), value: 'LECTURER' },
-                  { label: t('auth.student'), value: 'STUDENT' },
-                ]}
-              />
-            </Form.Item>
+          {error && (
+            <div style={{ color: colors.error, marginBottom: 12, fontSize: 13 }} role="alert">
+              {error}
+            </div>
+          )}
 
-            <Form.Item
-              name="userId"
-              label={t('auth.userId')}
-              validateFirst
-              rules={[
-                { required: true, message: t('auth.invalidUuid') },
-                {
-                  validator: (_, value: string) =>
-                    isValidUuid(value ?? '')
-                      ? Promise.resolve()
-                      : Promise.reject(new Error(t('auth.invalidUuid'))),
-                },
-              ]}
-              extra={t('auth.userIdHelp')}
-            >
-              <Input prefix={<IdcardOutlined />} placeholder={t('auth.userIdPlaceholder')} />
-            </Form.Item>
-
-            <Button type="primary" htmlType="submit" block size="large">
-              {t('auth.submit')}
-            </Button>
-          </Form>
+          {/* Fallback if the automatic redirect above did not fire or was blocked. */}
+          <Button type="primary" block size="large" onClick={startLogin}>
+            {t('auth.login')}
+          </Button>
         </div>
       </Card>
     </div>
