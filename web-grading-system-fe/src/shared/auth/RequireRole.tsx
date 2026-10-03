@@ -1,16 +1,18 @@
 import { Navigate } from 'react-router'
-// React 19 types dropped the global JSX namespace — it lives under React.JSX.
 import type { JSX, ReactNode } from 'react'
 import { getIdentity } from './identity'
-import type { Role } from './identity'
+import type { Role } from './keycloak'
 
 /**
- * Role gate for the routes that must not leak across personas (a student typing
- * `/classes` would otherwise land on the lecturer screen and meet a bare 404).
- * Wrong or missing identity → back to `/` where HomeRedirect picks the right landing.
+ * Role gate for routes that must not leak across personas
+ * (a student typing `/classes` would otherwise land on the lecturer screen).
+ *
+ * - No identity  → /login
+ * - Logged in but wrong role  → /no-role (avoids the RequireRole ↔ HomeRedirect loop)
  */
 export function RequireRole({ role, children }: { role: Role; children: ReactNode }): JSX.Element {
   const identity = getIdentity()
-  if (!identity || identity.role !== role) return <Navigate to="/" replace />
+  if (!identity) return <Navigate to="/login" replace />
+  if (identity.role !== role) return <Navigate to="/no-role" replace />
   return <>{children}</>
 }

@@ -1,20 +1,11 @@
 import axios from 'axios'
 import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
-import { clearIdentity, getIdentity } from '../auth/identity'
+import { clearIdentity } from '../auth/identity'
+import { refreshSession, getSession, clearSession } from '../auth/keycloak'
 import { ApiError } from './errors'
 
-/** Keys allowed in the backend envelope {status, message, data, error}. */
 const ENVELOPE_KEYS = new Set(['status', 'message', 'data', 'error'])
 
-/**
- * Detects the FormatRestResponse envelope and unwraps `data`.
- * The "every key is an envelope key" test keeps real payloads (which carry their own
- * fields such as `id`, `studentCode`, ...) from being mistaken for an envelope, while
- * still matching `{"status":200,"message":"Student scores updated"}` where `data` is
- * omitted entirely by @JsonInclude(NON_NULL).
- *
- * Throws ApiError when the envelope carries a failure status.
- */
 function unwrapEnvelope(body: unknown): { enveloped: boolean; value: unknown } {
   if (body === null || typeof body !== 'object' || Array.isArray(body)) {
     return { enveloped: false, value: body }
@@ -41,15 +32,59 @@ function unwrapEnvelope(body: unknown): { enveloped: boolean; value: unknown } {
 }
 
 export const http: AxiosInstance = axios.create({
-  baseURL: '', // paths already include /api/v1; dev goes through the Vite proxy (see vite.config.ts)
+  baseURL: '',
   timeout: 30_000,
 })
 
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value: unknown) => void
+  reject: (reason: unknown) => void
+}> = []
+
+function processQueue(err: unknown, token?: string): void {
+  failedQueue.forEach((f) => (err ? f.reject(err) : f.resolve(token)))
+  failedQueue = []
+}
+
+async function handle401(config: InternalAxiosRequestConfig): Promise<void> {
+  if (isRefreshing) {
+    await new Promise<unknown>((resolve, reject) => {
+      failedQueue.push({ resolve, reject })
+    }).catch(() => {})
+    return
+  }
+  isRefreshing = true
+  try {
+    const session = await refreshSession()
+    processQueue(null, session.accessToken)
+    config.headers.set('Authorization', `Bearer ${session.accessToken}`)
+  } catch (e) {
+    processQueue(e)
+    clearSession()
+    clearIdentity()
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      window.location.assign('/login')
+    }
+    throw e
+  } finally {
+    isRefreshing = false
+  }
+}
+
 http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const identity = getIdentity()
-  if (identity) config.headers.set('X-User-Id', identity.userId)
+  const session = getSession()
+  if (session && !getSessionExpired()) {
+    config.headers.set('Authorization', `Bearer ${session.accessToken}`)
+  }
   return config
 })
+
+function getSessionExpired(bufferMs = 30_000): boolean {
+  const s = getSession()
+  if (!s) return true
+  return Date.now() >= s.expiresAt - bufferMs
+}
 
 http.interceptors.response.use(
   (response) => {
@@ -58,33 +93,40 @@ http.interceptors.response.use(
     response.data = value
     return response
   },
-  (error: AxiosError) => {
-    // 401 = the server no longer accepts this identity (Keycloak era). 403 is a plain
-    // authorization refusal (e.g. "Not owner" on results) and must NOT log the user out.
-    if (error.response?.status === 401) {
+  async (error: AxiosError) => {
+    const status = error.response?.status
+    if (status === 401) {
+      const original = error.config as InternalAxiosRequestConfig | undefined
+      if (original) {
+        try {
+          await handle401(original)
+          return http(original)
+        } catch {
+          return Promise.reject(error)
+        }
+      }
+      clearSession()
       clearIdentity()
       if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
         window.location.assign('/login')
       }
     }
 
-    const status = error.response?.status ?? 0
-    if (status === 0) {
-      // No response at all: gateway down / proxy target wrong / offline.
+    const s = status ?? 0
+    if (s === 0) {
       return Promise.reject(new ApiError(0, '', undefined, 'network'))
     }
 
     try {
-      unwrapEnvelope(error.response?.data) // throws ApiError for a failure envelope
+      unwrapEnvelope(error.response?.data)
     } catch (envelopeError) {
       return Promise.reject(envelopeError)
     }
 
-    return Promise.reject(new ApiError(status, error.message, undefined, 'http'))
+    return Promise.reject(new ApiError(s, error.message, undefined, 'http'))
   },
 )
 
-/** GET that returns the unwrapped `data` payload. */
 export async function getData<T>(
   url: string,
   params?: Record<string, unknown>,
@@ -94,7 +136,6 @@ export async function getData<T>(
   return response.data
 }
 
-/** POST/PUT that returns the unwrapped `data` payload. */
 export async function sendData<T, B>(
   url: string,
   method: 'post' | 'put',

@@ -5,6 +5,7 @@ import { AppLayout } from '../shared/layout/AppLayout'
 import { ClassDetailPage } from '../features/classes/ClassDetailPage'
 import { ClassesPage } from '../features/classes/ClassesPage'
 import { LoginPage } from '../features/auth/LoginPage'
+import { NoRolePage } from '../shared/auth/NoRolePage'
 import { NotFoundPage } from '../features/NotFoundPage'
 import { StudentClassesPage } from '../features/student/StudentClassesPage'
 import { HomeRedirect } from './HomeRedirect'
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
               </RequireRole>
             ),
           },
+          { path: 'no-role', element: <NoRolePage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },
