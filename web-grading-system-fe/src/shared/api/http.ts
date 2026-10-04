@@ -1,8 +1,11 @@
 import axios from 'axios'
 import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 import { clearIdentity } from '../auth/identity'
-import { refreshSession, getSession, clearSession } from '../auth/keycloak'
+import { REFRESH_UNREACHABLE, refreshSession, getSession, clearSession } from '../auth/keycloak'
 import { ApiError } from './errors'
+
+/** Request config carrying the one-shot 401 retry marker (never `any`). */
+type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean }
 
 const ENVELOPE_KEYS = new Set(['status', 'message', 'data', 'error'])
 
@@ -47,11 +50,23 @@ function processQueue(err: unknown, token?: string): void {
   failedQueue = []
 }
 
+/** Drop the in-memory session and send the browser to the login screen. */
+function signOut(): void {
+  clearSession()
+  clearIdentity()
+  if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+    window.location.assign('/login')
+  }
+}
+
 async function handle401(config: InternalAxiosRequestConfig): Promise<void> {
   if (isRefreshing) {
+    // Wait for the in-flight refresh and adopt ITS outcome: a failure must
+    // reject us too, otherwise we would retry with the very token that just
+    // 401'd. Review: 2026-10-04, Pullfrog (waiters swallowed refresh failures)
     await new Promise<unknown>((resolve, reject) => {
       failedQueue.push({ resolve, reject })
-    }).catch(() => {})
+    })
     return
   }
   isRefreshing = true
@@ -61,11 +76,13 @@ async function handle401(config: InternalAxiosRequestConfig): Promise<void> {
     config.headers.set('Authorization', `Bearer ${session.accessToken}`)
   } catch (e) {
     processQueue(e)
-    clearSession()
-    clearIdentity()
-    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-      window.location.assign('/login')
-    }
+    // Only a dead grant ends the session (keycloak.ts already cleared its own
+    // tokens there). A transport failure during refresh — 503, DNS blip, one
+    // slow second on the token endpoint — keeps a still-valid session, so it
+    // must not clear it and redirect: fail this request and let the user
+    // continue. Review: 2026-10-04, Pullfrog (only a dead session signs out)
+    if (e instanceof Error && e.message === REFRESH_UNREACHABLE) throw e
+    signOut()
     throw e
   } finally {
     isRefreshing = false
@@ -73,18 +90,16 @@ async function handle401(config: InternalAxiosRequestConfig): Promise<void> {
 }
 
 http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  // Attach the token whenever one exists — even within 30s of expiry. Skipping
+  // it there made every request in that window go out anonymous, 401, and spend
+  // a refresh round-trip; the 401 path renews the token if it actually died.
+  // Review: 2026-10-04, Pullfrog (anonymous requests near expiry)
   const session = getSession()
-  if (session && !getSessionExpired()) {
+  if (session) {
     config.headers.set('Authorization', `Bearer ${session.accessToken}`)
   }
   return config
 })
-
-function getSessionExpired(bufferMs = 30_000): boolean {
-  const s = getSession()
-  if (!s) return true
-  return Date.now() >= s.expiresAt - bufferMs
-}
 
 http.interceptors.response.use(
   (response) => {
@@ -96,20 +111,26 @@ http.interceptors.response.use(
   async (error: AxiosError) => {
     const status = error.response?.status
     if (status === 401) {
-      const original = error.config as InternalAxiosRequestConfig | undefined
-      if (original) {
+      const original = error.config as RetriableConfig | undefined
+      // Exactly one refresh-and-retry per logical request. A second 401 means
+      // the refresh produced no token the gateway accepts (audience/issuer
+      // mismatch, SSO session killed server-side, an endpoint that 401's a fresh
+      // token): updateToken(30) can resolve without contacting Keycloak, so the
+      // retry would be byte-identical and loop forever — the caller's promise
+      // would never settle and the gateway would eat the loop. Give up instead.
+      // Review: 2026-10-04, Pullfrog (unbounded 401 retry loop)
+      if (original && !original._retried) {
+        original._retried = true
         try {
           await handle401(original)
           return http(original)
         } catch {
+          // refresh failed: request rejects (session kept for a transport
+          // failure, sign-out already handled for a dead grant) — no retry.
           return Promise.reject(error)
         }
       }
-      clearSession()
-      clearIdentity()
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-        window.location.assign('/login')
-      }
+      signOut()
     }
 
     const s = status ?? 0

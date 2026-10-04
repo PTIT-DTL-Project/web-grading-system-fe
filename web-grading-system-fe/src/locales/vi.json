@@ -22,7 +22,6 @@
   "nav": {
     "classes": "Lớp học",
     "studentClasses": "Lớp của tôi",
-    "switchUser": "Đổi người dùng",
     "logout": "Đăng xuất",
     "changePassword": "Đổi mật khẩu",
     "collapseSidebar": "Thu gọn thanh bên",
@@ -149,7 +148,6 @@
     "confirmPassword": "Xác nhận mật khẩu",
     "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới",
     "changePassword": "Đổi mật khẩu",
-    "passwordChangeError": "Đổi mật khẩu thất bại. Vui lòng thử lại.",
     "currentPassword": "Mật khẩu hiện tại",
     "currentPasswordPlaceholder": "Nhập mật khẩu hiện tại",
     "currentPasswordWrong": "Mật khẩu hiện tại không đúng.",

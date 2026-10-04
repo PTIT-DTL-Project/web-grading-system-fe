@@ -22,7 +22,6 @@
   "nav": {
     "classes": "Classes",
     "studentClasses": "My classes",
-    "switchUser": "Switch user",
     "logout": "Sign out",
     "changePassword": "Change password",
     "collapseSidebar": "Collapse sidebar",
@@ -149,7 +148,6 @@
     "confirmPassword": "Confirm Password",
     "confirmPasswordPlaceholder": "Re-enter new password",
     "changePassword": "Change Password",
-    "passwordChangeError": "Failed to change password. Please try again.",
     "currentPassword": "Current password",
     "currentPasswordPlaceholder": "Enter current password",
     "currentPasswordWrong": "Current password is incorrect.",

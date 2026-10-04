@@ -12,9 +12,10 @@
  *   `AuthGate` (src/app/AuthGate.tsx) awaits it and only then mounts the
  *   router, because `RequireIdentity`/`RequireRole` read `getSession()`
  *   synchronously at render time.
- * - Refresh is `keycloak.updateToken(30)`, deduped in-tab via
- *   `refreshPromise` and across tabs via the Web Locks API (REFRESH_LOCK) —
- *   the Phase 2 lock is kept until Phase 3 has been verified end-to-end (D9).
+ * - Refresh is `keycloak.updateToken(30)`, deduped in-tab via `refreshPromise`.
+ *   The Phase 2 Web Lock (REFRESH_LOCK) is kept as cross-tab serialization only
+ *   (D9): since tokens are memory-only each tab holds its OWN refresh token, so
+ *   there is no shared token to dedupe and no cross-tab "already fresh" state.
  * - Password changes still go through the API gateway
  *   (`/api/v1/account/change-password`), not Keycloak Admin, so no admin
  *   credentials live in the browser bundle.
@@ -28,10 +29,21 @@ const CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID ?? 'web-grading-fe'
 
 export type Role = 'LECTURER' | 'STUDENT'
 
+/**
+ * Keycloak answered the refresh with a dead grant (400 — tokens dropped): the
+ * session is gone and the caller (http.ts) may sign the user out.
+ */
+const REFRESH_DEAD = 'refresh_failed'
+/**
+ * The token endpoint could not be reached (network/5xx): the current session is
+ * untouched and must be preserved — surfacing the error beats a spurious logout.
+ * Exported because http.ts branches on it: only this error keeps the session.
+ */
+export const REFRESH_UNREACHABLE = 'refresh_unreachable'
+
 export interface AuthSession {
   accessToken: string
   refreshToken: string
-  expiresAt: number
   userId: string
   email: string
   role: Role
@@ -63,22 +75,23 @@ function decodeJwt(payload: string): Record<string, unknown> {
 function sessionFromTokens(tokens: {
   access_token: string
   refresh_token: string
-  expires_in: number
 }): AuthSession {
   const claims = decodeJwt(tokens.access_token.split('.')[1])
   const realmAccess = (claims.realm_access ?? {}) as Record<string, unknown>
   const roles = Array.isArray(realmAccess.roles) ? (realmAccess.roles as string[]) : []
-  const normalized =
-    (roles.find((r) => r.startsWith('ROLE_')) as string | undefined)?.replace(/^ROLE_/, '')
+  // Allow-list governs BOTH branches: strip the realm's ROLE_ prefix for matching,
+  // then accept the result only when it is LECTURER or STUDENT. Casting an untested
+  // `normalized` to Role would let ROLE_ADMIN (or ADMIN) mint an out-of-contract
+  // session that HomeRedirect treats as a lecturer.
+  // Review: 2026-10-04, Pullfrog (ROLE_ fallback bypassed the allow-list)
   const role =
-    ((roles.find((r) => r === 'LECTURER' || r === 'STUDENT') as Role | undefined) ??
-      (normalized as Role | undefined)) ??
-    null
+    roles
+      .map((r) => (r.startsWith('ROLE_') ? r.slice('ROLE_'.length) : r))
+      .find((r): r is Role => r === 'LECTURER' || r === 'STUDENT') ?? null
   if (!role) throw new Error('token_no_allowed_role')
   return {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token,
-    expiresAt: Date.now() + tokens.expires_in * 1000,
     userId: (claims.sub as string) ?? '',
     email: (claims.email as string) ?? '',
     role,
@@ -93,11 +106,15 @@ function keycloakConfig(): { url: string; realm: string; clientId: string } {
   const match = /^(https?:\/\/[^/]+)\/realms\/([^/]+)\/?$/.exec(AUTHORITY)
   if (!match) {
     // Fail loudly at init instead of building wrong endpoint URLs that 404 on
-    // /.well-known/openid-configuration with a confusing message.
-    // Review: 2026-10-03, Phase 3 (config derivation)
-    throw new Error(
+    // /.well-known/openid-configuration with a confusing message. `name` lets
+    // AuthGate show this message verbatim (it names the offending env var) —
+    // a generic "could not initialize" hides the one fact that fixes a deploy.
+    // Review: 2026-10-04, Pullfrog (config error invisible to the user)
+    const err = new Error(
       `VITE_KEYCLOAK_AUTHORITY must have the form https://<host>/realms/<realm> — got: ${AUTHORITY || '(unset)'}`,
     )
+    err.name = 'KeycloakConfigError'
+    throw err
   }
   return { url: match[1], realm: match[2], clientId: CLIENT_ID }
 }
@@ -109,15 +126,11 @@ function keycloakConfig(): { url: string; realm: string; clientId: string } {
  */
 function buildSession(kc: Keycloak): AuthSession | null {
   if (!kc.authenticated || !kc.token || !kc.refreshToken || !kc.tokenParsed) return null
-  const nowSec = Math.ceil(Date.now() / 1000)
-  const exp = typeof kc.tokenParsed.exp === 'number' ? kc.tokenParsed.exp : nowSec + 60
-  // Same maths as keycloak-js's own `isTokenExpired` (exp − now + timeSkew) so
-  // our 30s refresh buffer and keycloak-js never disagree about freshness.
-  const expiresInSec = exp - nowSec + (kc.timeSkew ?? 0)
+  // Freshness/expiry is keycloak-js's own business (updateToken(30)); nothing
+  // consumer-side reads an expiry any more, so no expiry maths is re-derived here.
   return sessionFromTokens({
     access_token: kc.token,
     refresh_token: kc.refreshToken,
-    expires_in: expiresInSec,
   })
 }
 
@@ -187,8 +200,9 @@ export function redirectToKeycloakLogin(): Promise<void> {
 const REFRESH_LOCK = 'wgs.token.refresh'
 
 /**
- * Silent refresh — deduped so concurrent 401s share one refresh: within a tab
- * via `refreshPromise`, across tabs via the `REFRESH_LOCK` Web Lock.
+ * Silent refresh — deduped within this tab so concurrent 401s share one refresh
+ * (`refreshPromise`); rejects with `REFRESH_UNREACHABLE` when the token endpoint
+ * is unreachable (session kept) and `REFRESH_DEAD` when the grant is gone.
  */
 export async function refreshSession(): Promise<AuthSession> {
   if (refreshPromise) return refreshPromise
@@ -209,46 +223,44 @@ async function refreshOnce(): Promise<AuthSession> {
     // that triggered us never races expiry. Resolves `false` when still fresh.
     await kc.updateToken(30)
   } catch {
-    clearSession()
-    throw new Error('refresh_failed')
+    // Transport-level failure (network blip, 5xx on the token endpoint): NOT a
+    // dead session. keycloak-js keeps its tokens on anything but a 400, so the
+    // current session stays valid — preserve it and let the caller surface the
+    // error. Only a 400 clears kc's tokens, caught by the buildSession-null
+    // branch below. Collapsing this into a sign-out discarded a still-valid
+    // refresh token and hard-logged the user out mid-session.
+    // Review: 2026-10-04, Pullfrog (only a dead session should sign out)
+    throw new Error(REFRESH_UNREACHABLE)
   }
   const next = buildSession(kc)
   if (!next) {
-    // keycloak-js drops its tokens when Keycloak answers 400 — same outcome as
-    // a failed refresh: no session, caller sends the user to /login.
+    // Genuine dead session: keycloak-js cleared its tokens (400 invalid_grant),
+    // so this branch may sign the caller out.
     clearSession()
-    throw new Error('refresh_failed')
+    throw new Error(REFRESH_DEAD)
   }
   session = next
   return next
 }
 
 async function exclusiveRefresh(): Promise<AuthSession> {
-  // Cross-tab lock, kept from Phase 2 (D9): refreshes stay serialized across
-  // the tabs of this origin until Phase 3 has been verified end-to-end, so two
-  // tabs can never spend the same refresh token concurrently.
-  // Review: 2026-10-03, Phase 2 plan — retained by Phase 3, D9
-  if (!navigator.locks) return refreshOnce() // no Web Locks (insecure/old context) → same behaviour as before
-  return navigator.locks.request(REFRESH_LOCK, async () => {
-    // Skip-if-already-fresh against the in-memory session: if the session was
-    // refreshed while we waited for the lock, reuse it instead of spending
-    // another refresh. (Phase 2 read the shared persisted session here; with
-    // memory-only tokens the check only ever sees this tab's own session.)
-    if (!isSessionExpired()) return getSession()!
-    return refreshOnce()
-  })
+  // Cross-tab lock kept from Phase 2 (D9): refreshes stay serialized across this
+  // origin's tabs. Since Phase 3 each tab holds its OWN keycloak-js tokens
+  // (memory-only), so tabs never share a refresh token — there is nothing for a
+  // peer tab to replay and nothing here a peer's refresh could update.
+  // The old skip-if-fresh branch was removed 2026-10-04 (Pullfrog): it read only
+  // THIS tab's in-memory session, which a peer's refresh can never make fresh, so
+  // it could never fire — while its comment promised a cross-tab dedup that does
+  // not exist (serialization alone cannot dedupe a spent refresh token).
+  // Review: 2026-10-04, Pullfrog (lock serialized but could not dedupe)
+  if (!navigator.locks) return refreshOnce() // no Web Locks (insecure/old context) → in-tab dedup only
+  return navigator.locks.request(REFRESH_LOCK, () => refreshOnce())
 }
 
 /** Synchronous read of the in-memory session (never touches storage). */
 export function getSession(): AuthSession | null {
   if (!session || !session.accessToken || !session.refreshToken || !session.role) return null
   return session
-}
-
-export function isSessionExpired(bufferMs = 30_000): boolean {
-  const s = getSession()
-  if (!s) return true
-  return Date.now() >= s.expiresAt - bufferMs
 }
 
 export function clearSession(): void {

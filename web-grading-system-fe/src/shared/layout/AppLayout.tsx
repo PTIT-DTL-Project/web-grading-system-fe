@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router'
 import { getSession, logout, type Role } from '../auth/keycloak'
-import { clearIdentity, getIdentity } from '../auth/identity'
+import { getIdentity } from '../auth/identity'
 import { ChangePasswordModal } from '../../features/auth/ChangePasswordModal'
 import { changeLanguage, type Lang } from '../../locales/i18n'
 import { colors } from '../theme/tokens'
@@ -38,8 +38,13 @@ export function AppLayout() {
   const lang: Lang = i18n.language === 'en' ? 'en' : 'vi'
 
   const handleLogout = () => {
+    // Nothing is cleared before logout(): clearSession() would drop keycloak-js's
+    // idToken and leave id_token_hint empty — Keycloak then renders its own
+    // logout-confirmation screen instead of returning to /login (the invariant
+    // documented on logout() itself). The navigation after it wipes the
+    // in-memory session anyway, so no clearing call is needed for correctness.
+    // Review: 2026-10-04, Pullfrog (logout() invariant)
     logout()
-    clearIdentity()
     navigate('/login', { replace: true })
   }
 
@@ -48,7 +53,10 @@ export function AppLayout() {
     if (key === 'logout') handleLogout()
   }
 
-  const displayName = session?.email ?? identity.userId
+  // `||` not `??`: sessionFromTokens defaults a missing email claim to '', and
+  // `??` only falls back on null/undefined — an empty email would render a blank
+  // header instead of the userId. Review: 2026-10-04, Pullfrog (empty displayName)
+  const displayName = session?.email || identity.userId
 
   return (
     <Layout style={{ minHeight: '100vh' }}>

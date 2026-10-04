@@ -1,8 +1,8 @@
-import { Spin } from 'antd'
+import { Button, Result, Spin } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RouterProvider } from 'react-router'
-import { initAuth } from '../shared/auth/keycloak'
+import { initAuth, logout } from '../shared/auth/keycloak'
 import { ErrorState } from '../shared/ui/ErrorState'
 import { router } from './router'
 
@@ -70,13 +70,36 @@ export function AuthGate() {
 
   if (state === 'failed') {
     // A token without LECTURER/STUDENT is an account problem, not a transport
-    // one — say so instead of blaming the auth server.
-    const message =
-      error instanceof Error && error.message === 'token_no_allowed_role'
-        ? t('auth.noRole')
-        : t('auth.initFailed')
+    // one — say so instead of blaming the auth server. Reload reproduces the
+    // identical failure, so Retry is a dead end; keycloak-js IS initialized
+    // here (buildSession threw after init), so logout() ends the Keycloak
+    // session and the user reaches a real sign-in form / another account.
+    // Review: 2026-10-04, Pullfrog (no-role user had no way out)
+    if (error instanceof Error && error.message === 'token_no_allowed_role') {
+      return (
+        <Result
+          status="warning"
+          title={t('auth.noRole')}
+          extra={
+            <Button type="primary" onClick={() => logout()}>
+              {t('auth.logout')}
+            </Button>
+          }
+        />
+      )
+    }
+    // A misconfigured VITE_KEYCLOAK_AUTHORITY is a deploy bug the reader can fix
+    // only if they see it: show the exact thrown message (it names the env var)
+    // rather than the generic sentence that hides the cause.
+    // Review: 2026-10-04, Pullfrog (config error invisible to the user)
+    const detail =
+      error instanceof Error && error.name === 'KeycloakConfigError' ? error.message : null
     // Retry = full reload: a half-initialized adapter instance must not be reused.
-    return <ErrorState message={message} onRetry={() => window.location.reload()} />
+    return detail ? (
+      <ErrorState title={t('auth.initFailed')} message={detail} onRetry={() => window.location.reload()} />
+    ) : (
+      <ErrorState message={t('auth.initFailed')} onRetry={() => window.location.reload()} />
+    )
   }
 
   return <RouterProvider router={router} />

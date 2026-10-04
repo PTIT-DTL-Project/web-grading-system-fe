@@ -5,8 +5,9 @@ import type { TFunction } from 'i18next'
  * Shared `newPassword` rules mirroring the Keycloak realm policy
  * `length(8) and specialChars(1) and upperCase(1) and digits(1) and notUsername`.
  * `notUsername` cannot be evaluated in the browser — the realm enforces it server-side.
- * Both password forms (forced change in LoginPage, voluntary ChangePasswordModal) import
- * this so the two rule sets cannot drift apart. Review: 2026-10-03, Phase 2 plan
+ * Imported by the voluntary `ChangePasswordModal` (Keycloak renders its own
+ * UPDATE_PASSWORD page for the forced flow since Phase 3, D10).
+ * Review: 2026-10-03, Phase 2 plan; 2026-10-04, Pullfrog (stale comment)
  */
 export function newPasswordRules(t: TFunction): FormRule[] {
   return [
