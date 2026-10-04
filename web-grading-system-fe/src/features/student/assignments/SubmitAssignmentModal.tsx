@@ -115,7 +115,7 @@ export function SubmitAssignmentModal({
               </Button>,
             ]
       }
-      destroyOnHide
+      destroyOnClose
     >
       {step === 'done' ? (
         <Alert

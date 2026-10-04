@@ -21,7 +21,7 @@ export function StudentAssignmentsPage() {
   )
 
   const filters: FilterConfig<{ search?: string }>[] = [
-    { key: 'search', type: 'text', placeholder: t('assignments.search'), submitOnEnter: true },
+    { key: 'search', type: 'text', label: t('assignments.search'), placeholder: t('assignments.search'), submitOnEnter: true },
   ]
 
   const columns: TableColumnsType<AssignmentResponse> = [

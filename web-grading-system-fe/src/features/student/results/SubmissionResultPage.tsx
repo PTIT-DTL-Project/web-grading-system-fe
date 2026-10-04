@@ -86,12 +86,12 @@ export function SubmissionResultPage() {
       dataIndex: 'passed',
       key: 'passed',
       width: 90,
-      render: (passed: boolean) =>
-        passed ? (
-          <CheckCircleOutlined style={{ color: colors.success, fontSize: 18 }} />
-        ) : (
-          <CloseCircleOutlined style={{ color: colors.error, fontSize: 18 }} />,
-        ),
+      render: (passed: boolean) => {
+        if (passed) {
+          return <CheckCircleOutlined style={{ color: colors.success, fontSize: 18 }} />
+        }
+        return <CloseCircleOutlined style={{ color: colors.error, fontSize: 18 }} />
+      },
     },
     {
       title: t('result.score'),
@@ -110,14 +110,16 @@ export function SubmissionResultPage() {
       title: t('result.errorMessage'),
       dataIndex: 'errorMessage',
       key: 'errorMessage',
-      render: (v: string | null) =>
-        v ? (
-          <Typography.Text type="danger" style={{ fontSize: 12 }}>
-            {v}
-          </Typography.Text>
-        ) : (
-          '—'
-        ),
+      render: (v: string | null) => {
+        if (v) {
+          return (
+            <Typography.Text type="danger" style={{ fontSize: 12 }}>
+              {v}
+            </Typography.Text>
+          )
+        }
+        return '—'
+      },
     },
   ]
 
