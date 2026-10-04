@@ -76,11 +76,11 @@ async function handle401(config: InternalAxiosRequestConfig): Promise<void> {
     config.headers.set('Authorization', `Bearer ${session.accessToken}`)
   } catch (e) {
     processQueue(e)
-    // Only a dead grant ends the session (keycloak.ts already cleared its own
-    // tokens there). A transport failure during refresh — 503, DNS blip, one
-    // slow second on the token endpoint — keeps a still-valid session, so it
-    // must not clear it and redirect: fail this request and let the user
-    // continue. Review: 2026-10-04, Pullfrog (only a dead session signs out)
+    // refreshOnce's catch classifies the failure: kc's tokens cleared (400
+    // invalid_grant, dead grant) → REFRESH_DEAD → sign out; tokens intact
+    // (transport failure) → REFRESH_UNREACHABLE → keep a still-valid session,
+    // fail this request only, no redirect. Review: 2026-10-04, Pullfrog
+    // (only a dead session signs out; classification moved into the catch).
     if (e instanceof Error && e.message === REFRESH_UNREACHABLE) throw e
     signOut()
     throw e

@@ -201,8 +201,10 @@ const REFRESH_LOCK = 'wgs.token.refresh'
 
 /**
  * Silent refresh — deduped within this tab so concurrent 401s share one refresh
- * (`refreshPromise`); rejects with `REFRESH_UNREACHABLE` when the token endpoint
- * is unreachable (session kept) and `REFRESH_DEAD` when the grant is gone.
+ * (`refreshPromise`); rejects with `REFRESH_DEAD` when the grant is gone (kc's
+ * tokens cleared — 400 invalid_grant — or no session to derive) and with
+ * `REFRESH_UNREACHABLE` only when a transport failure left the tokens intact
+ * (session kept).
  */
 export async function refreshSession(): Promise<AuthSession> {
   if (refreshPromise) return refreshPromise
@@ -223,19 +225,26 @@ async function refreshOnce(): Promise<AuthSession> {
     // that triggered us never races expiry. Resolves `false` when still fresh.
     await kc.updateToken(30)
   } catch {
-    // Transport-level failure (network blip, 5xx on the token endpoint): NOT a
-    // dead session. keycloak-js keeps its tokens on anything but a 400, so the
-    // current session stays valid — preserve it and let the caller surface the
-    // error. Only a 400 clears kc's tokens, caught by the buildSession-null
-    // branch below. Collapsing this into a sign-out discarded a still-valid
-    // refresh token and hard-logged the user out mid-session.
-    // Review: 2026-10-04, Pullfrog (only a dead session should sign out)
+    // keycloak-js clears kc's tokens AND rejects in the same tick on a 400
+    // invalid_grant (keycloak.js:1507-1514), so the genuinely dead session
+    // surfaces HERE — the buildSession-null branch below only runs when
+    // updateToken resolves, which it never does with cleared tokens. Classify
+    // on kc's own token state (the signal buildSession already uses): no
+    // tokens = grant gone (400, or the no-refresh-token guard); tokens still
+    // there = transport failure (network blip, 5xx) — preserve the session,
+    // surface the error, no redirect. Filing a 400 as UNREACHABLE left a
+    // tokenless session looping 401 with no /login recovery.
+    // Review: 2026-10-04, Pullfrog (dead grant was filed as UNREACHABLE)
+    if (!kc.authenticated || !kc.token || !kc.refreshToken) {
+      clearSession()
+      throw new Error(REFRESH_DEAD)
+    }
     throw new Error(REFRESH_UNREACHABLE)
   }
+  // Reachable only on the resolve path above (tokens still present): a refresh
+  // succeeded but no usable session could be derived — e.g. token_no_allowed_role.
   const next = buildSession(kc)
   if (!next) {
-    // Genuine dead session: keycloak-js cleared its tokens (400 invalid_grant),
-    // so this branch may sign the caller out.
     clearSession()
     throw new Error(REFRESH_DEAD)
   }
