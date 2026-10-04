@@ -1,9 +1,11 @@
-import { GlobalOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, TeamOutlined } from '@ant-design/icons'
+import { GlobalOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, TeamOutlined } from '@ant-design/icons'
 import { Dropdown, Layout, Menu, Segmented, Space, Tag, Typography } from 'antd'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router'
-import { clearIdentity, getIdentity, type Role } from '../auth/identity'
+import { getSession, logout, type Role } from '../auth/keycloak'
+import { getIdentity } from '../auth/identity'
+import { ChangePasswordModal } from '../../features/auth/ChangePasswordModal'
 import { changeLanguage, type Lang } from '../../locales/i18n'
 import { colors } from '../theme/tokens'
 
@@ -18,8 +20,11 @@ export function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const identity = getIdentity()
+  const session = getSession()
 
+  // Hooks must run before the early `!identity` return below (rules of hooks).
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [changePwdOpen, setChangePwdOpen] = useState(false)
 
   if (!identity) return <Navigate to="/login" replace />
 
@@ -32,12 +37,26 @@ export function AppLayout() {
   const selectedKey = location.pathname.startsWith(menuKey) ? menuKey : ''
   const lang: Lang = i18n.language === 'en' ? 'en' : 'vi'
 
-  const handleUserMenu = ({ key }: { key: string }) => {
-    if (key === 'logout') {
-      clearIdentity()
-      navigate('/login', { replace: true })
-    }
+  const handleLogout = () => {
+    // Nothing is cleared before logout(): clearSession() would drop keycloak-js's
+    // idToken and leave id_token_hint empty — Keycloak then renders its own
+    // logout-confirmation screen instead of returning to /login (the invariant
+    // documented on logout() itself). The navigation after it wipes the
+    // in-memory session anyway, so no clearing call is needed for correctness.
+    // Review: 2026-10-04, Pullfrog (logout() invariant)
+    logout()
+    navigate('/login', { replace: true })
   }
+
+  const handleUserMenu = ({ key }: { key: string }) => {
+    if (key === 'change-password') setChangePwdOpen(true)
+    if (key === 'logout') handleLogout()
+  }
+
+  // `||` not `??`: sessionFromTokens defaults a missing email claim to '', and
+  // `??` only falls back on null/undefined — an empty email would render a blank
+  // header instead of the userId. Review: 2026-10-04, Pullfrog (empty displayName)
+  const displayName = session?.email || identity.userId
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -85,7 +104,7 @@ export function AppLayout() {
               display: 'flex',
               justifyContent: 'flex-end',
               padding: '8px 8px',
-              background: colors.surface,   // opaque so the button is always readable
+              background: colors.surface,
             }}
           >
             <button
@@ -110,10 +129,8 @@ export function AppLayout() {
               onMouseOut={(e) => (e.currentTarget.style.background = colors.surface)}
             >
               {sidebarCollapsed ? (
-                // Expanded (collapsed=false) -> RightOutlined (›)
                 <RightOutlined style={{ fontSize: 20 }} />
               ) : (
-                // Collapsed (collapsed=true) -> LeftOutlined («)
                 <LeftOutlined style={{ fontSize: 20 }} />
               )}
             </button>
@@ -158,19 +175,23 @@ export function AppLayout() {
             <Dropdown
               menu={{
                 items: [
-                  { key: 'logout', icon: <LogoutOutlined />, label: t('nav.switchUser') },
+                  { key: 'change-password', icon: <KeyOutlined />, label: t('nav.changePassword') },
+                  { type: 'divider' },
+                  { key: 'logout', icon: <LogoutOutlined />, label: t('nav.logout') },
                 ],
                 onClick: handleUserMenu,
               }}
             >
               <Space style={{ cursor: 'pointer' }}>
                 <Typography.Text type="secondary">
-                  {identity.userId.slice(0, 8)}
+                  {displayName.slice(0, 24)}
                 </Typography.Text>
                 <GlobalOutlined style={{ color: colors.primary }} />
               </Space>
             </Dropdown>
           </Space>
+
+          <ChangePasswordModal open={changePwdOpen} onClose={() => setChangePwdOpen(false)} />
         </Header>
 
         <Content style={{ padding: 24 }}>

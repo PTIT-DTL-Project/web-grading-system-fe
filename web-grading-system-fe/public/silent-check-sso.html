@@ -1,0 +1,12 @@
+<!doctype html>
+<!-- Served to keycloak-js's hidden iframe during silent check-sso
+     (init option `silentCheckSsoRedirectUri`). Its only job is to post the
+     callback URL back to the app; keep it minimal.
+     Review: 2026-10-03, Phase 3 (D8) -->
+<html>
+  <body>
+    <script>
+      parent.postMessage(location.href, location.origin)
+    </script>
+  </body>
+</html>

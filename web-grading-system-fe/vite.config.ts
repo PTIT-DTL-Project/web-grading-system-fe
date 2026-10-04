@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
 
   // Dev-only proxy: the browser talks to a single origin (this dev server), Vite forwards
   // /api/** to the API gateway server-side. Without it every call would be cross-origin and
-  // the gateway (which has no CORS filter at all) would block the X-User-Id preflight.
+  // the gateway (which has no CORS filter at all) would reject the Authorization preflight.
   // Same-origin also mirrors production, where the FE host routes /api to the gateway.
   // Target differs per machine (Traefik NodePort / tunnel host / local gateway) => env, not code.
   const target = env.VITE_API_PROXY_TARGET || 'http://localhost:30195'
