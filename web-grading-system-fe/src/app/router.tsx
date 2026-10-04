@@ -8,17 +8,17 @@ import { LoginPage } from '../features/auth/LoginPage'
 import { NoRolePage } from '../shared/auth/NoRolePage'
 import { NotFoundPage } from '../features/NotFoundPage'
 import { StudentClassesPage } from '../features/student/StudentClassesPage'
-import { HomeRedirect } from './HomeRedirect'
+import { LandingPage } from '../features/landing/LandingPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { index: true, element: <LandingPage /> },
   {
     element: <RequireIdentity />,
     children: [
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: <HomeRedirect /> },
           {
             path: 'classes',
             element: (

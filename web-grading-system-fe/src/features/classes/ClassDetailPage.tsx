@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert, Button, Result, Space, Spin, Tabs, Typography, Tag } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import { useClassDetail } from './useClassDetail'
+import { AssignmentTab } from './tabs/AssignmentTab'
 import { StudentsTab } from './tabs/StudentsTab'
 import { ScoreComponentsTab } from './tabs/ScoreComponentsTab'
 import { TranscriptTab } from './tabs/TranscriptTab'
@@ -86,8 +87,9 @@ export function ClassDetailPage() {
         }}
       >
         <Tabs
-          defaultActiveKey="students"
+          defaultActiveKey="assignments"
           items={[
+            { key: 'assignments', label: t('detail.tabAssignments'), children: <AssignmentTab classId={klass.id} ownerId={klass.ownerId} archived={isArchived} refreshToken={refreshToken} onSaved={refreshAll} /> },
             { key: 'students', label: t('detail.tabStudents'), children: <StudentsTab classId={klass.id} archived={isArchived} refreshToken={refreshToken} onSaved={refreshAll} /> },
             { key: 'components', label: t('detail.tabComponents'), children: <ScoreComponentsTab classId={klass.id} archived={isArchived} refreshToken={refreshToken} onSaved={refreshAll} /> },
             { key: 'transcript', label: t('detail.tabTranscript'), children: <TranscriptTab classId={klass.id} refreshToken={refreshToken} onSaved={refreshAll} /> },

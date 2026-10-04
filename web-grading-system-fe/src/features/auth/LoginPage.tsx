@@ -1,4 +1,4 @@
-import { Button, Card, Typography } from 'antd'
+import { Button, Card, Spin, Typography } from 'antd'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router'
@@ -16,7 +16,15 @@ import { colors } from '../../shared/theme/tokens'
  * query, so without the guard below this page re-fires `login()` after every
  * successful sign-in and the browser ping-pongs with Keycloak forever.
  *
- * Review: 2026-10-03, Phase 3 (D7, D10 — forced-change branch removed);
+ * While the automatic redirect is in flight this route renders a
+ * spinner only. The card below is the fallback for a redirect that
+ * could NOT start (`redirectToKeycloakLogin()` rejected — blocked
+ * navigation / uninitialized adapter), where the button is the only
+ * way out. Rendering the card as the default view made every reload
+ * of a deep link (/classes/:id) flash the login card before the
+ * browser was sent to Keycloak.
+ * Review: 2026-10-04 (reload card flash);
+ * 2026-10-03, Phase 3 (D7, D10 — forced-change branch removed);
  * 2026-10-03, infinite-redirect fix (authenticated guard).
  */
 export function LoginPage() {
@@ -57,6 +65,20 @@ export function LoginPage() {
   // endless /login ↔ Keycloak loop. Review: 2026-10-03, infinite-redirect fix.
   if (authenticated) return <Navigate to="/" replace />
 
+  // The mount effect above has already fired (or fires immediately
+  // after this paint) and the browser is on its way to Keycloak, so
+  // show only a spinner. keycloak-js's login() always navigates
+  // (window.location.assign) and its promise never settles — the only
+  // non-navigating outcome is a rejection, which sets `error` and
+  // falls through to the card below.
+  // Review: 2026-10-04 (reload showed the card before the redirect)
+  if (!error) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
+        <Spin size="large" />
+      </div>
+    )
+  }
 
   return (
     <div

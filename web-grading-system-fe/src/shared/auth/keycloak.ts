@@ -146,22 +146,12 @@ export function initAuth(): Promise<void> {
 
 async function runInit(silentSso: boolean): Promise<void> {
   const options: KeycloakInitOptions = {
-    // check-sso: a reload must never force the Keycloak login page — an
-    // unauthenticated visitor just ends up with `authenticated === false`
-    // and the route guard sends them to /login.
     onLoad: 'check-sso',
     pkceMethod: 'S256',
-    // The Session Status iframe needs 3rd-party cookies (Keycloak is another
-    // origin) and would block init until its iframe loads. With memory-only
-    // tokens expiry is detected by the refresh path below anyway, so disable it.
     checkLoginIframe: false,
+    silentCheckSsoFallback: false,
   }
   if (silentSso) {
-    // Silent reload check: refresh SSO state in a hidden iframe instead of a
-    // full-page bounce. keycloak-js itself clears this URI when the browser
-    // blocks 3rd-party cookies (`silentCheckSsoFallback`, default true), so
-    // restricted browsers degrade to a full-page `prompt=none` check rather
-    // than losing the session (D8).
     options.silentCheckSsoRedirectUri = `${window.location.origin}/silent-check-sso.html`
   }
 
@@ -169,15 +159,22 @@ async function runInit(silentSso: boolean): Promise<void> {
   let authenticated = false
   try {
     authenticated = await kc.init(options)
-  } catch (e) {
-    if (silentSso) {
-      // Fallback (D8): if the silent check-sso path fails outright (iframe
-      // blocked/missing), retry WITHOUT it — keycloak-js then performs one
-      // full-page `prompt=none` redirect, so a reload never strands the user.
-      // A keycloak-js instance refuses to initialize twice, hence a fresh one.
-      return runInit(false)
-    }
-    throw e
+  } catch {
+    keycloak = kc
+    window.location.href = '/login'
+    return
+  }
+
+  if (!authenticated && silentSso) {
+    // Silent check-sso could not restore the session (iframe
+    // blocked / SSO cookie inaccessible).  Do NOT redirect —
+    // let the router mount so the landing page is shown for
+    // unauthenticated users.  LoginPage handles the redirect
+    // via kc.login() when the user clicks the login button.
+    // keycloak is still set so redirectToKeycloakLogin() works.
+    // Review: 2026-10-04, public landing page fix.
+    keycloak = kc
+    return
   }
 
   keycloak = kc
@@ -193,7 +190,11 @@ async function runInit(silentSso: boolean): Promise<void> {
 export function redirectToKeycloakLogin(): Promise<void> {
   const kc = keycloak
   if (!kc) return Promise.reject(new Error('keycloak_not_initialized'))
-  return kc.login()
+  const redirectUri =
+    sessionStorage.getItem('wgs.postLoginUrl') ??
+    `${window.location.origin}${window.location.pathname}`
+  sessionStorage.removeItem('wgs.postLoginUrl')
+  return kc.login({ redirectUri })
 }
 
 // Cross-tab lock name shared by every tab of this origin (Web Locks keys on it).

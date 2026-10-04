@@ -12,7 +12,10 @@ import type { Role } from './keycloak'
  */
 export function RequireRole({ role, children }: { role: Role; children: ReactNode }): JSX.Element {
   const identity = getIdentity()
-  if (!identity) return <Navigate to="/login" replace />
+  if (!identity) {
+    sessionStorage.setItem('wgs.postLoginUrl', window.location.href)
+    return <Navigate to="/login" replace />
+  }
   if (identity.role !== role) return <Navigate to="/no-role" replace />
   return <>{children}</>
 }

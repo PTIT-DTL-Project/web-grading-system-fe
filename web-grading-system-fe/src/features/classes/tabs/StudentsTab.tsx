@@ -10,6 +10,8 @@ import { useApiErrorMessage } from '../../../shared/api/errors'
 import { colors } from '../../../shared/theme/tokens'
 import { ErrorState } from '../../../shared/ui/ErrorState'
 
+const SAMPLE_CSV_URL = '/samples/students-import.csv'
+
 interface StudentsTabProps {
   classId: string
   archived?: boolean
@@ -40,42 +42,49 @@ export function StudentsTab({ classId, archived = false, refreshToken, onSaved }
   const errorMessage = error ? (toMessage(error) as string) : ''
   const hasError = Boolean(error)
 
-  const handleImport = async (file: File) => {
-    if (!file) return
-    setUploading(true)
-    try {
-      const result = await importStudents(classId, file)
-      message.success(t('students.importSuccess', { imported: result.imported, skipped: result.skipped }))
-      onSaved?.()
-      reload()
-    } catch (err) {
-      message.error(toMessage(err))
-    } finally {
-      setUploading(false)
-    }
-  }
+   const handleImport = async (file: File) => {
+     if (!file) return
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+       message.error(t('students.importInvalidFile'))
+       return
+     }
+     setUploading(true)
+     try {
+       const result = await importStudents(classId, file)
+       message.success(t('students.importSuccess', { imported: result.imported, skipped: result.skipped }))
+       onSaved?.()
+       reload()
+     } catch (err) {
+       message.error(toMessage(err))
+     } finally {
+       setUploading(false)
+     }
+   }
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+    <Space orientation="vertical" style={{ width: '100%' }} size={24}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography.Title level={4} style={{ margin: 0 }}>{t('students.title')}</Typography.Title>
         <Space size={12}>
-          <Upload
-            accept=".csv"
-            showUploadList={false}
-            beforeUpload={() => false}
-            maxCount={1}
-            disabled={archived}
-            onChange={({ file }) => {
-              if (file && file.originFileObj) {
-                handleImport(file.originFileObj)
-              }
-            }}
-          >
-            <Button loading={uploading} disabled={archived}>
-              {t('students.import')}
-            </Button>
-          </Upload>
+            <Upload
+              accept=".csv"
+              showUploadList={false}
+              customRequest={() => {}}
+              maxCount={1}
+              disabled={archived}
+              onChange={({ file }) => {
+                if (file && file.originFileObj) {
+                  handleImport(file.originFileObj)
+                }
+              }}
+            >
+             <Button loading={uploading} disabled={archived}>
+               {t('students.import')}
+             </Button>
+           </Upload>
+           <a href={SAMPLE_CSV_URL} download="students-import.csv" target="_blank" rel="noreferrer">
+             {t('students.downloadTemplate')}
+           </a>
         </Space>
       </div>
 

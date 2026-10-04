@@ -68,6 +68,7 @@ export function AppLayout() {
         >
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
           <div
+            onClick={() => navigate('/')}
             style={{
               background: colors.primary,
               color: colors.textOnPrimary,
@@ -76,6 +77,7 @@ export function AppLayout() {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
+              cursor: 'pointer',
             }}
           >
             <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>

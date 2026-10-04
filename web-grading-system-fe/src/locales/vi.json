@@ -58,6 +58,7 @@
     "readOnlyMessage": "Thành phần điểm và dữ liệu sinh viên ở chế độ chỉ đọc."
   },
   "detail": {
+    "tabAssignments": "Bài tập",
     "tabStudents": "Sinh viên",
     "tabComponents": "Thành phần điểm",
     "tabTranscript": "Bảng điểm",
@@ -65,6 +66,46 @@
     "loadFailed": "Không tải được lớp học này",
     "notFound": "Không tìm thấy lớp học",
     "title": "Chi tiết lớp học"
+  },
+  "assignment": {
+    "title": "Bài tập",
+    "create": "Thêm bài tập",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "publish": "Công bố",
+    "created": "Đã tạo bài tập",
+    "deleted": "Đã xóa bài tập",
+    "published": "Đã công bố",
+    "empty": "Chưa có bài tập nào",
+    "strategy": "Chiến lược chấm",
+    "status": "Trạng thái",
+    "statusPublished": "Đã công bố",
+    "statusDraft": "Nháp",
+    "createdAt": "Ngày tạo",
+    "form": {
+      "title": "Tiêu đề",
+      "description": "Mô tả",
+      "strategy": "Chiến lược chấm",
+      "timeouts": "Thời gian timeout",
+      "resources": "Tài nguyên"
+    }
+  },
+  "plan": {
+    "title": "Câu kiểm tra",
+    "create": "Thêm câu kiểm tra",
+    "empty": "Chưa có câu kiểm tra nào"
+  },
+  "step": {
+    "title": "Bước kiểm tra",
+    "create": "Thêm bước",
+    "empty": "Chưa có bước",
+    "name": "Tên bước",
+    "type": "Loại bước",
+    "config": "Cấu hình",
+    "expectedResult": "Kết quả mong đợi",
+    "weight": "Trọng số",
+    "timeout": "Timeout",
+    "required": "Bắt buộc"
   },
   "students": {
     "title": "Sinh viên",
@@ -79,7 +120,8 @@
     "enterScores": "Nhập điểm",
     "empty": "Chưa có sinh viên nào",
     "emptyHint": "Nhập sinh viên từ CSV để bắt đầu",
-    "loadFailed": "Không tải được sinh viên"
+    "loadFailed": "Không tải được sinh viên",
+    "downloadTemplate": "Tải mẫu CSV"
   },
   "components": {
     "title": "Thành phần điểm",
@@ -95,7 +137,7 @@
       "FINAL_EXAM": "Điểm thi cuối kỳ",
       "ASSIGNMENT": "Điểm assignment"
     },
-    "autoGraded": "Tự động chấm điểm (tính bởi result‑service)",
+    "autoGraded": "Tự động chấm điểm",
     "allTypesUsed": "Tất cả các loại thành phần đã được cấu hình",
     "addTitle": "Thêm thành phần điểm",
     "type": "Loại",
@@ -133,6 +175,24 @@
     "unavailable": "Không khả dụng",
     "saved": "Đã lưu điểm",
     "loadFailed": "Không tải được điểm"
+  },
+  "landing": {
+    "hero": "Hệ thống chấm bài tự động",
+    "login": "Đăng nhập",
+    "welcome": "Chào, {{name}}",
+    "enterClasses": "Vào lớp học",
+    "myClasses": "Lớp của tôi",
+    "logout": "Đăng xuất",
+    "features": {
+      "classes": "Lớp học",
+      "classesDesc": "Tạo và quản lý lớp học",
+      "import": "Nhập CSV",
+      "importDesc": "Nhập sinh viên từ file CSV",
+      "grading": "Chấm điểm tự động",
+      "gradingDesc": "Chấm điểm tự động theo kế hoạch",
+      "transcript": "Bảng điểm",
+      "transcriptDesc": "Xem bảng điểm tổng kết"
+    }
   },
   "auth": {
     "title": "Đăng nhập",

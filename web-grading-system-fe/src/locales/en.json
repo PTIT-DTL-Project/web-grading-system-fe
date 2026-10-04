@@ -58,6 +58,7 @@
     "readOnlyMessage": "Score components and student data are read-only."
   },
   "detail": {
+    "tabAssignments": "Assignments",
     "tabStudents": "Students",
     "tabComponents": "Score components",
     "tabTranscript": "Class transcript",
@@ -65,6 +66,46 @@
     "loadFailed": "Could not load this class",
     "notFound": "Class not found",
     "title": "Class details"
+  },
+  "assignment": {
+    "title": "Assignments",
+    "create": "Add assignment",
+    "edit": "Edit",
+    "delete": "Delete",
+    "publish": "Publish",
+    "created": "Assignment created",
+    "deleted": "Assignment deleted",
+    "published": "Assignment published",
+    "empty": "No assignments yet",
+    "strategy": "Grading strategy",
+    "status": "Status",
+    "statusPublished": "Published",
+    "statusDraft": "Draft",
+    "createdAt": "Created",
+    "form": {
+      "title": "Title",
+      "description": "Description",
+      "strategy": "Grading strategy",
+      "timeouts": "Timeouts",
+      "resources": "Resources"
+    }
+  },
+  "plan": {
+    "title": "Test cases",
+    "create": "Add test case",
+    "empty": "No test cases yet"
+  },
+  "step": {
+    "title": "Test step",
+    "create": "Add step",
+    "empty": "No steps",
+    "name": "Name",
+    "type": "Type",
+    "config": "Config",
+    "expectedResult": "Expected result",
+    "weight": "Weight",
+    "timeout": "Timeout",
+    "required": "Required"
   },
   "students": {
     "title": "Students",
@@ -79,7 +120,8 @@
     "enterScores": "Enter scores",
     "empty": "No students yet",
     "emptyHint": "Import students from CSV to get started",
-    "loadFailed": "Could not load students"
+    "loadFailed": "Could not load students",
+    "downloadTemplate": "Download sample CSV"
   },
   "components": {
     "title": "Score components",
@@ -95,7 +137,7 @@
       "FINAL_EXAM": "Final exam",
       "ASSIGNMENT": "Assignment"
     },
-    "autoGraded": "Auto‑graded (computed by result‑service)",
+    "autoGraded": "Auto‑graded",
     "allTypesUsed": "All component types are already configured",
     "addTitle": "Add score component",
     "type": "Type",
@@ -133,6 +175,24 @@
     "unavailable": "Not available",
     "saved": "Scores saved",
     "loadFailed": "Could not load scores"
+  },
+  "landing": {
+    "hero": "Automated grading platform",
+    "login": "Sign in",
+    "welcome": "Welcome, {{name}}",
+    "enterClasses": "Enter classes",
+    "myClasses": "My classes",
+    "logout": "Sign out",
+    "features": {
+      "classes": "Classes",
+      "classesDesc": "Create and manage classes",
+      "import": "CSV Import",
+      "importDesc": "Import students from CSV",
+      "grading": "Auto Grading",
+      "gradingDesc": "Auto-grade by plan",
+      "transcript": "Transcript",
+      "transcriptDesc": "View final transcript"
+    }
   },
   "auth": {
     "title": "Sign in",
