@@ -38,6 +38,20 @@ export interface StepResponseDto {
   required: boolean
 }
 
+/** course-service StepResponse — nested in PlanResponse */
+export interface StepResponse {
+  id: string
+  stepOrder: number
+  name: string
+  description: string | null
+  type: string
+  config: unknown
+  expectedResult: unknown
+  weight: number
+  timeoutMs: number | null
+  required: boolean
+}
+
 export interface StepCreateBody {
   name: string
   description?: string
@@ -62,21 +76,23 @@ export interface StepUpdateBody {
   required?: boolean
 }
 
+/** course-service AssignmentResponse — GET /api/v1/student/assignments[/{id}] */
 export interface AssignmentResponse {
   id: string
   classId: string
   ownerId: string
   title: string
   description: string | null
-  gradingStrategy: GradingStrategy
+  gradingStrategy: GradingStrategy | string | null
   dockerComposeTemplate: string | null
-  dockerComposePort: number
-  startupTimeoutMs: number
-  executionTimeoutMs: number
-  maxMemoryMb: number
-  maxCpu: number
+  dockerComposePort: number | null
+  startupTimeoutMs: number | null
+  executionTimeoutMs: number | null
+  maxMemoryMb: number | null
+  maxCpu: number | null
   published: boolean
   createdAt: string | null
+  updatedAt?: string | null
 }
 
 export interface AssignmentResultStepResponse {
@@ -133,7 +149,8 @@ export interface SubmissionResponse {
 export interface DockerImageResponse {
   id: string
   name: string
-  imageUrl: string
+  imageUrl?: string
+  tag?: string
   description: string | null
 }
 
@@ -160,4 +177,14 @@ export interface UpdateAssignmentRequest {
   executionTimeoutMs?: number
   maxMemoryMb?: number
   maxCpu?: number
+}
+
+/** course-service PlanResponse — GET /api/v1/student/assignments/{id}/plans */
+export interface PlanResponse {
+  id: string
+  name: string
+  description: string | null
+  sequenceOrder: number
+  weight: number
+  steps: StepResponse[]
 }
