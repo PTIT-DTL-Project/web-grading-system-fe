@@ -41,6 +41,64 @@ export interface AssignmentResponse {
   createdAt: string | null
 }
 
+export interface AssignmentResultStepResponse {
+  id: string
+  planId: string
+  stepId: string
+  stepOrder: number
+  stepName: string
+  stepType: string
+  passed: boolean | null
+  weight: number | null
+  score: number | null
+  actualValue: string | null
+  expectedValue: string | null
+  errorMessage: string | null
+  durationMs: number | null
+}
+
+export interface AssignmentResultResponse {
+  id: string
+  submissionId: string
+  assignmentId: string
+  studentId: string
+  planId: string
+  planWeight: number | null
+  score: number | null
+  maxScore: number | null
+  status: string
+  summaryLog: string | null
+  latest: boolean | null
+  startedAt: string | null
+  completedAt: string | null
+  steps: AssignmentResultStepResponse[]
+}
+
+export interface StudentResultResponse {
+  studentUserId: string
+  studentCode: string
+  studentName: string
+  exerciseScore: number | null
+  results: AssignmentResultResponse[]
+}
+
+export interface SubmissionResponse {
+  id: string
+  assignmentId: string
+  studentId: string
+  zipFileName: string
+  status: string
+  latest: boolean | null
+  createdAt: string | null
+}
+
+export interface DockerImageResponse {
+  id: string
+  name: string
+  imageUrl: string
+  description: string | null
+}
+
 export interface CreateAssignmentRequest {
   classId: string
   ownerId: string

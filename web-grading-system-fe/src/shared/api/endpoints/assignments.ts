@@ -1,5 +1,5 @@
 import { getData, sendData, http } from '../http'
-import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest, TestPlan, TestStep, StepType } from '../../types/assignment'
+import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest, TestPlan, TestStep, StepType, StudentResultResponse, SubmissionResponse, DockerImageResponse } from '../../types/assignment'
 import type { Page } from '../../types/pagination'
 
 export function listAssignments(
@@ -74,4 +74,40 @@ export function updateStep(assignmentId: string, planId: string, stepId: string,
 
 export function deleteStep(assignmentId: string, planId: string, stepId: string): Promise<void> {
   return http.delete(`/api/v1/assignments/${assignmentId}/plans/${planId}/steps/${stepId}`).then((response) => response.data)
+}
+
+/* --------------------------------------------------------------- results */
+
+export function listResults(assignmentId: string, includeSteps?: boolean): Promise<StudentResultResponse[]> {
+  return getData<StudentResultResponse[]>(`/api/v1/assignments/${assignmentId}/results`, {
+    ...(includeSteps !== undefined ? { includeSteps } : {}),
+  })
+}
+
+/* ------------------------------------------------------------- submissions */
+
+export function listSubmissions(assignmentId: string): Promise<SubmissionResponse[]> {
+  return getData<SubmissionResponse[]>(`/api/v1/assignments/${assignmentId}/submissions`)
+}
+
+/* ---------------------------------------------------------------- docker */
+
+export function listDockerImages(name?: string, page?: number, size?: number): Promise<Page<DockerImageResponse>> {
+  return getData<Page<DockerImageResponse>>('/api/v1/docker-images', {
+    ...(name ? { name } : {}),
+    ...(page !== undefined ? { page } : {}),
+    ...(size !== undefined ? { size } : {}),
+  })
+}
+
+export function createDockerImage(body: { name: string; imageUrl: string; description?: string }): Promise<DockerImageResponse> {
+  return sendData<DockerImageResponse, typeof body>('/api/v1/docker-images', 'post', body)
+}
+
+export function updateDockerImage(id: string, body: { name?: string; imageUrl?: string; description?: string }): Promise<DockerImageResponse> {
+  return sendData<DockerImageResponse, typeof body>(`/api/v1/docker-images/${id}`, 'put', body)
+}
+
+export function deleteDockerImage(id: string): Promise<void> {
+  return http.delete(`/api/v1/docker-images/${id}`).then((response) => response.data)
 }

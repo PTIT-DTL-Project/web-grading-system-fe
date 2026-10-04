@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Table, Button, Space, Popconfirm, message, Tag } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useAssignments } from '../../assignments/useAssignments'
@@ -20,6 +21,7 @@ interface AssignmentTabProps {
 
 export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: AssignmentTabProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const toMessage = useApiErrorMessage()
   const [page, setPage] = useState(0)
   const { data, loading, error, refetch, create, remove, publish } = useAssignments(classId)
@@ -31,6 +33,7 @@ export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: A
     description?: string
     gradingStrategy: 'STUDENT_DOCKER_COMPOSE' | 'LECTURER_DOCKER_COMPOSE'
     dockerComposeTemplate?: string
+    dockerComposePort?: number
     startupTimeoutMs?: number
     executionTimeoutMs?: number
     maxMemoryMb?: number
@@ -38,22 +41,11 @@ export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: A
   }) => {
     setCreating(true)
     try {
-      await create({
-        classId,
-        ownerId,
-        title: values.title,
-        description: values.description,
-        gradingStrategy: values.gradingStrategy,
-        dockerComposeTemplate: values.dockerComposeTemplate,
-        startupTimeoutMs: values.startupTimeoutMs,
-        executionTimeoutMs: values.executionTimeoutMs,
-        maxMemoryMb: values.maxMemoryMb,
-        maxCpu: values.maxCpu,
-      })
+      await create({ ...values, classId, ownerId })
       message.success(t('assignment.created'))
       setModalOpen(false)
       onSaved?.()
-    } catch (err) {
+    } catch (err: unknown) {
       message.error(toMessage(err))
     } finally {
       setCreating(false)
@@ -65,7 +57,7 @@ export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: A
       await remove(id)
       message.success(t('assignment.deleted'))
       onSaved?.()
-    } catch (err) {
+    } catch (err: unknown) {
       message.error(toMessage(err))
     }
   }
@@ -75,7 +67,7 @@ export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: A
       await publish(id)
       message.success(t('assignment.published'))
       onSaved?.()
-    } catch (err) {
+    } catch (err: unknown) {
       message.error(toMessage(err))
     }
   }
@@ -90,30 +82,24 @@ export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: A
       title: t('assignment.title'),
       dataIndex: 'title',
       key: 'title',
-      ellipsis: true,
+      render: (v: string) => <strong>{v}</strong>,
     },
     {
       title: t('assignment.strategy'),
       dataIndex: 'gradingStrategy',
       key: 'gradingStrategy',
       render: (v: string) =>
-        v === 'STUDENT_DOCKER_COMPOSE' ? (
-          <Tag>Student Docker Compose</Tag>
-        ) : (
-          <Tag color="blue">Lecturer Docker Compose</Tag>
-        ),
+        v === 'STUDENT_DOCKER_COMPOSE' ? 'Student Docker' : 'Lecturer Docker',
     },
     {
       title: t('assignment.status'),
       dataIndex: 'published',
       key: 'published',
-      render: (v: boolean, record: AssignmentResponse) => (
+      render: (v: boolean) => (
         v ? (
           <Tag color="green">{t('assignment.statusPublished')}</Tag>
         ) : (
-          <Button type="link" size="small" disabled={archived} onClick={() => handlePublish(record.id)}>
-            {t('assignment.publish')}
-          </Button>
+          <Tag>{t('assignment.statusDraft')}</Tag>
         )
       ),
     },
@@ -128,6 +114,16 @@ export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: A
       key: 'actions',
       render: (_: unknown, record: AssignmentResponse) => (
         <Space size={8}>
+          {record.published && (
+            <>
+              <Button type="link" size="small" onClick={() => navigate(`/classes/${classId}/assignments/${record.id}/results`)}>
+                {t('assignment.results')}
+              </Button>
+              <Button type="link" size="small" onClick={() => navigate(`/classes/${classId}/assignments/${record.id}/submissions`)}>
+                {t('assignment.submissions')}
+              </Button>
+            </>
+          )}
           {!record.published && (
             <Button type="link" size="small" disabled={archived} onClick={() => handlePublish(record.id)}>
               {t('assignment.publish')}

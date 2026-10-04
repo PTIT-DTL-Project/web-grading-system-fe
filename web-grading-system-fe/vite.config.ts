@@ -12,8 +12,41 @@ export default defineConfig(({ mode }) => {
   // Target differs per machine (Traefik NodePort / tunnel host / local gateway) => env, not code.
   const target = env.VITE_API_PROXY_TARGET || 'http://localhost:30195'
 
+  // Preconnect the browser to the Keycloak origin: auth round trips (3p-cookies
+  // probe / silent-check iframe / token exchange) run on every reload, so DNS +
+  // TLS (~150–250 ms per load through the tunnel, measured 2026-10-04) should
+  // overlap the bundle parse instead of delaying the first auth request.
+  // Derived from VITE_KEYCLOAK_AUTHORITY here rather than written as a literal
+  // `%VITE_*%` placeholder in index.html: an unset var would leave the
+  // placeholder text in the served HTML.
+  // Review: 2026-10-04 (reload latency)
+  let keycloakOrigin: string | null = null
+  if (env.VITE_KEYCLOAK_AUTHORITY) {
+    try {
+      keycloakOrigin = new URL(env.VITE_KEYCLOAK_AUTHORITY).origin
+    } catch {
+      keycloakOrigin = null
+    }
+  }
+
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        name: 'preconnect-keycloak',
+        transformIndexHtml(html) {
+          if (!keycloakOrigin) return html
+          // Both sockets: the authorize navigation / silent iframe is a plain
+          // request, the token POST (fetch, CORS) needs its own connection.
+          return html.replace(
+            '</head>',
+            `    <link rel="preconnect" href="${keycloakOrigin}" />\n` +
+              `    <link rel="preconnect" href="${keycloakOrigin}" crossorigin />\n` +
+              `  </head>`,
+          )
+        },
+      },
+    ],
     server: {
       proxy: {
         '/api': {

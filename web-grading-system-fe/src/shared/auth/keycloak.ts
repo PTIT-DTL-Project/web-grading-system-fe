@@ -144,6 +144,26 @@ export function initAuth(): Promise<void> {
   return initPromise
 }
 
+/**
+ * True when the current URL carries an OIDC authorization response. keycloak-js
+ * returns it in the hash (`response_mode=fragment`, keycloak.js:1237); the
+ * query form is tolerated for other flows.
+ *
+ * On a callback load `#processInit` exchanges the code and never runs a silent
+ * check, so keycloak-js would still pay its 3p-cookies probe (~2 round trips
+ * over the tunnel, ≈0.5 s measured) for a capability that is not used.
+ * `runInit` therefore omits `silentCheckSsoRedirectUri` here: the probe skips
+ * itself when neither the silent URI nor the login iframe is set
+ * (keycloak.js:751), so the code exchange starts immediately.
+ * Review: 2026-10-04 (reload latency — probe ran before the code exchange)
+ */
+function hasAuthCallback(): boolean {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const search = new URLSearchParams(window.location.search)
+  const has = (key: string) => hash.has(key) || search.has(key)
+  return has('state') && (has('code') || has('error'))
+}
+
 async function runInit(silentSso: boolean): Promise<void> {
   const options: KeycloakInitOptions = {
     onLoad: 'check-sso',
@@ -151,7 +171,9 @@ async function runInit(silentSso: boolean): Promise<void> {
     checkLoginIframe: false,
     silentCheckSsoFallback: false,
   }
-  if (silentSso) {
+  // Skip the silent-check machinery (and its 3p-cookies probe) on callback
+  // loads — see hasAuthCallback(). Review: 2026-10-04 (reload latency)
+  if (silentSso && !hasAuthCallback()) {
     options.silentCheckSsoRedirectUri = `${window.location.origin}/silent-check-sso.html`
   }
 
@@ -185,7 +207,8 @@ async function runInit(silentSso: boolean): Promise<void> {
  * Redirect (full page) to Keycloak's hosted login form — authorization code +
  * PKCE, the browser never sees a password (D7). The promise never settles when
  * navigation starts, so callers only use `.catch()` to surface a blocked
- * redirect. The single call site is `LoginPage`.
+ * redirect. Call sites: `LoginPage` (automatic on mount) and `LandingPage`
+ * (the public login button).
  */
 export function redirectToKeycloakLogin(): Promise<void> {
   const kc = keycloak
