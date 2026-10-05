@@ -16,22 +16,28 @@ interface StepEditorProps {
   onSave: (body: { name: string; stepType: StepType; config?: string; expectedResult?: string; weight?: number; timeoutMs?: number; required?: boolean }) => Promise<unknown>
   onCancel: () => void
   saving: boolean
+  disabled?: boolean
 }
 
-const STEP_TYPE_OPTIONS = [
-  { value: 'HTTP_REQUEST', label: 'HTTP Request' },
-  { value: 'DB_QUERY', label: 'DB Query' },
-  { value: 'DB_SCHEMA_CHECK', label: 'DB Schema Check' },
-  { value: 'DB_MIGRATION', label: 'DB Migration' },
-  { value: 'EXTRACT', label: 'Extract' },
-  { value: 'DELAY', label: 'Delay' },
+const STEP_TYPES: StepType[] = [
+  'HTTP_REQUEST',
+  'DB_QUERY',
+  'DB_SCHEMA_CHECK',
+  'DB_MIGRATION',
+  'EXTRACT',
+  'DELAY',
 ]
 
-export function StepEditor({ step, onSave, onCancel, saving }: StepEditorProps) {
+export function StepEditor({ step, onSave, onCancel, saving, disabled = false }: StepEditorProps) {
   const { t } = useTranslation()
   const [form] = Form.useForm()
   const stepType = Form.useWatch('stepType', form) as StepType | undefined
+  const stepTypeOptions = STEP_TYPES.map((value) => ({
+    value,
+    label: t(`step.typeOptions.${value}`),
+  }))
 
+  // Review: 2026-10-05, Pullfrog — PlanCard owns success, failure, and closing, so do not reset here and discard editor state.
   const handleOk = async () => {
     const values = await form.validateFields()
     await onSave({
@@ -43,7 +49,6 @@ export function StepEditor({ step, onSave, onCancel, saving }: StepEditorProps) 
       timeoutMs: values.timeoutMs ?? null,
       required: values.required ?? true,
     })
-    form.resetFields()
   }
 
   return (
@@ -51,28 +56,28 @@ export function StepEditor({ step, onSave, onCancel, saving }: StepEditorProps) 
       <Form.Item name="name" label={t('step.name')} rules={[{ required: true }]}>
         <Input />
       </Form.Item>
-      <Form.Item name="stepType" label={t('step.type')} rules={[{ required: true }]}>
-        <Select options={STEP_TYPE_OPTIONS} />
-      </Form.Item>
+        <Form.Item name="stepType" label={t('step.type')} rules={[{ required: true }]}>
+          <Select options={stepTypeOptions} />
+        </Form.Item>
       {(stepType === 'HTTP_REQUEST' || stepType === 'DB_QUERY' || stepType === 'DB_MIGRATION') && (
         <Form.Item name="config" label={t('step.config')}>
-          <Input.TextArea rows={4} placeholder="JSON" />
+          <Input.TextArea rows={4} placeholder={t('step.configPlaceholder')} />
         </Form.Item>
       )}
-      <Form.Item name="expectedResult" label={t('step.expectedResult')}>
-        <Input.TextArea rows={3} placeholder="JSON" />
+        <Form.Item name="expectedResult" label={t('step.expectedResult')}>
+          <Input.TextArea rows={3} placeholder={t('step.expectedResultPlaceholder')} />
       </Form.Item>
       <Form.Item name="weight" label={t('step.weight')} initialValue={1}>
         <InputNumber min={1} />
       </Form.Item>
-      <Form.Item name="timeoutMs" label={t('step.timeout')} initialValue={null}>
-        <InputNumber min={0} placeholder="Default" />
+        <Form.Item name="timeoutMs" label={t('step.timeout')} initialValue={null}>
+          <InputNumber min={0} placeholder={t('step.timeoutPlaceholder')} />
       </Form.Item>
       <Form.Item name="required" label={t('step.required')} valuePropName="checked" initialValue={true}>
         <Switch />
       </Form.Item>
       <Space>
-        <Button type="primary" onClick={handleOk} loading={saving}>
+        <Button type="primary" disabled={disabled} onClick={handleOk} loading={saving}>
           {t('common.save')}
         </Button>
         <Button onClick={onCancel}>{t('common.cancel')}</Button>

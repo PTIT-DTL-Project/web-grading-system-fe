@@ -6,12 +6,12 @@ import type { ReactNode } from 'react'
 import { colors } from '../shared/theme/tokens'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+// Review: 2026-10-05, Pullfrog — keep focus refetching and retry storms off globally; freshness belongs to each query because grading snapshots can change while in flight.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: Infinity,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
+      retry: 1,
     },
   },
 })

@@ -7,9 +7,10 @@ import { useState } from 'react'
 
 interface TestPlanEditorProps {
   assignmentId: string
+  archived?: boolean
 }
 
-export function TestPlanEditor({ assignmentId }: TestPlanEditorProps) {
+export function TestPlanEditor({ assignmentId, archived = false }: TestPlanEditorProps) {
   const { t } = useTranslation()
   const toMessage = useApiErrorMessage()
   const { plans, loading, error, remove, create } = useTestPlans(assignmentId)
@@ -53,11 +54,16 @@ export function TestPlanEditor({ assignmentId }: TestPlanEditorProps) {
           key={plan.id}
           plan={plan}
           assignmentId={assignmentId}
+          archived={archived}
           onDelete={(planId) => remove(planId)}
         />
       ))}
 
-      <Button type="primary" size="small" onClick={() => setModalOpen(true)}>
+      {plans.length === 0 && (
+        <Typography.Text type="secondary">{t('plan.empty')}</Typography.Text>
+      )}
+
+      <Button type="primary" size="small" disabled={archived} onClick={() => setModalOpen(true)}>
         {t('plan.create')}
       </Button>
 

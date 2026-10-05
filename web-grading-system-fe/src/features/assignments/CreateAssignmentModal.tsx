@@ -26,21 +26,27 @@ export function CreateAssignmentModal({
 
   const strategy = Form.useWatch('gradingStrategy', form) as GradingStrategy | undefined
 
+  // Review: 2026-10-05, Pullfrog — only clear and close after backend success so validation failures preserve user input.
   const handleOk = async () => {
     const values = await form.validateFields()
-    await createFn({
-      classId,
-      ownerId,
-      title: values.title,
-      description: values.description || undefined,
-      gradingStrategy: values.gradingStrategy,
-      dockerComposeTemplate: values.dockerComposeTemplate || undefined,
-      dockerComposePort: values.dockerComposePort || 8080,
-      startupTimeoutMs: values.startupTimeoutMs || 60000,
-      executionTimeoutMs: values.executionTimeoutMs || 300000,
-      maxMemoryMb: values.maxMemoryMb || 256,
-      maxCpu: values.maxCpu || 0.5,
-    })
+    try {
+      await createFn({
+        classId,
+        ownerId,
+        title: values.title,
+        description: values.description || undefined,
+        gradingStrategy: values.gradingStrategy,
+        dockerComposeTemplate: values.dockerComposeTemplate || undefined,
+        dockerComposePort: values.dockerComposePort ?? 8080,
+        startupTimeoutMs: values.startupTimeoutMs || 60000,
+        executionTimeoutMs: values.executionTimeoutMs || 300000,
+        maxMemoryMb: values.maxMemoryMb || 256,
+        maxCpu: values.maxCpu || 0.5,
+      })
+    } catch {
+      // AssignmentTab already shows the backend error; keep the modal open with its values.
+      return
+    }
     form.resetFields()
     onCreated()
   }
@@ -66,26 +72,29 @@ export function CreateAssignmentModal({
         <Form.Item name="gradingStrategy" label={t('assignment.form.strategy')} rules={[{ required: true }]}>
           <Select
             options={[
-              { value: 'STUDENT_DOCKER_COMPOSE', label: 'Student Docker Compose' },
-              { value: 'LECTURER_DOCKER_COMPOSE', label: 'Lecturer Docker Compose' },
+              { value: 'STUDENT_DOCKER_COMPOSE', label: t('assignment.strategyStudent') },
+              { value: 'LECTURER_DOCKER_COMPOSE', label: t('assignment.strategyLecturer') },
             ]}
           />
         </Form.Item>
         {strategy === 'LECTURER_DOCKER_COMPOSE' && (
-          <Form.Item name="dockerComposeTemplate" label="Docker Compose Template" rules={[{ required: true }]}>
+          <Form.Item name="dockerComposeTemplate" label={t('assignment.form.dockerComposeTemplate')} rules={[{ required: true }]} preserve={false}>
             <Input.TextArea rows={4} />
           </Form.Item>
         )}
-        <Form.Item name="startupTimeoutMs" label="Startup Timeout (ms)" initialValue={60000}>
+        <Form.Item name="dockerComposePort" label={t('assignment.form.dockerComposePort')} initialValue={8080}>
+          <InputNumber min={1} max={65535} />
+        </Form.Item>
+        <Form.Item name="startupTimeoutMs" label={t('assignment.form.startupTimeout')} initialValue={60000}>
           <InputNumber />
         </Form.Item>
-        <Form.Item name="executionTimeoutMs" label="Execution Timeout (ms)" initialValue={300000}>
+        <Form.Item name="executionTimeoutMs" label={t('assignment.form.executionTimeout')} initialValue={300000}>
           <InputNumber />
         </Form.Item>
-        <Form.Item name="maxMemoryMb" label="Max Memory (MB)" initialValue={256}>
+        <Form.Item name="maxMemoryMb" label={t('assignment.form.maxMemory')} initialValue={256}>
           <InputNumber />
         </Form.Item>
-        <Form.Item name="maxCpu" label="Max CPU" initialValue={0.5}>
+        <Form.Item name="maxCpu" label={t('assignment.form.maxCpu')} initialValue={0.5}>
           <InputNumber step={0.1} />
         </Form.Item>
       </Form>

@@ -8,6 +8,7 @@ import { useAssignments } from '../../assignments/useAssignments'
 import { CreateAssignmentModal } from '../../assignments/CreateAssignmentModal'
 import { TestPlanEditor } from '../../assignments/TestPlanEditor'
 import { useApiErrorMessage } from '../../../shared/api/errors'
+import { standardPagination } from '../../../shared/ui/StandardPagination'
 import { colors } from '../../../shared/theme/tokens'
 import type { AssignmentResponse } from '../../../shared/types/assignment'
 
@@ -19,12 +20,13 @@ interface AssignmentTabProps {
   onSaved?: () => void
 }
 
-export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: AssignmentTabProps) {
+export function AssignmentTab({ classId, ownerId, archived = false, refreshToken = 0, onSaved }: AssignmentTabProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const toMessage = useApiErrorMessage()
   const [page, setPage] = useState(0)
-  const { data, loading, error, refetch, create, remove, publish } = useAssignments(classId)
+  // Review: 2026-10-05, Pullfrog — refresh classroom-wide mutations into this tab instead of leaving it stale.
+  const { data, loading, error, refetch, create, remove, publish } = useAssignments(classId, refreshToken, page)
   const [modalOpen, setModalOpen] = useState(false)
   const [creating, setCreating] = useState(false)
 
@@ -43,10 +45,11 @@ export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: A
     try {
       await create({ ...values, classId, ownerId })
       message.success(t('assignment.created'))
-      setModalOpen(false)
       onSaved?.()
     } catch (err: unknown) {
+      // Review: 2026-10-05, Pullfrog — rethrow so the modal can keep user input when creation fails.
       message.error(toMessage(err))
+      throw err
     } finally {
       setCreating(false)
     }
@@ -89,7 +92,7 @@ export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: A
       dataIndex: 'gradingStrategy',
       key: 'gradingStrategy',
       render: (v: string) =>
-        v === 'STUDENT_DOCKER_COMPOSE' ? 'Student Docker' : 'Lecturer Docker',
+        v === 'STUDENT_DOCKER_COMPOSE' ? t('assignment.strategyStudent') : t('assignment.strategyLecturer'),
     },
     {
       title: t('assignment.status'),
@@ -170,29 +173,16 @@ export function AssignmentTab({ classId, ownerId, archived = false, onSaved }: A
           columns={columns}
           dataSource={dataSource}
           loading={loading}
-          pagination={false}
+          pagination={data ? standardPagination({ meta: data.meta, currentPage: page, onPageChange: setPage }) : false}
           size="middle"
           expandable={{
             expandedRowRender: (record) => (
-              <TestPlanEditor assignmentId={record.id} />
+              // Review: 2026-10-05, Pullfrog — archived classes must not stay editable through the expanded plan editor.
+              <TestPlanEditor assignmentId={record.id} archived={archived} />
             ),
             rowExpandable: () => true,
           }}
         />
-      )}
-
-      {data && data.meta.pages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0' }}>
-          <Space>
-            <Button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-              Prev
-            </Button>
-            <span>{page + 1} / {data.meta.pages}</span>
-            <Button disabled={page >= data.meta.pages - 1} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </Button>
-          </Space>
-        </div>
       )}
 
       <CreateAssignmentModal

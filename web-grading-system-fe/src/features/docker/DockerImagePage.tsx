@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
@@ -24,13 +24,24 @@ export function DockerImagePage() {
   const [form] = Form.useForm()
   const [saving, setSaving] = useState(false)
 
-  const load = () => {
+  // Review: 2026-10-05, Pullfrog — the table stayed on a spinner because only mutations triggered a load.
+  const load = useCallback(() => {
     setLoading(true)
     listDockerImages()
-      .then((resp) => { setData(resp.result ?? resp) })
-      .catch((err: unknown) => message.error(toMessage(err)))
-      .finally(() => setLoading(false))
-  }
+      .then((resp) => {
+        setData(resp.result)
+      })
+      .catch((err: unknown) => {
+        message.error(toMessage(err))
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [toMessage])
+
+  useEffect(() => {
+    load()
+  }, [load])
 
   const handleCreate = async (values: { name: string; imageUrl: string; description?: string }) => {
     setSaving(true)
@@ -88,7 +99,7 @@ export function DockerImagePage() {
 
   const columns = [
     { title: t('assignment.name'), dataIndex: 'name', key: 'name' },
-    { title: 'Image', dataIndex: 'imageUrl', key: 'imageUrl', render: (v: string) => <code>{v}</code> },
+    { title: t('assignment.image'), dataIndex: 'imageUrl', key: 'imageUrl', render: (v: string) => <code>{v}</code> },
     { title: t('assignment.description'), dataIndex: 'description', key: 'description' },
     {
       title: t('common.actions'),
@@ -141,7 +152,7 @@ export function DockerImagePage() {
           <Form.Item name="name" label={t('assignment.name')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}>
+          <Form.Item name="imageUrl" label={t('assignment.imageUrl')} rules={[{ required: true }]}>
             <Input />
           </Form.Item>
           <Form.Item name="description" label={t('assignment.description')}>

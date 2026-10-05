@@ -8,6 +8,7 @@ export function listAssignments(
   size: number,
   search?: string,
   published?: boolean,
+  options?: { signal?: AbortSignal },
 ): Promise<Page<AssignmentResponse>> {
   return getData<Page<AssignmentResponse>>('/api/v1/assignments', {
     classId,
@@ -15,7 +16,7 @@ export function listAssignments(
     size,
     ...(search ? { search } : {}),
     ...(published !== undefined ? { published } : {}),
-  })
+  }, { signal: options?.signal })
 }
 
 export function getAssignment(id: string): Promise<AssignmentResponse> {

@@ -9,6 +9,7 @@
     "empty": "No data",
     "error": "Something went wrong",
     "retry": "Retry",
+    "refresh": "Refresh",
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -17,7 +18,13 @@
     "comingSoon": "This feature is under construction.",
     "filter": "Filter",
     "clearFilters": "Clear filters",
-    "delete": "Delete"
+    "delete": "Delete",
+    "created": "Created",
+    "updated": "Updated",
+    "deleted": "Deleted",
+    "edit": "Edit",
+    "collapse": "Collapse",
+    "expand": "Expand"
   },
   "nav": {
     "classes": "Classes",
@@ -70,8 +77,6 @@
   "assignment": {
     "title": "Assignments",
     "create": "Add assignment",
-    "edit": "Edit",
-    "delete": "Delete",
     "publish": "Publish",
     "created": "Assignment created",
     "deleted": "Assignment deleted",
@@ -89,17 +94,30 @@
     "step": "Step",
     "passed": "Passed",
     "failed": "Failed",
+    "pending": "Pending",
     "strategy": "Grading strategy",
     "status": "Status",
     "statusPublished": "Published",
     "statusDraft": "Draft",
     "createdAt": "Created",
+    "name": "Name",
+    "description": "Description",
+    "file": "File",
+    "latest": "Latest",
+    "image": "Image",
+    "imageUrl": "Image URL",
+    "strategyStudent": "Student Docker Compose",
+    "strategyLecturer": "Lecturer Docker Compose",
     "form": {
       "title": "Title",
       "description": "Description",
       "strategy": "Grading strategy",
-      "timeouts": "Timeouts",
-      "resources": "Resources"
+      "dockerComposeTemplate": "Docker Compose Template",
+      "dockerComposePort": "Docker Compose Port",
+      "startupTimeout": "Startup Timeout (ms)",
+      "executionTimeout": "Execution Timeout (ms)",
+      "maxMemory": "Max Memory (MB)",
+      "maxCpu": "Max CPU"
     }
   },
   "plan": {
@@ -108,16 +126,26 @@
     "empty": "No test cases yet"
   },
   "step": {
-    "title": "Test step",
     "create": "Add step",
     "empty": "No steps",
     "name": "Name",
     "type": "Type",
     "config": "Config",
     "expectedResult": "Expected result",
+    "expectedResultPlaceholder": "JSON",
     "weight": "Weight",
     "timeout": "Timeout",
-    "required": "Required"
+    "required": "Required",
+    "configPlaceholder": "JSON",
+    "timeoutPlaceholder": "Default",
+    "typeOptions": {
+      "HTTP_REQUEST": "HTTP Request",
+      "DB_QUERY": "DB Query",
+      "DB_SCHEMA_CHECK": "DB Schema Check",
+      "DB_MIGRATION": "DB Migration",
+      "EXTRACT": "Extract",
+      "DELAY": "Delay"
+    }
   },
   "students": {
     "title": "Students",
@@ -133,7 +161,8 @@
     "empty": "No students yet",
     "emptyHint": "Import students from CSV to get started",
     "loadFailed": "Could not load students",
-    "downloadTemplate": "Download sample CSV"
+    "downloadTemplate": "Download sample CSV",
+    "importInvalidFile": "Please choose a CSV file"
   },
   "components": {
     "title": "Score components",

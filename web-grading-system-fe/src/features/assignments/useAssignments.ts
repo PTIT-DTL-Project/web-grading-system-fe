@@ -1,3 +1,4 @@
+import { isCancel } from 'axios'
 import { useEffect, useState, useCallback } from 'react'
 import {
   listAssignments,
@@ -20,7 +21,7 @@ interface UseAssignmentsReturn {
   publish: (id: string) => Promise<AssignmentResponse>
 }
 
-export function useAssignments(classId: string): UseAssignmentsReturn {
+export function useAssignments(classId: string, refreshToken = 0, page = 0, pageSize = 20): UseAssignmentsReturn {
   const [data, setData] = useState<Page<AssignmentResponse> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
@@ -31,14 +32,15 @@ export function useAssignments(classId: string): UseAssignmentsReturn {
   useEffect(() => {
     const controller = new AbortController()
     setLoading(true)
-    listAssignments(classId, 0, 20)
+    // Review: 2026-10-05, Pullfrog — page changes must re-query instead of only relabeling the pager.
+    listAssignments(classId, page, pageSize, undefined, undefined, { signal: controller.signal })
       .then((resp) => {
         if (controller.signal.aborted) return
         setData(resp)
         setError(null)
       })
       .catch((err: unknown) => {
-        if (controller.signal.aborted) return
+        if (controller.signal.aborted || isCancel(err)) return
         setError(err)
       })
       .finally(() => {
@@ -46,7 +48,7 @@ export function useAssignments(classId: string): UseAssignmentsReturn {
         setLoading(false)
       })
     return () => controller.abort()
-  }, [classId, version])
+  }, [classId, refreshToken, page, pageSize, version])
 
   const create = async (req: CreateAssignmentRequest) => {
     const resp = await createAssignment(req)

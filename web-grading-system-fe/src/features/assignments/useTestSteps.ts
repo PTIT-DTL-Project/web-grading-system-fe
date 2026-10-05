@@ -17,7 +17,7 @@ interface UseTestStepsReturn {
   remove: (stepId: string) => Promise<void>
 }
 
-export function useTestSteps(assignmentId: string, planId: string): UseTestStepsReturn {
+export function useTestSteps(assignmentId: string, planId: string, enabled = true): UseTestStepsReturn {
   const [steps, setSteps] = useState<TestStep[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
@@ -26,6 +26,8 @@ export function useTestSteps(assignmentId: string, planId: string): UseTestSteps
   const refetch = useCallback(() => setVersion((v) => v + 1), [])
 
   useEffect(() => {
+    // Review: 2026-10-05, Pullfrog — only fetch steps after the card is expanded, not for every mounted plan.
+    if (!enabled) return
     const controller = new AbortController()
     setLoading(true)
     listSteps(assignmentId, planId)
@@ -43,7 +45,7 @@ export function useTestSteps(assignmentId: string, planId: string): UseTestSteps
         setLoading(false)
       })
     return () => controller.abort()
-  }, [assignmentId, planId, version])
+  }, [assignmentId, planId, enabled, version])
 
   const create = async (body: { name: string; stepType: StepType; config?: string; expectedResult?: string; weight?: number; timeoutMs?: number; required?: boolean }) => {
     const resp = await createStep(assignmentId, planId, body)

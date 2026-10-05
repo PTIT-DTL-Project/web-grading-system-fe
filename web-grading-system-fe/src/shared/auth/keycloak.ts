@@ -82,7 +82,7 @@ function sessionFromTokens(tokens: {
   // Allow-list governs BOTH branches: strip the realm's ROLE_ prefix for matching,
   // then accept the result only when it is LECTURER or STUDENT. Casting an untested
   // `normalized` to Role would let ROLE_ADMIN (or ADMIN) mint an out-of-contract
-  // session that HomeRedirect treats as a lecturer.
+  // session that the role guards would accept as a lecturer.
   // Review: 2026-10-04, Pullfrog (ROLE_ fallback bypassed the allow-list)
   const role =
     roles
@@ -149,13 +149,9 @@ export function initAuth(): Promise<void> {
  * returns it in the hash (`response_mode=fragment`, keycloak.js:1237); the
  * query form is tolerated for other flows.
  *
- * On a callback load `#processInit` exchanges the code and never runs a silent
- * check, so keycloak-js would still pay its 3p-cookies probe (~2 round trips
- * over the tunnel, ≈0.5 s measured) for a capability that is not used.
- * `runInit` therefore omits `silentCheckSsoRedirectUri` here: the probe skips
- * itself when neither the silent URI nor the login iframe is set
- * (keycloak.js:751), so the code exchange starts immediately.
- * Review: 2026-10-04 (reload latency — probe ran before the code exchange)
+ * Valid callback URLs are handled before the silent-SSO branch
+ * (keycloak.js:810-813), so this guard only avoids configuring silent SSO for a
+ * URL whose authorization response takes precedence.
  */
 function hasAuthCallback(): boolean {
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
@@ -169,10 +165,9 @@ async function runInit(silentSso: boolean): Promise<void> {
     onLoad: 'check-sso',
     pkceMethod: 'S256',
     checkLoginIframe: false,
-    silentCheckSsoFallback: false,
   }
-  // Skip the silent-check machinery (and its 3p-cookies probe) on callback
-  // loads — see hasAuthCallback(). Review: 2026-10-04 (reload latency)
+  // Review: 2026-10-05, Pullfrog — keep the adapter default fallback so blocked third-party cookies use a full-page prompt=none instead of a hanging silent iframe.
+  // Skip the silent-check setup on callback loads — see hasAuthCallback().
   if (silentSso && !hasAuthCallback()) {
     options.silentCheckSsoRedirectUri = `${window.location.origin}/silent-check-sso.html`
   }
@@ -181,10 +176,10 @@ async function runInit(silentSso: boolean): Promise<void> {
   let authenticated = false
   try {
     authenticated = await kc.init(options)
-  } catch {
+  } catch (e) {
+    // Review: 2026-10-05, Pullfrog — the same transport/config failure recurs from /login, so redirecting hides the cause in a reload loop.
     keycloak = kc
-    window.location.href = '/login'
-    return
+    throw e
   }
 
   if (!authenticated && silentSso) {

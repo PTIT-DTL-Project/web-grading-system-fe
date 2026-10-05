@@ -9,6 +9,7 @@
     "empty": "Không có dữ liệu",
     "error": "Đã xảy ra lỗi",
     "retry": "Thử lại",
+    "refresh": "Làm mới",
     "save": "Lưu",
     "cancel": "Hủy",
     "confirm": "Xác nhận",
@@ -17,7 +18,13 @@
     "comingSoon": "Chức năng đang được xây dựng.",
     "filter": "Lọc",
     "clearFilters": "Xóa lọc",
-    "delete": "Xóa"
+    "delete": "Xóa",
+    "created": "Đã tạo",
+    "updated": "Đã cập nhật",
+    "deleted": "Đã xóa",
+    "edit": "Chỉnh sửa",
+    "collapse": "Thu gọn",
+    "expand": "Mở rộng"
   },
   "nav": {
     "classes": "Lớp học",
@@ -70,8 +77,6 @@
   "assignment": {
     "title": "Bài tập",
     "create": "Thêm bài tập",
-    "edit": "Chỉnh sửa",
-    "delete": "Xóa",
     "publish": "Công bố",
     "created": "Đã tạo bài tập",
     "deleted": "Đã xóa bài tập",
@@ -89,17 +94,30 @@
     "step": "Bước",
     "passed": "Đạt",
     "failed": "Không đạt",
+    "pending": "Đang chờ",
     "strategy": "Chiến lược chấm",
     "status": "Trạng thái",
     "statusPublished": "Đã công bố",
     "statusDraft": "Nháp",
     "createdAt": "Ngày tạo",
+    "name": "Tên",
+    "description": "Mô tả",
+    "file": "Tệp",
+    "latest": "Mới nhất",
+    "image": "Hình ảnh",
+    "imageUrl": "URL hình ảnh",
+    "strategyStudent": "Student Docker Compose",
+    "strategyLecturer": "Lecturer Docker Compose",
     "form": {
       "title": "Tiêu đề",
       "description": "Mô tả",
       "strategy": "Chiến lược chấm",
-      "timeouts": "Thời gian timeout",
-      "resources": "Tài nguyên"
+      "dockerComposeTemplate": "Mẫu Docker Compose",
+      "dockerComposePort": "Cổng Docker Compose",
+      "startupTimeout": "Timeout khởi động (ms)",
+      "executionTimeout": "Timeout thực thi (ms)",
+      "maxMemory": "Bộ nhớ tối đa (MB)",
+      "maxCpu": "CPU tối đa"
     }
   },
   "plan": {
@@ -108,16 +126,26 @@
     "empty": "Chưa có câu kiểm tra nào"
   },
   "step": {
-    "title": "Bước kiểm tra",
     "create": "Thêm bước",
     "empty": "Chưa có bước",
     "name": "Tên bước",
     "type": "Loại bước",
     "config": "Cấu hình",
     "expectedResult": "Kết quả mong đợi",
+    "expectedResultPlaceholder": "JSON",
     "weight": "Trọng số",
     "timeout": "Timeout",
-    "required": "Bắt buộc"
+    "required": "Bắt buộc",
+    "configPlaceholder": "JSON",
+    "timeoutPlaceholder": "Mặc định",
+    "typeOptions": {
+      "HTTP_REQUEST": "HTTP Request",
+      "DB_QUERY": "DB Query",
+      "DB_SCHEMA_CHECK": "DB Schema Check",
+      "DB_MIGRATION": "DB Migration",
+      "EXTRACT": "Extract",
+      "DELAY": "Delay"
+    }
   },
   "students": {
     "title": "Sinh viên",
@@ -133,7 +161,8 @@
     "empty": "Chưa có sinh viên nào",
     "emptyHint": "Nhập sinh viên từ CSV để bắt đầu",
     "loadFailed": "Không tải được sinh viên",
-    "downloadTemplate": "Tải mẫu CSV"
+    "downloadTemplate": "Tải mẫu CSV",
+    "importInvalidFile": "Vui lòng chọn tệp CSV"
   },
   "components": {
     "title": "Thành phần điểm",
