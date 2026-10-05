@@ -25,9 +25,9 @@ interface StepEditorProps {
     name?: string
     stepType?: StepType
     config?: string
-    expectedResult?: string
+    expectedResult?: string | null
     weight?: number
-    timeoutMs?: number
+    timeoutMs?: number | null
     required?: boolean
   }
   onSave: (body: StepDraft) => Promise<unknown>
@@ -145,7 +145,7 @@ export function StepEditor({
   const { t } = useTranslation()
   const [form] = Form.useForm()
   const stepType = Form.useWatch('stepType', form) as StepType | undefined
-  const [advanced, setAdvanced] = useState(false)
+  const [advanced, setAdvanced] = useState(() => !!step)
   const [bodyMode, setBodyMode] = useState<'none' | 'raw'>('none')
   const [copiedVar, setCopiedVar] = useState<string | null>(null)
   const guided =
@@ -362,6 +362,21 @@ export function StepEditor({
 
   const previewText = (): string => {
     if (!guided || !allValues) return ''
+    // Review: 2026-10-05, Pullfrog — the backend stores config in cleartext, so the
+    // preview must never unmask credentials; the payload sent on save is untouched.
+    const redactSecrets = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(redactSecrets)
+      if (value && typeof value === 'object') {
+        return Object.fromEntries(
+          Object.entries(value as Record<string, unknown>).map(([key, val]) => {
+            const lower = key.toLowerCase()
+            if (lower === 'password' || lower === 'authorization') return [key, '***']
+            return [key, redactSecrets(val)]
+          }),
+        )
+      }
+      return value
+    }
     const silent = (raw: unknown): unknown => {
       if (raw === undefined || raw === null || (typeof raw === 'string' && !raw.trim())) return undefined
       if (typeof raw !== 'string') return raw
@@ -381,7 +396,7 @@ export function StepEditor({
       } else {
         return ''
       }
-      return JSON.stringify(payload, null, 2)
+      return JSON.stringify(redactSecrets(payload), null, 2)
     } catch {
       return ''
     }
@@ -441,7 +456,13 @@ export function StepEditor({
     stepType === 'DB_MIGRATION'
 
   return (
-    <Form form={form} layout="vertical" initialValues={step}>
+    // Review: 2026-10-05, Pullfrog — edit mode opens in Advanced JSON prefilled
+    // from the stored step (`config` -> `configRaw`), instead of an empty form.
+    <Form
+      form={form}
+      layout="vertical"
+      initialValues={step ? { ...step, configRaw: step.config, expectedRaw: step.expectedResult ?? undefined } : step}
+    >
       <Form.Item name="name" label={t('step.name')} rules={[{ required: true }]}>
         <Input />
       </Form.Item>
@@ -455,7 +476,7 @@ export function StepEditor({
         />
       </Form.Item>
 
-      {guidedTypes && (
+      {guidedTypes && !step && (
         <Form.Item label={t('step.mode')}>
           <Segmented
             options={[
@@ -477,7 +498,7 @@ export function StepEditor({
             <Form.Item
               name="httpPath"
               label={t('step.httpPath')}
-              rules={[{ required: true }, { pattern: /^\//, message: t('step.httpPath') }]}
+              rules={[{ required: true }, { pattern: /^\//, message: t('step.httpPathPattern') }]}
               style={{ flex: 1 }}
             >
               <Input placeholder="/api/v1/books/${bookId}" />
