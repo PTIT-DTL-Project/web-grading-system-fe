@@ -54,6 +54,18 @@ const INVALID_JSON = '__invalid_json__'
 
 type NamePathLike = string | (string | number)[]
 
+// Lenient JSON helper for previews and mode switches: never marks fields,
+// callers decide what to do with undefined.
+const silentParse = (raw: unknown): unknown => {
+  if (raw === undefined || raw === null || (typeof raw === 'string' && !raw.trim())) return undefined
+  if (typeof raw !== 'string') return raw
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return undefined
+  }
+}
+
 function AssertionFields({ index }: { index: number }) {
   const { t } = useTranslation()
   const kind = Form.useWatch(['assertions', index, 'kind']) as string | undefined
@@ -278,6 +290,157 @@ export function StepEditor({
     return config
   }
 
+  // Review: 2026-10-05, Pullfrog — edit mode must be able to return to the
+  // guided form, so reverse-map stored JSON back into guided fields on switch.
+  const fillHttpGuided = (config: Record<string, any>) => {
+    const toRows = (obj: unknown) =>
+      obj && typeof obj === 'object' && !Array.isArray(obj)
+        ? Object.entries(obj as Record<string, unknown>).map(([key, value]) => ({
+            key,
+            value: typeof value === 'string' ? value : JSON.stringify(value ?? ''),
+            enabled: true,
+          }))
+        : []
+    form.setFieldsValue({
+      httpMethod: config.method,
+      httpPath: config.path,
+      httpExpectedStatus: config.expected_status,
+      headers: toRows(config.headers),
+      queryParams: toRows(config.query_params),
+      httpBody: config.body !== undefined ? JSON.stringify(config.body, null, 2) : undefined,
+      assertions: Array.isArray(config.assertions)
+        ? config.assertions.map((assertion: any) => ({
+            kind: assertion?.kind,
+            equals: assertion?.equals,
+            path: assertion?.path,
+            exists: assertion?.exists ?? true,
+            text: assertion?.text,
+            json:
+              assertion?.json !== undefined ? JSON.stringify(assertion.json, null, 2) : undefined,
+          }))
+        : [],
+      extracts: Array.isArray(config.extract)
+        ? config.extract.map((entry: any) => ({
+            name: entry?.name,
+            from: entry?.from ?? 'response_body',
+            expression: entry?.expression,
+          }))
+        : [],
+    })
+  }
+
+  const fillConnectionFields = (config: Record<string, any>) => {
+    const connection =
+      config.connection && typeof config.connection === 'object' ? config.connection : {}
+    form.setFieldsValue({
+      dbType: connection.db_type,
+      dbService: connection.db_service,
+      dbPort: connection.db_port,
+      dbName: connection.database,
+      dbUser: connection.username,
+      dbPassword: connection.password,
+    })
+  }
+
+  const fillDbGuided = (config: Record<string, any>, expectedRaw: unknown) => {
+    fillConnectionFields(config)
+    const expected =
+      config.expected && typeof config.expected === 'object'
+        ? config.expected
+        : silentParse(expectedRaw) && typeof silentParse(expectedRaw) === 'object'
+          ? silentParse(expectedRaw)
+          : {}
+    form.setFieldsValue({
+      dbQuery: config.query,
+      expectedRowCount: (expected as Record<string, any>).row_count,
+      expectedColumnsText: Array.isArray((expected as Record<string, any>).columns)
+        ? (expected as Record<string, any>).columns.join(', ')
+        : undefined,
+    })
+  }
+
+  const fillSchemaGuided = (config: Record<string, any>) => {
+    fillConnectionFields(config)
+    form.setFieldsValue({
+      checks: Array.isArray(config.checks)
+        ? config.checks.map((check: any) => ({
+            kind: check?.kind,
+            table_name: check?.table_name,
+            column_name: check?.column_name,
+            data_type: check?.data_type,
+            index_name: check?.index_name,
+            column: check?.column,
+          }))
+        : [],
+    })
+  }
+
+  const fillMigrationGuided = (config: Record<string, any>) => {
+    fillConnectionFields(config)
+    form.setFieldsValue({
+      statements: Array.isArray(config.statements)
+        ? config.statements.map((statement: any) => ({
+            sql: typeof statement === 'string' ? statement : JSON.stringify(statement),
+          }))
+        : [],
+    })
+  }
+
+  const fillAdvancedFromGuided = () => {
+    const values = form.getFieldsValue() as Record<string, any>
+    try {
+      let config: unknown
+      let expectedResult: unknown
+      if (stepType === 'HTTP_REQUEST') {
+        config = buildHttpConfig(values, silentParse)
+      } else if (stepType === 'DB_QUERY') {
+        const built = buildDbConfig(values)
+        config = built.config
+        expectedResult = built.expectedResult
+      } else if (stepType === 'DB_SCHEMA_CHECK') {
+        config = buildSchemaConfig(values)
+      } else if (stepType === 'DB_MIGRATION') {
+        config = buildMigrationConfig(values)
+      } else {
+        return
+      }
+      form.setFieldsValue({
+        configRaw: JSON.stringify(config, null, 2),
+        expectedRaw:
+          expectedResult === undefined ? undefined : JSON.stringify(expectedResult, null, 2),
+      })
+    } catch {
+      // Best effort only: guided values stay intact and the raw editor keeps
+      // whatever was typed there before.
+    }
+  }
+
+  const switchMode = (toAdvanced: boolean) => {
+    if (toAdvanced === advanced) return
+    if (!toAdvanced) {
+      const raw = form.getFieldValue('configRaw')
+      let parsed: unknown
+      try {
+        parsed = typeof raw === 'string' && raw.trim() ? JSON.parse(raw) : {}
+      } catch {
+        parsed = undefined
+      }
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        form.setFields([{ name: 'configRaw', errors: [t('step.invalidJson')] }])
+        return
+      }
+      const config = parsed as Record<string, any>
+      if (stepType === 'HTTP_REQUEST') fillHttpGuided(config)
+      else if (stepType === 'DB_QUERY') fillDbGuided(config, form.getFieldValue('expectedRaw'))
+      else if (stepType === 'DB_SCHEMA_CHECK') fillSchemaGuided(config)
+      else if (stepType === 'DB_MIGRATION') fillMigrationGuided(config)
+      else return
+    } else {
+      fillAdvancedFromGuided()
+    }
+    setAdvanced(toAdvanced)
+  }
+
   const enabledHeaders = (values: Record<string, any>): { index: number; key: string }[] =>
     (values.headers ?? [])
       .map((row: any, index: number) => ({ index, key: String(row?.key ?? '') }))
@@ -377,15 +540,10 @@ export function StepEditor({
       }
       return value
     }
-    const silent = (raw: unknown): unknown => {
-      if (raw === undefined || raw === null || (typeof raw === 'string' && !raw.trim())) return undefined
-      if (typeof raw !== 'string') return raw
-      return JSON.parse(raw)
-    }
     try {
       let payload: unknown
       if (stepType === 'HTTP_REQUEST') {
-        payload = { config: buildHttpConfig(allValues, silent) }
+        payload = { config: buildHttpConfig(allValues, silentParse) }
       } else if (stepType === 'DB_QUERY') {
         const built = buildDbConfig(allValues)
         payload = { config: built.config, ...(built.expectedResult ? { expectedResult: built.expectedResult } : {}) }
@@ -476,7 +634,7 @@ export function StepEditor({
         />
       </Form.Item>
 
-      {guidedTypes && !step && (
+      {guidedTypes && (
         <Form.Item label={t('step.mode')}>
           <Segmented
             options={[
@@ -484,7 +642,7 @@ export function StepEditor({
               { value: true, label: t('step.advanced') },
             ]}
             value={advanced}
-            onChange={(value) => setAdvanced(value)}
+            onChange={(value) => switchMode(value)}
           />
         </Form.Item>
       )}
