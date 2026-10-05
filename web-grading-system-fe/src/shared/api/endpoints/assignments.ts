@@ -1,5 +1,5 @@
 import { getData, sendData, http } from '../http'
-import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest, TestPlan, TestStep, StepType, StudentResultResponse, SubmissionResponse, DockerImageResponse } from '../../types/assignment'
+import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest, TestPlan, TestStep, StepType, StepResponseDto, StepCreateBody, StepUpdateBody, StudentResultResponse, SubmissionResponse, DockerImageResponse } from '../../types/assignment'
 import type { Page } from '../../types/pagination'
 
 export function listAssignments(
@@ -49,7 +49,7 @@ export function listPlans(assignmentId: string): Promise<TestPlan[]> {
   return getData<TestPlan[]>(`/api/v1/assignments/${assignmentId}/plans`)
 }
 
-export function createPlan(assignmentId: string, body: { name: string; description?: string; sequenceOrder?: number; weight?: number }): Promise<TestPlan> {
+export function createPlan(assignmentId: string, body: { name: string; description?: string; sequenceOrder: number; weight?: number }): Promise<TestPlan> {
   return sendData<TestPlan, typeof body>(`/api/v1/assignments/${assignmentId}/plans`, 'post', body)
 }
 
@@ -61,16 +61,46 @@ export function deletePlan(assignmentId: string, planId: string): Promise<void> 
   return http.delete(`/api/v1/assignments/${assignmentId}/plans/${planId}`).then((response) => response.data)
 }
 
+function toJsonText(value: unknown): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'string') return value
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return null
+  }
+}
+
+// Review: 2026-10-05 — backend StepResponse uses `type` and JSON values; normalize once at the API boundary.
+function toTestStep(dto: StepResponseDto, planId: string): TestStep {
+  return {
+    id: dto.id,
+    planId,
+    stepOrder: dto.stepOrder,
+    name: dto.name,
+    description: dto.description,
+    stepType: dto.type as StepType,
+    config: toJsonText(dto.config) ?? '{}',
+    expectedResult: toJsonText(dto.expectedResult),
+    weight: dto.weight,
+    timeoutMs: dto.timeoutMs,
+    required: dto.required,
+  }
+}
+
 export function listSteps(assignmentId: string, planId: string): Promise<TestStep[]> {
-  return getData<TestStep[]>(`/api/v1/assignments/${assignmentId}/plans/${planId}/steps`)
+  return getData<StepResponseDto[]>(`/api/v1/assignments/${assignmentId}/plans/${planId}/steps`)
+    .then((dtos) => dtos.map((dto) => toTestStep(dto, planId)))
 }
 
-export function createStep(assignmentId: string, planId: string, body: { name: string; stepType: StepType; config?: string; expectedResult?: string; weight?: number; timeoutMs?: number; required?: boolean }): Promise<TestStep> {
-  return sendData<TestStep, typeof body>(`/api/v1/assignments/${assignmentId}/plans/${planId}/steps`, 'post', body)
+export function createStep(assignmentId: string, planId: string, body: StepCreateBody): Promise<TestStep> {
+  return sendData<StepResponseDto, StepCreateBody>(`/api/v1/assignments/${assignmentId}/plans/${planId}/steps`, 'post', body)
+    .then((dto) => toTestStep(dto, planId))
 }
 
-export function updateStep(assignmentId: string, planId: string, stepId: string, body: { name?: string; stepType?: StepType; config?: string; expectedResult?: string; weight?: number; timeoutMs?: number; required?: boolean }): Promise<TestStep> {
-  return sendData<TestStep, typeof body>(`/api/v1/assignments/${assignmentId}/plans/${planId}/steps/${stepId}`, 'put', body)
+export function updateStep(assignmentId: string, planId: string, stepId: string, body: StepUpdateBody): Promise<TestStep> {
+  return sendData<StepResponseDto, StepUpdateBody>(`/api/v1/assignments/${assignmentId}/plans/${planId}/steps/${stepId}`, 'put', body)
+    .then((dto) => toTestStep(dto, planId))
 }
 
 export function deleteStep(assignmentId: string, planId: string, stepId: string): Promise<void> {

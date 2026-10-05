@@ -18,10 +18,12 @@ export function TestPlanEditor({ assignmentId, archived = false }: TestPlanEdito
   const [creating, setCreating] = useState(false)
   const [form] = Form.useForm()
 
+  // CreatePlanRequest requires sequenceOrder, so derive the next order instead of omitting it.
   const handleCreate = async (values: { name: string; description?: string }) => {
     setCreating(true)
     try {
-      await create(values)
+      const sequenceOrder = plans.length ? Math.max(...plans.map((plan) => plan.sequenceOrder)) + 1 : 0
+      await create({ ...values, sequenceOrder })
       form.resetFields()
       setModalOpen(false)
     } catch (err: unknown) {

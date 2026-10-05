@@ -7,7 +7,7 @@ interface UseTestPlansReturn {
   loading: boolean
   error: unknown
   refetch: () => void
-  create: (body: { name: string; description?: string; sequenceOrder?: number; weight?: number }) => Promise<TestPlan>
+  create: (body: { name: string; description?: string; sequenceOrder: number; weight?: number }) => Promise<TestPlan>
   update: (planId: string, body: { name?: string; description?: string; sequenceOrder?: number; weight?: number }) => Promise<TestPlan>
   remove: (planId: string) => Promise<void>
 }
@@ -40,7 +40,7 @@ export function useTestPlans(assignmentId: string): UseTestPlansReturn {
     return () => controller.abort()
   }, [assignmentId, version])
 
-  const create = async (body: { name: string; description?: string; sequenceOrder?: number; weight?: number }) => {
+  const create = async (body: { name: string; description?: string; sequenceOrder: number; weight?: number }) => {
     const resp = await createPlan(assignmentId, body)
     refetch()
     return resp

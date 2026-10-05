@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { App, Space, Typography, Tag, Button, Popconfirm } from 'antd'
 import { useTranslation } from 'react-i18next'
 import type { TestPlan } from '../../shared/types/assignment'
 import { StepEditor } from './StepEditor'
+import type { StepDraft } from './stepConfig'
+import { SYSTEM_VARIABLES } from './stepConfig'
 import { useTestSteps } from './useTestSteps'
 import { useApiErrorMessage } from '../../shared/api/errors'
 import { colors } from '../../shared/theme/tokens'
-import type { StepType } from '../../shared/types/assignment'
 
 interface PlanCardProps {
   plan: TestPlan
@@ -22,13 +23,34 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete }: Pla
   const [expanded, setExpanded] = useState(false)
   const [stepEditorOpen, setStepEditorOpen] = useState(false)
   const [savingStep, setSavingStep] = useState(false)
-  const { steps, loading: stepsLoading, create } = useTestSteps(assignmentId, plan.id, expanded)
+  const { steps, loading: stepsLoading, create } = useTestSteps(assignmentId, plan.id, expanded || stepEditorOpen)
 
-  // Review: 2026-10-05, Pullfrog — the Save button must track the actual create request and close only on success.
-  const handleCreateStep = async (body: { name: string; stepType: StepType; config?: string; expectedResult?: string; weight?: number; timeoutMs?: number; required?: boolean }) => {
+  // Review: 2026-10-05 — variable names come from earlier steps' extract blocks plus system variables.
+  const availableVariables = useMemo(() => {
+    const names = new Set<string>(SYSTEM_VARIABLES)
+    steps.forEach((step) => {
+      try {
+        const config = JSON.parse(step.config) as { extract?: { name?: string }[] }
+        ;(config.extract ?? []).forEach((entry) => {
+          if (entry?.name) names.add(entry.name)
+        })
+      } catch {
+        // Unparseable configs simply contribute no variable names.
+      }
+    })
+    return [...names]
+  }, [steps])
+
+  // Review: 2026-10-05 — CreateStepRequest requires stepOrder; auto-assign next order instead of omitting it.
+  const handleCreateStep = async (body: StepDraft) => {
+    if (stepsLoading) {
+      message.warning(t('common.loading'))
+      return
+    }
+    const stepOrder = steps.length ? Math.max(...steps.map((step) => step.stepOrder)) + 1 : 0
     setSavingStep(true)
     try {
-      await create(body)
+      await create({ ...body, stepOrder })
       setStepEditorOpen(false)
     } catch (err: unknown) {
       message.error(toMessage(err))
@@ -88,6 +110,7 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete }: Pla
           onCancel={() => setStepEditorOpen(false)}
           saving={savingStep}
           disabled={archived}
+          availableVariables={availableVariables}
         />
       )}
     </div>

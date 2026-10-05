@@ -12,7 +12,7 @@ export interface TestPlan {
 
 export interface TestStep {
   id: string
-  planId: string
+  planId?: string
   stepOrder: number
   name: string
   description: string | null
@@ -22,6 +22,44 @@ export interface TestStep {
   weight: number
   timeoutMs: number | null
   required: boolean
+}
+
+/** Mirrors backend StepResponse field-for-field: `type` (not `stepType`) and JSON values (not strings). */
+export interface StepResponseDto {
+  id: string
+  stepOrder: number
+  name: string
+  description: string | null
+  type: string
+  config: unknown
+  expectedResult: unknown
+  weight: number
+  timeoutMs: number | null
+  required: boolean
+}
+
+export interface StepCreateBody {
+  name: string
+  description?: string
+  stepType: StepType
+  stepOrder: number
+  config?: unknown
+  expectedResult?: unknown
+  weight?: number
+  timeoutMs?: number
+  required?: boolean
+}
+
+export interface StepUpdateBody {
+  name?: string
+  description?: string
+  stepType?: StepType
+  stepOrder?: number
+  config?: unknown
+  expectedResult?: unknown
+  weight?: number
+  timeoutMs?: number
+  required?: boolean
 }
 
 export interface AssignmentResponse {

@@ -5,15 +5,15 @@ import {
   updateStep,
   deleteStep,
 } from '../../shared/api/endpoints/assignments'
-import type { TestStep, StepType } from '../../shared/types/assignment'
+import type { TestStep, StepCreateBody, StepUpdateBody } from '../../shared/types/assignment'
 
 interface UseTestStepsReturn {
   steps: TestStep[]
   loading: boolean
   error: unknown
   refetch: () => void
-  create: (body: { name: string; stepType: StepType; config?: string; expectedResult?: string; weight?: number; timeoutMs?: number; required?: boolean }) => Promise<TestStep>
-  update: (stepId: string, body: { name?: string; stepType?: StepType; config?: string; expectedResult?: string; weight?: number; timeoutMs?: number; required?: boolean }) => Promise<TestStep>
+  create: (body: StepCreateBody) => Promise<TestStep>
+  update: (stepId: string, body: StepUpdateBody) => Promise<TestStep>
   remove: (stepId: string) => Promise<void>
 }
 
@@ -47,13 +47,13 @@ export function useTestSteps(assignmentId: string, planId: string, enabled = tru
     return () => controller.abort()
   }, [assignmentId, planId, enabled, version])
 
-  const create = async (body: { name: string; stepType: StepType; config?: string; expectedResult?: string; weight?: number; timeoutMs?: number; required?: boolean }) => {
+  const create = async (body: StepCreateBody) => {
     const resp = await createStep(assignmentId, planId, body)
     refetch()
     return resp
   }
 
-  const update = async (stepId: string, body: { name?: string; stepType?: StepType; config?: string; expectedResult?: string; weight?: number; timeoutMs?: number; required?: boolean }) => {
+  const update = async (stepId: string, body: StepUpdateBody) => {
     const resp = await updateStep(assignmentId, planId, stepId, body)
     refetch()
     return resp
