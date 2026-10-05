@@ -104,8 +104,8 @@
     "description": "Mô tả",
     "file": "Tệp",
     "latest": "Mới nhất",
-    "image": "Hình ảnh",
-    "imageUrl": "URL hình ảnh",
+    "image": "Ảnh Docker",
+    "imageUrl": "URL ảnh Docker",
     "strategyStudent": "Student Docker Compose",
     "strategyLecturer": "Lecturer Docker Compose",
     "form": {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from 'react'
+import { isCancel } from 'axios'
 import { Table, Button, Space, Modal, Form, Input, message, Popconfirm, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
@@ -25,22 +26,27 @@ export function DockerImagePage() {
   const [saving, setSaving] = useState(false)
 
   // Review: 2026-10-05, Pullfrog — the table stayed on a spinner because only mutations triggered a load.
-  const load = useCallback(() => {
+  const load = useCallback((signal?: AbortSignal) => {
     setLoading(true)
-    listDockerImages()
+    listDockerImages(undefined, undefined, undefined, { signal })
       .then((resp) => {
+        if (signal?.aborted) return
         setData(resp.result)
       })
       .catch((err: unknown) => {
+        if (signal?.aborted || isCancel(err)) return
         message.error(toMessage(err))
       })
       .finally(() => {
+        if (signal?.aborted) return
         setLoading(false)
       })
   }, [toMessage])
 
   useEffect(() => {
-    load()
+    const controller = new AbortController()
+    load(controller.signal)
+    return () => controller.abort()
   }, [load])
 
   const handleCreate = async (values: { name: string; imageUrl: string; description?: string }) => {

@@ -140,7 +140,7 @@ function buildSession(kc: Keycloak): AuthSession | null {
  * error state instead of an infinite spinner.
  */
 export function initAuth(): Promise<void> {
-  if (!initPromise) initPromise = runInit(true)
+  if (!initPromise) initPromise = runInit()
   return initPromise
 }
 
@@ -160,7 +160,8 @@ function hasAuthCallback(): boolean {
   return has('state') && (has('code') || has('error'))
 }
 
-async function runInit(silentSso: boolean): Promise<void> {
+// Review: 2026-10-05, Pullfrog — silent SSO is the only init path, so do not imply a selectable fallback mode.
+async function runInit(): Promise<void> {
   const options: KeycloakInitOptions = {
     onLoad: 'check-sso',
     pkceMethod: 'S256',
@@ -168,7 +169,7 @@ async function runInit(silentSso: boolean): Promise<void> {
   }
   // Review: 2026-10-05, Pullfrog — keep the adapter default fallback so blocked third-party cookies use a full-page prompt=none instead of a hanging silent iframe.
   // Skip the silent-check setup on callback loads — see hasAuthCallback().
-  if (silentSso && !hasAuthCallback()) {
+  if (!hasAuthCallback()) {
     options.silentCheckSsoRedirectUri = `${window.location.origin}/silent-check-sso.html`
   }
 
@@ -182,7 +183,7 @@ async function runInit(silentSso: boolean): Promise<void> {
     throw e
   }
 
-  if (!authenticated && silentSso) {
+  if (!authenticated) {
     // Silent check-sso could not restore the session (iframe
     // blocked / SSO cookie inaccessible).  Do NOT redirect —
     // let the router mount so the landing page is shown for

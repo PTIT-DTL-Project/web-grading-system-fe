@@ -93,12 +93,12 @@ export function listSubmissions(assignmentId: string): Promise<SubmissionRespons
 
 /* ---------------------------------------------------------------- docker */
 
-export function listDockerImages(name?: string, page?: number, size?: number): Promise<Page<DockerImageResponse>> {
+export function listDockerImages(name?: string, page?: number, size?: number, options?: { signal?: AbortSignal }): Promise<Page<DockerImageResponse>> {
   return getData<Page<DockerImageResponse>>('/api/v1/docker-images', {
     ...(name ? { name } : {}),
     ...(page !== undefined ? { page } : {}),
     ...(size !== undefined ? { size } : {}),
-  })
+  }, { signal: options?.signal })
 }
 
 export function createDockerImage(body: { name: string; imageUrl: string; description?: string }): Promise<DockerImageResponse> {
