@@ -218,10 +218,10 @@ export function StepEditor({
     if (headers) config.headers = headers
     const queryParams = toPairs(values.queryParams)
     if (queryParams) config.query_params = queryParams
-    if (bodyMode === 'raw') {
-      const body = parse(values.httpBody, 'httpBody')
-      if (body !== undefined) config.body = body
-    }
+    // Review: 2026-10-06, Pullfrog — key off the body text itself, not the Body-tab
+    // UI state, so a reverse-mapped body can never be silently dropped on save.
+    const body = parse(values.httpBody, 'httpBody')
+    if (body !== undefined) config.body = body
     if (values.assertions?.length) {
       config.assertions = values.assertions.map((assertion: any, index: number) =>
         buildAssertion(assertion, index, parse),
@@ -293,6 +293,9 @@ export function StepEditor({
   // Review: 2026-10-05, Pullfrog — edit mode must be able to return to the
   // guided form, so reverse-map stored JSON back into guided fields on switch.
   const fillHttpGuided = (config: Record<string, any>) => {
+    // Review: 2026-10-06, Pullfrog — restore the Body-tab mode too, otherwise a
+    // stored body stays hidden and is dropped on save.
+    setBodyMode(config.body !== undefined ? 'raw' : 'none')
     const toRows = (obj: unknown) =>
       obj && typeof obj === 'object' && !Array.isArray(obj)
         ? Object.entries(obj as Record<string, unknown>).map(([key, value]) => ({
@@ -344,11 +347,12 @@ export function StepEditor({
 
   const fillDbGuided = (config: Record<string, any>, expectedRaw: unknown) => {
     fillConnectionFields(config)
+    const parsedExpected = silentParse(expectedRaw)
     const expected =
       config.expected && typeof config.expected === 'object'
         ? config.expected
-        : silentParse(expectedRaw) && typeof silentParse(expectedRaw) === 'object'
-          ? silentParse(expectedRaw)
+        : parsedExpected && typeof parsedExpected === 'object'
+          ? parsedExpected
           : {}
     form.setFieldsValue({
       dbQuery: config.query,
@@ -667,6 +671,7 @@ export function StepEditor({
             items={[
               {
                 key: 'params',
+                forceRender: true,
                 label: t('step.tabParams'),
                 children: (
                   <Form.List name="queryParams">
@@ -696,6 +701,7 @@ export function StepEditor({
               },
               {
                 key: 'headers',
+                forceRender: true,
                 label: t('step.tabHeaders'),
                 children: (
                   <Form.List name="headers">
@@ -725,6 +731,7 @@ export function StepEditor({
               },
               {
                 key: 'body',
+                forceRender: true,
                 label: t('step.tabBody'),
                 children: (
                   <>
@@ -735,7 +742,12 @@ export function StepEditor({
                           { value: 'raw', label: t('step.bodyRaw') },
                         ]}
                         value={bodyMode}
-                        onChange={(value: 'none' | 'raw') => setBodyMode(value)}
+                        onChange={(value: 'none' | 'raw') => {
+                          // Review: 2026-10-06, Pullfrog — the builder keys off the
+                          // body text, so clear it when the lecturer picks none.
+                          if (value === 'none') form.setFieldsValue({ httpBody: undefined })
+                          setBodyMode(value)
+                        }}
                       />
                       {bodyMode === 'raw' && <Button onClick={formatBody}>{t('step.formatJson')}</Button>}
                     </Space>
@@ -749,6 +761,7 @@ export function StepEditor({
               },
               {
                 key: 'tests',
+                forceRender: true,
                 label: t('step.tabTests'),
                 children: (
                   <>
@@ -792,6 +805,7 @@ export function StepEditor({
               },
               {
                 key: 'variables',
+                forceRender: true,
                 label: t('step.tabVariables'),
                 children: (
                   <>
