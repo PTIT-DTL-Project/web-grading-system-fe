@@ -179,6 +179,13 @@ export function StepEditor({
       stepType === 'DB_MIGRATION')
   const allValues = Form.useWatch([], form) as Record<string, any> | undefined
 
+  // Review: 2026-10-06, Pullfrog — hidden tabs validate too, so a failure must
+  // jump to its tab instead of dying silently. Both failure sources route here.
+  const revealField = (field: NamePathLike | undefined) => {
+    const top = Array.isArray(field) ? field[0] : field
+    if (typeof top === 'string' && TAB_FOR_FIELD[top]) setActiveTab(TAB_FOR_FIELD[top])
+  }
+
   const mustParse = (raw: unknown, field: NamePathLike): unknown => {
     if (raw === undefined || raw === null || (typeof raw === 'string' && !raw.trim())) return undefined
     if (typeof raw !== 'string') return raw
@@ -186,7 +193,7 @@ export function StepEditor({
       return JSON.parse(raw)
     } catch {
       form.setFields([{ name: field, errors: [t('step.invalidJson')] }])
-      throw new Error(INVALID_JSON)
+      throw Object.assign(new Error(INVALID_JSON), { field })
     }
   }
 
@@ -584,8 +591,7 @@ export function StepEditor({
       // Review: 2026-10-06, Pullfrog — hidden tabs validate too, so surface the
       // failure by switching to the first tab holding an error.
       const fields = (e as { errorFields?: { name?: (string | number)[] }[] } | null)?.errorFields
-      const top = fields?.[0]?.name?.[0]
-      if (typeof top === 'string' && TAB_FOR_FIELD[top]) setActiveTab(TAB_FOR_FIELD[top])
+      revealField(fields?.[0]?.name)
       return
     }
     if (guided && stepType === 'HTTP_REQUEST') {
@@ -596,6 +602,7 @@ export function StepEditor({
             { name: ['headers', row.index, 'key'], errors: [t('step.restrictedHeaderError', { name: row.key.trim() })] },
           ]),
         )
+        setActiveTab('headers')
         return
       }
     }
@@ -617,7 +624,10 @@ export function StepEditor({
         expectedResult = mustParse(values.expectedRaw, 'expectedRaw')
       }
     } catch (e) {
-      if (e instanceof Error && e.message === INVALID_JSON) return
+      if (e instanceof Error && e.message === INVALID_JSON) {
+        revealField((e as { field?: NamePathLike }).field)
+        return
+      }
       throw e
     }
     await onSave({
