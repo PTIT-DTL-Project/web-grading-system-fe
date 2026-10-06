@@ -1,0 +1,94 @@
+import { Space, Typography, Spin, Button, Modal, Form, Input, message } from 'antd'
+import { useTranslation } from 'react-i18next'
+import { useTestPlans } from './useTestPlans'
+import { PlanCard } from './PlanCard'
+import { useApiErrorMessage } from '../../shared/api/errors'
+import { useState } from 'react'
+
+interface TestPlanEditorProps {
+  assignmentId: string
+  archived?: boolean
+}
+
+export function TestPlanEditor({ assignmentId, archived = false }: TestPlanEditorProps) {
+  const { t } = useTranslation()
+  const toMessage = useApiErrorMessage()
+  const { plans, loading, error, remove, create } = useTestPlans(assignmentId)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [form] = Form.useForm()
+
+  // CreatePlanRequest requires sequenceOrder, so derive the next order instead of omitting it.
+  const handleCreate = async (values: { name: string; description?: string }) => {
+    setCreating(true)
+    try {
+      const sequenceOrder = plans.length ? Math.max(...plans.map((plan) => plan.sequenceOrder)) + 1 : 0
+      await create({ ...values, sequenceOrder })
+      form.resetFields()
+      setModalOpen(false)
+    } catch (err: unknown) {
+      message.error(toMessage(err))
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: 24 }}>
+        <Spin />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ textAlign: 'center', padding: 24 }}>
+        <Typography.Text type="secondary">{toMessage(error) as string}</Typography.Text>
+      </div>
+    )
+  }
+
+  return (
+    <Space orientation="vertical" style={{ width: '100%' }} size={12}>
+      {plans.map((plan) => (
+        <PlanCard
+          key={plan.id}
+          plan={plan}
+          assignmentId={assignmentId}
+          archived={archived}
+          onDelete={(planId) => remove(planId)}
+        />
+      ))}
+
+      {plans.length === 0 && (
+        <Typography.Text type="secondary">{t('plan.empty')}</Typography.Text>
+      )}
+
+      <Button type="primary" size="small" disabled={archived} onClick={() => setModalOpen(true)}>
+        {t('plan.create')}
+      </Button>
+
+      <Modal
+        open={modalOpen}
+        title={t('plan.create')}
+        onCancel={() => { setModalOpen(false); form.resetFields() }}
+        footer={null}
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreate} style={{ marginTop: 16 }}>
+          <Form.Item name="name" label={t('plan.title')} rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="description" label={t('assignment.description')}>
+            <Input.TextArea />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={creating}>
+              {t('common.save')}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </Space>
+  )
+}

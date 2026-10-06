@@ -4,6 +4,17 @@ import viVN from 'antd/locale/vi_VN'
 import { useTranslation } from 'react-i18next'
 import type { ReactNode } from 'react'
 import { colors } from '../shared/theme/tokens'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+// Review: 2026-10-05, Pullfrog — keep focus refetching and retry storms off globally; freshness belongs to each query because grading snapshots can change while in flight.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+})
 
 /**
  * The single root ConfigProvider (project rule): theme tokens + antd locale in one place.
@@ -14,20 +25,22 @@ export function Providers({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation()
 
   return (
-    <ConfigProvider
-      locale={i18n.language === 'vi' ? viVN : enUS}
-      theme={{
-        token: {
-          colorPrimary: colors.primary,
-          colorLink: colors.primary,
-          colorBgLayout: colors.layoutBg,
-          colorBgContainer: colors.surface,
-          borderRadius: 6,
-          fontFamily: "Roboto, -apple-system, 'Segoe UI', sans-serif",
-        },
-      }}
-    >
-      <AntdApp>{children}</AntdApp>
-    </ConfigProvider>
+    <QueryClientProvider client={queryClient}>
+      <ConfigProvider
+        locale={i18n.language === 'vi' ? viVN : enUS}
+        theme={{
+          token: {
+            colorPrimary: colors.primary,
+            colorLink: colors.primary,
+            colorBgLayout: colors.layoutBg,
+            colorBgContainer: colors.surface,
+            borderRadius: 6,
+            fontFamily: "Roboto, -apple-system, 'Segoe UI', sans-serif",
+          },
+        }}
+      >
+        <AntdApp>{children}</AntdApp>
+      </ConfigProvider>
+    </QueryClientProvider>
   )
 }

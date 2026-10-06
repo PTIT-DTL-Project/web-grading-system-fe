@@ -8,17 +8,20 @@ import { LoginPage } from '../features/auth/LoginPage'
 import { NoRolePage } from '../shared/auth/NoRolePage'
 import { NotFoundPage } from '../features/NotFoundPage'
 import { StudentClassesPage } from '../features/student/StudentClassesPage'
-import { HomeRedirect } from './HomeRedirect'
+import { LandingPage } from '../features/landing/LandingPage'
+import { DockerImagePage } from '../features/docker/DockerImagePage'
+import { AssignmentResultsPage } from '../features/assignments/AssignmentResultsPage'
+import { AssignmentSubmissionsPage } from '../features/assignments/AssignmentSubmissionsPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { index: true, element: <LandingPage /> },
   {
     element: <RequireIdentity />,
     children: [
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: <HomeRedirect /> },
           {
             path: 'classes',
             element: (
@@ -40,6 +43,27 @@ export const router = createBrowserRouter([
             element: (
               <RequireRole role="STUDENT">
                 <StudentClassesPage />
+              </RequireRole>
+            ),
+          },
+          { path: 'classes/:classId/assignments/:assignmentId/results',
+            element: (
+              <RequireRole role="LECTURER">
+                <AssignmentResultsPage />
+              </RequireRole>
+            ),
+          },
+          { path: 'classes/:classId/assignments/:assignmentId/submissions',
+            element: (
+              <RequireRole role="LECTURER">
+                <AssignmentSubmissionsPage />
+              </RequireRole>
+            ),
+          },
+          { path: 'docker-images',
+            element: (
+              <RequireRole role="LECTURER">
+                <DockerImagePage />
               </RequireRole>
             ),
           },

@@ -82,7 +82,7 @@ function sessionFromTokens(tokens: {
   // Allow-list governs BOTH branches: strip the realm's ROLE_ prefix for matching,
   // then accept the result only when it is LECTURER or STUDENT. Casting an untested
   // `normalized` to Role would let ROLE_ADMIN (or ADMIN) mint an out-of-contract
-  // session that HomeRedirect treats as a lecturer.
+  // session that the role guards would accept as a lecturer.
   // Review: 2026-10-04, Pullfrog (ROLE_ fallback bypassed the allow-list)
   const role =
     roles
@@ -140,28 +140,36 @@ function buildSession(kc: Keycloak): AuthSession | null {
  * error state instead of an infinite spinner.
  */
 export function initAuth(): Promise<void> {
-  if (!initPromise) initPromise = runInit(true)
+  if (!initPromise) initPromise = runInit()
   return initPromise
 }
 
-async function runInit(silentSso: boolean): Promise<void> {
+/**
+ * True when the current URL carries an OIDC authorization response. keycloak-js
+ * returns it in the hash (`response_mode=fragment`, keycloak.js:1237); the
+ * query form is tolerated for other flows.
+ *
+ * Valid callback URLs are handled before the silent-SSO branch
+ * (keycloak.js:810-813), so this guard only avoids configuring silent SSO for a
+ * URL whose authorization response takes precedence.
+ */
+function hasAuthCallback(): boolean {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const search = new URLSearchParams(window.location.search)
+  const has = (key: string) => hash.has(key) || search.has(key)
+  return has('state') && (has('code') || has('error'))
+}
+
+// Review: 2026-10-05, Pullfrog — silent SSO is the only init path, so do not imply a selectable fallback mode.
+async function runInit(): Promise<void> {
   const options: KeycloakInitOptions = {
-    // check-sso: a reload must never force the Keycloak login page — an
-    // unauthenticated visitor just ends up with `authenticated === false`
-    // and the route guard sends them to /login.
     onLoad: 'check-sso',
     pkceMethod: 'S256',
-    // The Session Status iframe needs 3rd-party cookies (Keycloak is another
-    // origin) and would block init until its iframe loads. With memory-only
-    // tokens expiry is detected by the refresh path below anyway, so disable it.
     checkLoginIframe: false,
   }
-  if (silentSso) {
-    // Silent reload check: refresh SSO state in a hidden iframe instead of a
-    // full-page bounce. keycloak-js itself clears this URI when the browser
-    // blocks 3rd-party cookies (`silentCheckSsoFallback`, default true), so
-    // restricted browsers degrade to a full-page `prompt=none` check rather
-    // than losing the session (D8).
+  // Review: 2026-10-05, Pullfrog — keep the adapter default fallback so blocked third-party cookies use a full-page prompt=none instead of a hanging silent iframe.
+  // Skip the silent-check setup on callback loads — see hasAuthCallback().
+  if (!hasAuthCallback()) {
     options.silentCheckSsoRedirectUri = `${window.location.origin}/silent-check-sso.html`
   }
 
@@ -170,14 +178,21 @@ async function runInit(silentSso: boolean): Promise<void> {
   try {
     authenticated = await kc.init(options)
   } catch (e) {
-    if (silentSso) {
-      // Fallback (D8): if the silent check-sso path fails outright (iframe
-      // blocked/missing), retry WITHOUT it — keycloak-js then performs one
-      // full-page `prompt=none` redirect, so a reload never strands the user.
-      // A keycloak-js instance refuses to initialize twice, hence a fresh one.
-      return runInit(false)
-    }
+    // Review: 2026-10-05, Pullfrog — the same transport/config failure recurs from /login, so redirecting hides the cause in a reload loop.
+    keycloak = kc
     throw e
+  }
+
+  if (!authenticated) {
+    // Silent check-sso could not restore the session (iframe
+    // blocked / SSO cookie inaccessible).  Do NOT redirect —
+    // let the router mount so the landing page is shown for
+    // unauthenticated users.  LoginPage handles the redirect
+    // via kc.login() when the user clicks the login button.
+    // keycloak is still set so redirectToKeycloakLogin() works.
+    // Review: 2026-10-04, public landing page fix.
+    keycloak = kc
+    return
   }
 
   keycloak = kc
@@ -188,12 +203,17 @@ async function runInit(silentSso: boolean): Promise<void> {
  * Redirect (full page) to Keycloak's hosted login form — authorization code +
  * PKCE, the browser never sees a password (D7). The promise never settles when
  * navigation starts, so callers only use `.catch()` to surface a blocked
- * redirect. The single call site is `LoginPage`.
+ * redirect. Call sites: `LoginPage` (automatic on mount) and `LandingPage`
+ * (the public login button).
  */
 export function redirectToKeycloakLogin(): Promise<void> {
   const kc = keycloak
   if (!kc) return Promise.reject(new Error('keycloak_not_initialized'))
-  return kc.login()
+  const redirectUri =
+    sessionStorage.getItem('wgs.postLoginUrl') ??
+    `${window.location.origin}${window.location.pathname}`
+  sessionStorage.removeItem('wgs.postLoginUrl')
+  return kc.login({ redirectUri })
 }
 
 // Cross-tab lock name shared by every tab of this origin (Web Locks keys on it).

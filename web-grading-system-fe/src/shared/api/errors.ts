@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
 export type ApiErrorKind = 'http' | 'envelope' | 'network'
@@ -57,5 +58,6 @@ export function getErrorMessage(error: unknown, t: TFunction): string {
 /** Thin `useTranslation()` wrapper so screens never hand-roll the mapping. */
 export function useApiErrorMessage(): (error: unknown) => string {
   const { t } = useTranslation()
-  return (error: unknown) => getErrorMessage(error, t)
+  // Review: 2026-10-05, Pullfrog — a fresh closure per render made any consumer dep array unstable.
+  return useCallback((error: unknown) => getErrorMessage(error, t), [t])
 }

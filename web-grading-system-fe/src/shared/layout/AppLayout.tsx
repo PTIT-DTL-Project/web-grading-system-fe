@@ -2,7 +2,7 @@ import { GlobalOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined
 import { Dropdown, Layout, Menu, Segmented, Space, Tag, Typography } from 'antd'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Navigate, Outlet, useLocation, useNavigate } from 'react-router'
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router'
 import { getSession, logout, type Role } from '../auth/keycloak'
 import { getIdentity } from '../auth/identity'
 import { ChangePasswordModal } from '../../features/auth/ChangePasswordModal'
@@ -67,7 +67,10 @@ export function AppLayout() {
           onCollapse={(collapsed: boolean) => setSidebarCollapsed(collapsed)}
         >
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
-          <div
+          {/* Review: 2026-10-05, Pullfrog — keep signed-in users inside the app shell instead of ejecting them to the public landing page. */}
+          <Link
+            to={menuKey}
+            aria-label={t('app.name')}
             style={{
               background: colors.primary,
               color: colors.textOnPrimary,
@@ -76,6 +79,7 @@ export function AppLayout() {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
+              textDecoration: 'none',
             }}
           >
             <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>
@@ -84,7 +88,7 @@ export function AppLayout() {
             {!sidebarCollapsed && (
               <div style={{ fontSize: 12, opacity: 0.9 }}>{t('app.tagline')}</div>
             )}
-          </div>
+          </Link>
 
           <Menu
             mode="inline"
