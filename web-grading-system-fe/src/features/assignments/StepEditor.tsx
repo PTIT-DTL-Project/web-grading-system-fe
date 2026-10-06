@@ -52,6 +52,16 @@ const ASSERTION_KINDS = ['status', 'body_structure', 'body_equals', 'json_path',
 
 const INVALID_JSON = '__invalid_json__'
 
+// Review: 2026-10-06, Pullfrog — forceRender makes hidden tabs validate too,
+// so a failure must jump to its tab instead of dying silently in display:none.
+const TAB_FOR_FIELD: Record<string, string> = {
+  headers: 'headers',
+  queryParams: 'params',
+  httpBody: 'body',
+  assertions: 'tests',
+  extracts: 'variables',
+}
+
 type NamePathLike = string | (string | number)[]
 
 // Lenient JSON helper for previews and mode switches: never marks fields,
@@ -160,6 +170,7 @@ export function StepEditor({
   const [advanced, setAdvanced] = useState(() => !!step)
   const [bodyMode, setBodyMode] = useState<'none' | 'raw'>('none')
   const [copiedVar, setCopiedVar] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('params')
   const guided =
     !advanced &&
     (stepType === 'HTTP_REQUEST' ||
@@ -566,7 +577,17 @@ export function StepEditor({
 
   // Review: 2026-10-05 — PlanCard owns success, failure, and closing, so do not reset here and discard editor state.
   const handleOk = async () => {
-    const values = await form.validateFields()
+    let values: Record<string, any>
+    try {
+      values = await form.validateFields()
+    } catch (e) {
+      // Review: 2026-10-06, Pullfrog — hidden tabs validate too, so surface the
+      // failure by switching to the first tab holding an error.
+      const fields = (e as { errorFields?: { name?: (string | number)[] }[] } | null)?.errorFields
+      const top = fields?.[0]?.name?.[0]
+      if (typeof top === 'string' && TAB_FOR_FIELD[top]) setActiveTab(TAB_FOR_FIELD[top])
+      return
+    }
     if (guided && stepType === 'HTTP_REQUEST') {
       const restricted = restrictedHeaderIndexes(values)
       if (restricted.length) {
@@ -634,7 +655,10 @@ export function StepEditor({
       <Form.Item name="stepType" label={t('step.type')} rules={[{ required: true }]}>
         <Select
           options={STEP_TYPES.map((value) => ({ value, label: t(`step.typeOptions.${value}`) }))}
-          onChange={() => setAdvanced(false)}
+          onChange={() => {
+            setAdvanced(false)
+            setActiveTab('params')
+          }}
         />
       </Form.Item>
 
@@ -667,7 +691,8 @@ export function StepEditor({
             </Form.Item>
           </Space>
           <Tabs
-            defaultActiveKey="params"
+            activeKey={activeTab}
+            onChange={setActiveTab}
             items={[
               {
                 key: 'params',
