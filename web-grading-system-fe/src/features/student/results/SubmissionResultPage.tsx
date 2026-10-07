@@ -31,7 +31,7 @@ export function SubmissionResultPage() {
   const { submissionId } = useParams<{ submissionId: string }>()
   const navigate = useNavigate()
   const toMessage = useApiErrorMessage()
-  const { results, loading, error, isReady } = useSubmissionResult(submissionId ?? '')
+  const { results, loading, error, isReady, timedOut, retry } = useSubmissionResult(submissionId ?? '')
 
   if (loading && !isReady) {
     return (
@@ -58,6 +58,26 @@ export function SubmissionResultPage() {
           <Button onClick={() => navigate('/student/submissions')}>
             {t('result.backToSubmissions')}
           </Button>
+        }
+      />
+    )
+  }
+
+  if (timedOut && !isReady) {
+    return (
+      <Result
+        status="warning"
+        title={t('result.pollTimeout')}
+        subTitle={t('result.pollTimeoutHint')}
+        extra={
+          <Space>
+            <Button type="primary" onClick={retry}>
+              {t('common.retry')}
+            </Button>
+            <Button onClick={() => navigate('/student/submissions')}>
+              {t('result.backToSubmissions')}
+            </Button>
+          </Space>
         }
       />
     )
@@ -177,7 +197,7 @@ export function SubmissionResultPage() {
           {result.summaryLog && (
             <Alert
               type="info"
-              message={t('result.summaryLog')}
+              title={t('result.summaryLog')}
               description={
                 <Typography.Text code style={{ fontSize: 12, whiteSpace: 'pre-wrap' }}>
                   {result.summaryLog}

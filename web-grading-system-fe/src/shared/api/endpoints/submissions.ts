@@ -40,11 +40,3 @@ export function listMySubmissions(
 ): Promise<Page<SubmissionResponse>> {
   return getData<Page<SubmissionResponse>>('/api/v1/submissions', { page, size }, options)
 }
-
-/** GET /api/v1/submissions/{id} */
-export function getSubmission(
-  id: string,
-  options?: { signal?: AbortSignal },
-): Promise<SubmissionResponse> {
-  return getData<SubmissionResponse>(`/api/v1/submissions/${id}`, undefined, options)
-}
