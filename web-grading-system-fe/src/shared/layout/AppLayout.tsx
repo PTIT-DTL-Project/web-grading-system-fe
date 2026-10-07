@@ -1,4 +1,4 @@
-import { GlobalOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, TeamOutlined } from '@ant-design/icons'
+import { GlobalOutlined, HistoryOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, TeamOutlined } from '@ant-design/icons'
 import { Dropdown, Layout, Menu, Segmented, Space, Tag, Typography } from 'antd'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -29,12 +29,15 @@ export function AppLayout() {
   if (!identity) return <Navigate to="/login" replace />
 
   const menuKey = menuKeyFor(identity.role)
-  const items = [
+  const items =
     identity.role === 'LECTURER'
-      ? { key: menuKey, icon: <ReadOutlined />, label: t('nav.classes') }
-      : { key: menuKey, icon: <TeamOutlined />, label: t('nav.studentClasses') },
-  ]
-  const selectedKey = location.pathname.startsWith(menuKey) ? menuKey : ''
+      ? [{ key: '/classes', icon: <ReadOutlined />, label: t('nav.classes') }]
+      : [
+          { key: '/student/classes', icon: <TeamOutlined />, label: t('nav.studentClasses') },
+          { key: '/student/assignments', icon: <ReadOutlined />, label: t('nav.studentAssignments') },
+          { key: '/student/submissions', icon: <HistoryOutlined />, label: t('nav.studentMySubmissions') },
+        ]
+  const selectedKey = items.find((item) => location.pathname.startsWith(item.key))?.key ?? ''
   const lang: Lang = i18n.language === 'en' ? 'en' : 'vi'
 
   const handleLogout = () => {
