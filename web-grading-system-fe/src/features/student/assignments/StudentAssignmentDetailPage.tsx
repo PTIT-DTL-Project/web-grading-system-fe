@@ -156,27 +156,27 @@ export function StudentAssignmentDetailPage() {
           >
             <Descriptions column={1} size="small">
               {assignment.executionTimeoutMs && (
-                <Descriptions.Item label="Execution timeout">
+                <Descriptions.Item label={t('assignments.executionTimeout')}>
                   {assignment.executionTimeoutMs} ms
                 </Descriptions.Item>
               )}
               {assignment.startupTimeoutMs && (
-                <Descriptions.Item label="Startup timeout">
+                <Descriptions.Item label={t('assignments.startupTimeout')}>
                   {assignment.startupTimeoutMs} ms
                 </Descriptions.Item>
               )}
               {assignment.maxMemoryMb && (
-                <Descriptions.Item label="Max memory">
+                <Descriptions.Item label={t('assignments.maxMemory')}>
                   {assignment.maxMemoryMb} MB
                 </Descriptions.Item>
               )}
               {assignment.maxCpu && (
-                <Descriptions.Item label="Max CPU">
-                  {assignment.maxCpu} cores
+                <Descriptions.Item label={t('assignments.maxCpu')}>
+                  {assignment.maxCpu} {t('assignments.cores')}
                 </Descriptions.Item>
               )}
               {assignment.dockerComposePort && (
-                <Descriptions.Item label="Port">
+                <Descriptions.Item label={t('assignments.port')}>
                   {assignment.dockerComposePort}
                 </Descriptions.Item>
               )}
@@ -240,7 +240,6 @@ export function StudentAssignmentDetailPage() {
       <SubmitAssignmentModal
         assignmentId={assignment.id}
         plans={plans}
-        images={images}
         open={submitOpen}
         onClose={() => setSubmitOpen(false)}
         onSuccess={(submissionId) =>

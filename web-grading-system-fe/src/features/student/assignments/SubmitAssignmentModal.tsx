@@ -3,13 +3,12 @@ import { Modal, Form, Select, Button, Alert, Typography } from 'antd'
 import { InboxOutlined, LoadingOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { requestUploadUrl, uploadZipToStorage } from '../../../shared/api/endpoints/submissions'
-import type { PlanResponse, DockerImageResponse } from '../../../shared/types/assignment'
+import type { PlanResponse } from '../../../shared/types/assignment'
 import { colors } from '../../../shared/theme/tokens'
 
 interface SubmitAssignmentModalProps {
   assignmentId: string
   plans: PlanResponse[]
-  images: DockerImageResponse[]
   open: boolean
   onClose: () => void
   onSuccess: (submissionId: string) => void
@@ -20,7 +19,6 @@ type SubmitStep = 'idle' | 'uploading' | 'done' | 'error'
 export function SubmitAssignmentModal({
   assignmentId,
   plans,
-  images,
   open,
   onClose,
   onSuccess,
@@ -115,12 +113,12 @@ export function SubmitAssignmentModal({
               </Button>,
             ]
       }
-      destroyOnClose
+      destroyOnHidden
     >
       {step === 'done' ? (
         <Alert
           type="success"
-          message={t('submitModal.success')}
+          title={t('submitModal.success')}
           description={t('submitModal.successHint')}
           showIcon
         />
@@ -136,17 +134,6 @@ export function SubmitAssignmentModal({
                 {plans.map((p) => (
                   <Select.Option key={p.id} value={p.id}>
                     {p.name} — {t('assignments.planWeight', { weight: p.weight })}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-          )}
-          {images.length > 0 && (
-            <Form.Item name="imageId" label={t('submitModal.selectImage')}>
-              <Select placeholder={t('submitModal.selectImagePlaceholder')} allowClear>
-                {images.map((img) => (
-                  <Select.Option key={img.id} value={img.id}>
-                    {img.name}:{img.tag}
                   </Select.Option>
                 ))}
               </Select>

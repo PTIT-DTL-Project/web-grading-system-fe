@@ -4,20 +4,26 @@ import { getResultsBySubmission } from '../../../shared/api/endpoints/results'
 import type { ResultResponse } from '../../../shared/types/result'
 
 const POLL_INTERVAL_MS = 3000
+const MAX_POLL_MS = 10 * 60 * 1000
 
 export interface SubmissionResultState {
   results: ResultResponse[]
   loading: boolean
   error: unknown
   isReady: boolean
+  timedOut: boolean
+  retry: () => void
 }
 
 export function useSubmissionResult(submissionId: string): SubmissionResultState {
   const [results, setResults] = useState<ResultResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
+  const [timedOut, setTimedOut] = useState(false)
+  const [version, setVersion] = useState(0)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const hasResultRef = useRef(false)
+  const startRef = useRef(0)
 
   const fetch = useCallback(
     (controller: AbortController) => {
@@ -48,15 +54,35 @@ export function useSubmissionResult(submissionId: string): SubmissionResultState
     if (!submissionId) return
     const controller = new AbortController()
     hasResultRef.current = false
+    startRef.current = Date.now()
+    setTimedOut(false)
+    setLoading(true)
     fetch(controller)
     pollingRef.current = setInterval(() => {
-      if (!hasResultRef.current) fetch(controller)
+      if (hasResultRef.current) return
+      // A FAILED grading normally still writes a result row, so an endless empty
+      // poll means the report never landed (e.g. result-service down during
+      // retries). Stop and surface instead of spinning forever.
+      if (Date.now() - startRef.current > MAX_POLL_MS) {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current)
+          pollingRef.current = null
+        }
+        setTimedOut(true)
+        setLoading(false)
+        return
+      }
+      fetch(controller)
     }, POLL_INTERVAL_MS)
     return () => {
       controller.abort()
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
-  }, [submissionId, fetch])
+  }, [submissionId, fetch, version])
 
-  return { results, loading, error, isReady: results.length > 0 }
+  const retry = useCallback(() => {
+    setVersion((v) => v + 1)
+  }, [])
+
+  return { results, loading, error, isReady: results.length > 0, timedOut, retry }
 }

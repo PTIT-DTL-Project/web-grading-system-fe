@@ -6,11 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { useSubmissions } from './useSubmissions'
 import { useApiErrorMessage } from '../../shared/api/errors'
+import { formatDateTime } from '../../shared/format/formatDateTime'
 
 export function AssignmentSubmissionsPage() {
   const { assignmentId } = useParams<{ assignmentId: string }>()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const toMessage = useApiErrorMessage()
   const { data, isLoading, isFetching, isError, error, refetch } = useSubmissions(assignmentId ?? '')
 
@@ -63,7 +64,7 @@ export function AssignmentSubmissionsPage() {
               title: t('assignment.createdAt'),
               dataIndex: 'createdAt',
               key: 'createdAt',
-              render: (v: string | null) => (v ? new Date(v).toLocaleString() : '—'),
+              render: (v: string | null) => (v ? formatDateTime(v, i18n.language) : '—'),
             },
           ]}
           rowKey="id"

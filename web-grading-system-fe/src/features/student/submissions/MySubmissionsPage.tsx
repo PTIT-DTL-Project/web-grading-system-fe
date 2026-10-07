@@ -5,6 +5,7 @@ import type { TableColumnsType } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
 import { ListPage } from '../../../shared/ui/ListPage'
 import { listMySubmissions } from '../../../shared/api/endpoints/submissions'
+import { formatDateTime } from '../../../shared/format/formatDateTime'
 import type { SubmissionResponse, SubmissionStatus } from '../../../shared/types/submission'
 import { colors } from '../../../shared/theme/tokens'
 import { useCallback } from 'react'
@@ -22,7 +23,7 @@ function statusColor(status: SubmissionStatus): string {
 }
 
 export function MySubmissionsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
 
   const fetcher = useCallback(
@@ -47,7 +48,7 @@ export function MySubmissionsPage() {
       title: t('submission.submittedAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (v: string | null) => (v ? new Date(v).toLocaleString('vi-VN') : '—'),
+      render: (v: string | null) => (v ? formatDateTime(v, i18n.language) : '—'),
     },
     {
       title: t('common.actions'),
