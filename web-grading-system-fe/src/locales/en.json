@@ -363,6 +363,7 @@
     "startupTimeout": "Startup timeout",
     "maxMemory": "Max memory",
     "maxCpu": "Max CPU",
+    "cores": "cores",
     "port": "Port"
   },
   "submitModal": {

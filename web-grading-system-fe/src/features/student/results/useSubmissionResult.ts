@@ -60,9 +60,9 @@ export function useSubmissionResult(submissionId: string): SubmissionResultState
     fetch(controller)
     pollingRef.current = setInterval(() => {
       if (hasResultRef.current) return
-      // Review: 2026-10-07 — a FAILED grading normally still writes a result row,
-      // so an endless empty poll means the report never landed (result-service down
-      // during retries). Stop and surface instead of spinning forever.
+      // A FAILED grading normally still writes a result row, so an endless empty
+      // poll means the report never landed (e.g. result-service down during
+      // retries). Stop and surface instead of spinning forever.
       if (Date.now() - startRef.current > MAX_POLL_MS) {
         if (pollingRef.current) {
           clearInterval(pollingRef.current)

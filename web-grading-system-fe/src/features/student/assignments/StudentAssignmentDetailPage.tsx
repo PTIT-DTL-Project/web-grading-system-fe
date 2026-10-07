@@ -172,7 +172,7 @@ export function StudentAssignmentDetailPage() {
               )}
               {assignment.maxCpu && (
                 <Descriptions.Item label={t('assignments.maxCpu')}>
-                  {assignment.maxCpu} cores
+                  {assignment.maxCpu} {t('assignments.cores')}
                 </Descriptions.Item>
               )}
               {assignment.dockerComposePort && (

@@ -363,6 +363,7 @@
     "startupTimeout": "Timeout khởi động",
     "maxMemory": "Bộ nhớ tối đa",
     "maxCpu": "CPU tối đa",
+    "cores": "nhân",
     "port": "Cổng"
   },
   "submitModal": {
