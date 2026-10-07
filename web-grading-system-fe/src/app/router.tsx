@@ -16,7 +16,6 @@ import { StudentAssignmentsPage } from '../features/student/assignments/StudentA
 import { StudentAssignmentDetailPage } from '../features/student/assignments/StudentAssignmentDetailPage'
 import { MySubmissionsPage } from '../features/student/submissions/MySubmissionsPage'
 import { SubmissionResultPage } from '../features/student/results/SubmissionResultPage'
-import { HomeRedirect } from './HomeRedirect'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -27,7 +26,6 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: <HomeRedirect /> },
           {
             path: 'classes',
             element: (
