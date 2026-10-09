@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import {
   Button,
   Card,
@@ -28,6 +29,53 @@ import { useStudentAssignment } from './useStudentAssignment'
 import { SubmitAssignmentModal } from './SubmitAssignmentModal'
 import { useApiErrorMessage } from '../../../shared/api/errors'
 import { colors } from '../../../shared/theme/tokens'
+import type { StepResponse } from '../../../shared/types/assignment'
+
+// Review: 2026-10-09 — UC-04 Step 2: step description verbatim; auto-generated
+// fallback from the sanitized config only when description is null/empty.
+function asConfigRecord(config: unknown): Record<string, unknown> | null {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return null
+  return config as Record<string, unknown>
+}
+
+function stepAutoText(t: TFunction, step: StepResponse): string | null {
+  const config = asConfigRecord(step.config)
+  if (!config) return null
+  switch (step.type) {
+    case 'HTTP_REQUEST': {
+      const method = typeof config.method === 'string' ? config.method : 'GET'
+      const path = typeof config.path === 'string' ? config.path : '/'
+      const expected =
+        typeof config.expected_status === 'number'
+          ? ` ${t('step.expectStatus', { status: config.expected_status })}`
+          : ''
+      return `${method} ${path}${expected}`
+    }
+    case 'DB_QUERY': {
+      if (typeof config.query !== 'string') return null
+      const firstLine = config.query.split('\n')[0].trim()
+      return firstLine.length > 120 ? `${firstLine.slice(0, 120)}…` : firstLine
+    }
+    case 'DB_SCHEMA_CHECK': {
+      if (!Array.isArray(config.checks)) return null
+      const kinds = config.checks
+        .map((check) =>
+          check && typeof check === 'object'
+            ? (check as Record<string, unknown>).kind
+            : null,
+        )
+        .filter((kind): kind is string => typeof kind === 'string')
+      const unique = [...new Set(kinds)]
+      return `${t('step.schemaChecks', { count: config.checks.length })}${unique.length ? ` (${unique.join(', ')})` : ''}`
+    }
+    case 'DB_MIGRATION': {
+      const count = Array.isArray(config.statements) ? config.statements.length : 0
+      return t('step.migrationStatements', { count })
+    }
+    default:
+      return null
+  }
+}
 
 export function StudentAssignmentDetailPage() {
   const { t } = useTranslation()
@@ -209,9 +257,28 @@ export function StudentAssignmentDetailPage() {
                   <Tag>{t('assignments.planSteps', { count: plan.steps.length })}</Tag>
                 </div>
               ),
-              children: plan.description ? (
-                <Typography.Text type="secondary">{plan.description}</Typography.Text>
-              ) : null,
+              children: (
+                <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                  {plan.description ? (
+                    <Typography.Text type="secondary">{plan.description}</Typography.Text>
+                  ) : null}
+                  {plan.steps.map((step) => {
+                    const text = step.description?.trim()
+                      ? step.description
+                      : stepAutoText(t, step)
+                    return (
+                      <div key={step.id}>
+                        <Typography.Text strong>{step.name}</Typography.Text>
+                        {text ? (
+                          <Typography.Text type="secondary" style={{ marginLeft: 8 }}>
+                            {text}
+                          </Typography.Text>
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                </Space>
+              ),
             }))}
           />
         )}

@@ -125,12 +125,16 @@ export function SubmitAssignmentModal({
       ) : (
         <Form form={form} layout="vertical">
           {plans.length > 0 && (
+            // Review: 2026-10-09 — planId is optional contract-side (omitted =
+            // grade all plans), so the select stays optional with an explicit
+            // "all plans" default instead of a required rule.
             <Form.Item
               name="planId"
               label={t('submitModal.selectPlan')}
-              rules={[{ required: true, message: t('submitModal.planRequired') }]}
+              initialValue=""
             >
-              <Select placeholder={t('submitModal.selectPlanPlaceholder')}>
+              <Select placeholder={t('submitModal.selectPlanPlaceholder')} allowClear>
+                <Select.Option value="">{t('submitModal.allPlans')}</Select.Option>
                 {plans.map((p) => (
                   <Select.Option key={p.id} value={p.id}>
                     {p.name} — {t('assignments.planWeight', { weight: p.weight })}

@@ -8,6 +8,7 @@ import { LoginPage } from '../features/auth/LoginPage'
 import { NoRolePage } from '../shared/auth/NoRolePage'
 import { NotFoundPage } from '../features/NotFoundPage'
 import { StudentClassesPage } from '../features/student/StudentClassesPage'
+import { StudentClassDetailPage } from '../features/student/StudentClassDetailPage'
 import { LandingPage } from '../features/landing/LandingPage'
 import { DockerImagePage } from '../features/docker/DockerImagePage'
 import { AssignmentResultsPage } from '../features/assignments/AssignmentResultsPage'
@@ -47,6 +48,14 @@ export const router = createBrowserRouter([
             element: (
               <RequireRole role="STUDENT">
                 <StudentClassesPage />
+              </RequireRole>
+            ),
+          },
+          {
+            path: 'student/classes/:classId',
+            element: (
+              <RequireRole role="STUDENT">
+                <StudentClassDetailPage />
               </RequireRole>
             ),
           },

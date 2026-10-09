@@ -169,7 +169,9 @@ export function SubmissionResultPage() {
               value={totalScore.toFixed(2)}
               suffix={`/ ${totalMax.toFixed(2)}`}
               valueStyle={{
-                color: totalScore / totalMax >= 0.5 ? colors.success : colors.error,
+                // Review: 2026-10-09 — guard max 0 so an empty max score does
+                // not render NaN-red via a false comparison.
+                color: totalMax > 0 && totalScore / totalMax >= 0.5 ? colors.success : colors.error,
                 fontSize: 32,
                 fontWeight: 700,
               }}
