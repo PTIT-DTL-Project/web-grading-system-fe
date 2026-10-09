@@ -18,6 +18,12 @@ export interface ClassStudentResponse {
   email: string | null
 }
 
+/** course-service StudentRosterResponse — GET /api/v1/student/classes/{id}/students. Codes and names only, no contact details. */
+export interface StudentRoster {
+  studentCode: string
+  studentName: string
+}
+
 /** POST /api/v1/classes */
 export interface CreateClassRequest {
   name: string

@@ -29,6 +29,8 @@ import { useStudentAssignment } from './useStudentAssignment'
 import { SubmitAssignmentModal } from './SubmitAssignmentModal'
 import { useApiErrorMessage } from '../../../shared/api/errors'
 import { colors } from '../../../shared/theme/tokens'
+import { StepDetailView } from '../../../shared/ui/StepDetailView'
+import { normalizeStudentStep } from '../../../shared/ui/stepDetail'
 import type { StepResponse } from '../../../shared/types/assignment'
 
 // Review: 2026-10-09 — UC-04 Step 2: step description verbatim; auto-generated
@@ -85,6 +87,7 @@ export function StudentAssignmentDetailPage() {
   const toMessage = useApiErrorMessage()
   const { assignment, plans, images, loading, error, reload } = useStudentAssignment(id ?? '')
   const [submitOpen, setSubmitOpen] = useState(false)
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(null)
 
   useEffect(() => {
     if (searchParams.get('submit') === '1') {
@@ -266,6 +269,7 @@ export function StudentAssignmentDetailPage() {
                     const text = step.description?.trim()
                       ? step.description
                       : stepAutoText(t, step)
+                    const expanded = expandedStepId === step.id
                     return (
                       <div key={step.id}>
                         <Typography.Text strong>{step.name}</Typography.Text>
@@ -274,6 +278,18 @@ export function StudentAssignmentDetailPage() {
                             {text}
                           </Typography.Text>
                         ) : null}
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={() => setExpandedStepId(expanded ? null : step.id)}
+                        >
+                          {expanded ? t('common.collapse') : t('common.expand')}
+                        </Button>
+                        {expanded && (
+                          <div style={{ margin: '8px 0 8px 16px' }}>
+                            <StepDetailView model={normalizeStudentStep(step)} variant="contract" />
+                          </div>
+                        )}
                       </div>
                     )
                   })}

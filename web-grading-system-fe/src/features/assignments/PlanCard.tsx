@@ -8,6 +8,8 @@ import { SYSTEM_VARIABLES } from './stepConfig'
 import { useTestSteps } from './useTestSteps'
 import { useApiErrorMessage } from '../../shared/api/errors'
 import { colors } from '../../shared/theme/tokens'
+import { StepDetailView } from '../../shared/ui/StepDetailView'
+import { normalizeLecturerStep } from '../../shared/ui/stepDetail'
 
 interface PlanCardProps {
   plan: TestPlan
@@ -21,6 +23,7 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete }: Pla
   const { message } = App.useApp()
   const toMessage = useApiErrorMessage()
   const [expanded, setExpanded] = useState(false)
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(null)
   const [stepEditorOpen, setStepEditorOpen] = useState(false)
   const [editingStep, setEditingStep] = useState<TestStep | null>(null)
   const [savingStep, setSavingStep] = useState(false)
@@ -166,6 +169,13 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete }: Pla
                 <Tag>{step.stepType}</Tag>
                 <Typography.Text>{step.name}</Typography.Text>
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t('step.weight')}: {step.weight}</Typography.Text>
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={() => setExpandedStepId((current) => (current === step.id ? null : step.id))}
+                >
+                  {expandedStepId === step.id ? t('common.collapse') : t('common.expand')}
+                </Button>
                 <Button type="link" size="small" disabled={archived} onClick={() => openEdit(step)}>
                   {t('common.edit')}
                 </Button>
@@ -175,6 +185,11 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete }: Pla
                   </Button>
                 </Popconfirm>
               </Space>
+              {expandedStepId === step.id && (
+                <div style={{ marginTop: 8 }}>
+                  <StepDetailView model={normalizeLecturerStep(step)} variant="full" />
+                </div>
+              )}
             </div>
           ))}
         </div>
