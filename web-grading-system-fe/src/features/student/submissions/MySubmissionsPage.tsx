@@ -55,12 +55,14 @@ export function MySubmissionsPage() {
       key: 'actions',
       width: 150,
       render: (_, record) => (
-        <Button
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => navigate(`/student/submissions/${record.id}/results`)}
-          disabled={record.status !== 'GRADED'}
-        >
+          <Button
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => navigate(`/student/submissions/${record.id}/results`)}
+            // Review: 2026-10-09 — FAILED runs still write a result row, so the
+            // student must be able to open it; only non-terminal states stay locked.
+            disabled={record.status !== 'GRADED' && record.status !== 'FAILED'}
+          >
           {t('submission.viewResult')}
         </Button>
       ),
