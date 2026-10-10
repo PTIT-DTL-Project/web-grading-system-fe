@@ -5,6 +5,7 @@ import type { TableColumnsType } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
 import { ListPage } from '../../../shared/ui/ListPage'
 import { listMySubmissions } from '../../../shared/api/endpoints/submissions'
+import { AssignmentTitle } from './AssignmentTitle'
 import { formatDateTime } from '../../../shared/format/formatDateTime'
 import type { SubmissionResponse, SubmissionStatus } from '../../../shared/types/submission'
 import { colors } from '../../../shared/theme/tokens'
@@ -30,6 +31,12 @@ export function MySubmissionsPage() {
   )
 
   const columns: TableColumnsType<SubmissionResponse> = [
+    {
+      title: t('submission.assignment'),
+      dataIndex: 'assignmentId',
+      key: 'assignmentId',
+      render: (id: string) => <AssignmentTitle assignmentId={id} />,
+    },
     { title: t('submission.fileName'), dataIndex: 'zipFileName', key: 'zipFileName' },
     {
       title: t('submission.status'),

@@ -415,6 +415,7 @@
   },
   "submission": {
     "title": "Submission history",
+    "assignment": "Assignment",
     "empty": "No submissions yet",
     "emptyHint": "Submit an assignment to see history here",
     "total": "Total submissions: {{total}}",
