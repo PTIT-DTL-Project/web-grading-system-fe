@@ -20,15 +20,27 @@ export interface StepDetailModel {
 
 // Review: 2026-10-09 — mirrors the sensitive-header set in backend
 // HttpLogService (authorization, cookie, set-cookie, proxy-authorization,
-// x-api-key, x-gateway-secret). The student config keeps headers, so values
-// must be masked student-side. Keep the two lists in sync.
-const SENSITIVE_HEADERS = new Set([
+// x-api-key, x-gateway-secret), extended with generic credential key names for
+// nested request bodies. The student config keeps headers/body/query, so values
+// must be masked student-side. Keep the backend-mirrored names in sync.
+const SENSITIVE_KEYS = new Set([
   'authorization',
   'cookie',
   'set-cookie',
   'proxy-authorization',
   'x-api-key',
   'x-gateway-secret',
+  'password',
+  'passwd',
+  'pwd',
+  'pass',
+  'secret',
+  'token',
+  'api_key',
+  'apikey',
+  'access_token',
+  'refresh_token',
+  'auth',
 ])
 
 export function isRecord(value: unknown): value is Record<string, any> {
@@ -86,6 +98,23 @@ export function stringPairs(value: unknown): [string, string][] {
 export function maskHeaders(entries: [string, string][]): [string, string][] {
   return entries.map(([key, value]) => [
     key,
-    SENSITIVE_HEADERS.has(key.toLowerCase()) ? '***' : value,
+    SENSITIVE_KEYS.has(key.toLowerCase()) ? '***' : value,
   ])
+}
+
+// Review: 2026-10-09, Pullfrog — the student contract shows request bodies and
+// query values verbatim, so credential-bearing keys must be masked recursively
+// at any depth. Lecturer `full` variant stays unmasked (own authored data).
+/** Deep-mask credential values inside request bodies / query values. */
+export function maskSensitiveValues(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(maskSensitiveValues)
+  if (isRecord(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        SENSITIVE_KEYS.has(key.toLowerCase()) ? '***' : maskSensitiveValues(entry),
+      ]),
+    )
+  }
+  return value
 }

@@ -234,7 +234,8 @@
     "emptyHint": "Nhập sinh viên từ CSV để bắt đầu",
     "loadFailed": "Không tải được sinh viên",
     "downloadTemplate": "Tải mẫu CSV",
-    "importInvalidFile": "Vui lòng chọn tệp CSV"
+    "importInvalidFile": "Vui lòng chọn tệp CSV",
+    "emptyRosterHint": "Chưa có bạn học nào trong lớp"
   },
   "components": {
     "title": "Thành phần điểm",

@@ -2,7 +2,7 @@ import { Descriptions, Space, Tag, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { colors } from '../theme/tokens'
 import type { StepDetailModel } from './stepDetail'
-import { isRecord, maskHeaders, stringPairs } from './stepDetail'
+import { isRecord, maskHeaders, maskSensitiveValues, stringPairs } from './stepDetail'
 
 interface StepDetailViewProps {
   /** `contract`: request + required response only. `full`: everything the config holds. */
@@ -89,9 +89,17 @@ export function StepDetailView({ model, variant }: StepDetailViewProps) {
     const path = typeof config.path === 'string' ? config.path : '/'
     const expectedStatus = typeof config.expected_status === 'number' ? config.expected_status : null
     let headers = stringPairs(config.headers)
-    if (!full) headers = maskHeaders(headers)
-    const query = stringPairs(config.query_params)
-    const body = config.body !== undefined ? JSON.stringify(config.body, null, 2) : null
+    let query = stringPairs(config.query_params)
+    let bodySource: unknown = config.body
+    if (!full) {
+      // Review: 2026-10-09, Pullfrog — credential-bearing query/body values
+      // reach students verbatim from the backend, so mask them here. The
+      // `full` (lecturer) variant keeps the authored values.
+      headers = maskHeaders(headers)
+      query = maskHeaders(query)
+      bodySource = maskSensitiveValues(bodySource)
+    }
+    const body = bodySource !== undefined ? JSON.stringify(bodySource, null, 2) : null
     const assertions = Array.isArray(config.assertions) ? config.assertions : []
     const extracts = Array.isArray(config.extract) ? config.extract : []
     return (

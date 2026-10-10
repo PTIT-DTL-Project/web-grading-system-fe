@@ -234,7 +234,8 @@
     "emptyHint": "Import students from CSV to get started",
     "loadFailed": "Could not load students",
     "downloadTemplate": "Download sample CSV",
-    "importInvalidFile": "Please choose a CSV file"
+    "importInvalidFile": "Please choose a CSV file",
+    "emptyRosterHint": "No classmates enrolled yet"
   },
   "components": {
     "title": "Score components",

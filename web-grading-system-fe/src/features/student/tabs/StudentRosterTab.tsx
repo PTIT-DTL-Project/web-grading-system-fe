@@ -31,7 +31,7 @@ export function StudentRosterTab({ classId }: StudentRosterTabProps) {
       rowKey="studentCode"
       headerTitle={t('students.title')}
       emptyTitle={t('students.empty')}
-      emptyHint={t('students.emptyHint')}
+      emptyHint={t('students.emptyRosterHint')}
       showTotal={(total) => t('students.total', { total })}
     />
   )
