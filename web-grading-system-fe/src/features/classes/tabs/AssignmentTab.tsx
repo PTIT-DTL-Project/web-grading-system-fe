@@ -21,7 +21,7 @@ interface AssignmentTabProps {
 }
 
 export function AssignmentTab({ classId, ownerId, archived = false, refreshToken = 0, onSaved }: AssignmentTabProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const toMessage = useApiErrorMessage()
   const [page, setPage] = useState(0)
@@ -110,7 +110,11 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
       title: t('assignment.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (v: string) => (v ? new Date(v).toLocaleDateString() : '—'),
+      // Pinned to the system timezone like formatDateTime (2026-10-10).
+      render: (v: string) =>
+        v
+          ? new Date(v).toLocaleDateString(i18n.language, { timeZone: 'Asia/Ho_Chi_Minh' })
+          : '—',
     },
     {
       title: t('common.actions'),

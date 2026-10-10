@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import { useSubmissionResult } from './useSubmissionResult'
+import { AssignmentTitle } from '../submissions/AssignmentTitle'
 import { useApiErrorMessage } from '../../../shared/api/errors'
 import { colors } from '../../../shared/theme/tokens'
 import type { ResultResponse, StepResultResponse } from '../../../shared/types/result'
@@ -153,9 +154,16 @@ export function SubmissionResultPage() {
         >
           {t('result.backToSubmissions')}
         </Button>
-        <Typography.Title level={4} style={{ margin: 0 }}>
-          {t('result.title')}
-        </Typography.Title>
+        <div>
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {t('result.title')}
+          </Typography.Title>
+          {results[0] ? (
+            <Typography.Text type="secondary">
+              <AssignmentTitle assignmentId={results[0].assignmentId} />
+            </Typography.Text>
+          ) : null}
+        </div>
       </div>
 
       <Row gutter={[16, 16]}>
