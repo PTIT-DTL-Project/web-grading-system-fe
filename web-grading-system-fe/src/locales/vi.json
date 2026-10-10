@@ -417,6 +417,7 @@
   "submission": {
     "title": "Lịch sử nộp bài",
     "assignment": "Bài tập",
+    "scope": "Phạm vi",
     "empty": "Chưa có bài nộp nào",
     "emptyHint": "Nộp bài để xem lịch sử tại đây",
     "total": "Tổng số bài nộp: {{total}}",
