@@ -6,12 +6,16 @@ export interface PresignedUrlResponse {
   expiresInMinutes: number
 }
 
+/** submission-service SubmissionStatus — PENDING, GRADING, DONE, FAILED only.
+ * The executor writes DONE on success; no GRADED/QUEUED/UPLOADED exists
+ * backend-side (SubmissionStatus.valueOf would reject them).
+ *
+ * <p>Review: 2026-10-10, DONE-status mismatch locked students out of results.
+ */
 export type SubmissionStatus =
   | 'PENDING'
-  | 'UPLOADED'
-  | 'QUEUED'
   | 'GRADING'
-  | 'GRADED'
+  | 'DONE'
   | 'FAILED'
 
 /** submission-service SubmissionResponse — GET /api/v1/submissions[/{id}] */

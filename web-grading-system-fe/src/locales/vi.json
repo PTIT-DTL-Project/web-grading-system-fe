@@ -424,10 +424,8 @@
     "latest": "Mới nhất",
     "viewResult": "Xem kết quả",
     "statusPENDING": "Đang chờ",
-    "statusUPLOADED": "Đã tải lên",
-    "statusQUEUED": "Trong hàng chờ",
     "statusGRADING": "Đang chấm",
-    "statusGRADED": "Đã chấm",
+    "statusDONE": "Đã chấm",
     "statusFAILED": "Lỗi"
   },
   "result": {

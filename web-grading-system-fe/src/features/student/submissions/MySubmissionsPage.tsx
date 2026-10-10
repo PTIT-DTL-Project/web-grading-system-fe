@@ -12,11 +12,9 @@ import { useCallback } from 'react'
 
 function statusColor(status: SubmissionStatus): string {
   const map: Record<SubmissionStatus, string> = {
-    GRADED: colors.success,
+    DONE: colors.success,
     GRADING: colors.info,
     FAILED: colors.error,
-    QUEUED: colors.warning,
-    UPLOADED: colors.info,
     PENDING: colors.neutral,
   }
   return map[status] ?? colors.neutral
@@ -59,9 +57,10 @@ export function MySubmissionsPage() {
             size="small"
             icon={<EyeOutlined />}
             onClick={() => navigate(`/student/submissions/${record.id}/results`)}
-            // Review: 2026-10-09 — FAILED runs still write a result row, so the
-            // student must be able to open it; only non-terminal states stay locked.
-            disabled={record.status !== 'GRADED' && record.status !== 'FAILED'}
+            // Review: 2026-10-10 — backend terminal states are DONE (graded)
+            // and FAILED (run failed but still writes a result row); only
+            // non-terminal PENDING/GRADING stay locked.
+            disabled={record.status !== 'DONE' && record.status !== 'FAILED'}
           >
           {t('submission.viewResult')}
         </Button>

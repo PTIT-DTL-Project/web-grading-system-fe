@@ -424,10 +424,8 @@
     "latest": "Latest",
     "viewResult": "View result",
     "statusPENDING": "Pending",
-    "statusUPLOADED": "Uploaded",
-    "statusQUEUED": "Queued",
     "statusGRADING": "Grading",
-    "statusGRADED": "Graded",
+    "statusDONE": "Graded",
     "statusFAILED": "Failed"
   },
   "result": {
