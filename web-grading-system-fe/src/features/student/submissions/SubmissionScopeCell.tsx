@@ -7,12 +7,15 @@ import { ResultScopeBadge } from '../../../shared/ui/ResultScopeBadge'
 // React Query dedupes identical keys: N rows across M assignments cost M calls,
 // cached 10 minutes (plans rarely change). A gone assignment/plan renders '—'
 // instead of breaking the page.
+// An absent planId (backend pre-#38 omits the field) reads as FULL — the
+// default submit path — via explicit === undefined (not ==, lint-clean), and
+// self-corrects once the backend ships the field. Review: Pullfrog pre-#38 order.
 export function SubmissionScopeCell({
   assignmentId,
   planId,
 }: {
   assignmentId: string
-  planId: string | null
+  planId: string | null | undefined
 }) {
   const { data: plans } = useQuery({
     queryKey: ['student-assignment-plans', assignmentId],
@@ -21,5 +24,7 @@ export function SubmissionScopeCell({
     staleTime: 10 * 60 * 1000,
   })
   const name = planId ? (plans?.find((p) => p.id === planId)?.name ?? null) : null
-  return <ResultScopeBadge scope={planId === null ? 'FULL' : 'PLAN'} planName={name} />
+  return (
+    <ResultScopeBadge scope={planId === null || planId === undefined ? 'FULL' : 'PLAN'} planName={name} />
+  )
 }

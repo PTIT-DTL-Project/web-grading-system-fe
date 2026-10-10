@@ -69,9 +69,14 @@ export function AssignmentResultsPage() {
                     // Review: 2026-10-10 — course-service rows carry no scope
                     // field yet, so FULL vs question derives from planId null
                     // (matches the backfilled backend convention); null-safe,
-                    // the old v.slice(0, 8) crashed on whole-run rows.
-                    render: (v: string | null) => (
-                      <ResultScopeBadge scope={v === null ? 'FULL' : 'PLAN'} planName={planName(v)} />
+                    // the old v.slice(0, 8) crashed on whole-run rows. Absent
+                    // (undefined, pre-mirror-field) reads as FULL like the
+                    // student history cell — explicit check, lint-clean.
+                    render: (v: string | null | undefined) => (
+                      <ResultScopeBadge
+                        scope={v === null || v === undefined ? 'FULL' : 'PLAN'}
+                        planName={planName(v ?? null)}
+                      />
                     ),
                   },
                   {
