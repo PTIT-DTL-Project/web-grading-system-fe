@@ -60,7 +60,11 @@ export function LandingPage() {
           </Typography.Title>
           <Space size={16}>
             <Button type="primary" size="large" onClick={handleEnterClasses} style={{ minWidth: 200 }}>
-              {identity.role === 'STUDENT' ? t('landing.myClasses') : t('landing.enterClasses')}
+              {identity.role === 'STUDENT'
+                ? t('landing.myClasses')
+                : identity.role === 'ADMIN'
+                  ? t('nav.adminUsers')
+                  : t('landing.enterClasses')}
             </Button>
             <Button size="large" icon={<LogoutOutlined />} onClick={handleLogout}>
               {t('landing.logout')}

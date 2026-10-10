@@ -41,9 +41,33 @@ export function AdminUsersPage() {
     return key ? t(key) : reason
   }
 
+  // Client-side mirrors of UserImportService.MAX_BYTES / MAX_ROWS: fail fast
+  // without an upload. The server stays the source of truth — keep both sides
+  // in sync when either changes.
+  const MAX_BYTES = 2 * 1024 * 1024
+  const MAX_ROWS = 2000
+
+  // Mirrors the server header heuristic (ClassService.parseCsv discipline):
+  // a leading row whose first column names the username field is not data.
+  const isHeaderRow = (line: string): boolean => {
+    const first = line.split(',')[0]?.trim().toLowerCase() ?? ''
+    return first === 'username' || first === 'studentcode' || first === 'code'
+  }
+
   const handleImport = async (file: File) => {
     if (!file.name.toLowerCase().endsWith('.csv')) {
       message.error(t('students.importInvalidFile'))
+      return
+    }
+    if (file.size > MAX_BYTES) {
+      message.error(t('admin.fileTooLarge'))
+      return
+    }
+    const text = await file.text()
+    const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '')
+    const dataRows = lines.length > 0 && isHeaderRow(lines[0]) ? lines.length - 1 : lines.length
+    if (dataRows > MAX_ROWS) {
+      message.error(t('admin.tooManyRows'))
       return
     }
     setUploading(true)

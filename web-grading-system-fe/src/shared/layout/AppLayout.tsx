@@ -180,7 +180,11 @@ export function AppLayout() {
                 fontWeight: 500,
               }}
             >
-              {identity.role === 'LECTURER' ? t('auth.lecturer') : t('auth.student')}
+              {identity.role === 'LECTURER'
+                ? t('auth.lecturer')
+                : identity.role === 'ADMIN'
+                  ? t('auth.admin')
+                  : t('auth.student')}
             </Tag>
 
             <Dropdown
