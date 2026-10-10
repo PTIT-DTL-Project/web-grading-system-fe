@@ -27,7 +27,7 @@ import Keycloak, { type KeycloakInitOptions } from 'keycloak-js'
 const AUTHORITY = import.meta.env.VITE_KEYCLOAK_AUTHORITY ?? ''
 const CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID ?? 'web-grading-fe'
 
-export type Role = 'LECTURER' | 'STUDENT'
+export type Role = 'LECTURER' | 'STUDENT' | 'ADMIN'
 
 /**
  * Keycloak answered the refresh with a dead grant (400 — tokens dropped): the
@@ -80,14 +80,17 @@ function sessionFromTokens(tokens: {
   const realmAccess = (claims.realm_access ?? {}) as Record<string, unknown>
   const roles = Array.isArray(realmAccess.roles) ? (realmAccess.roles as string[]) : []
   // Allow-list governs BOTH branches: strip the realm's ROLE_ prefix for matching,
-  // then accept the result only when it is LECTURER or STUDENT. Casting an untested
-  // `normalized` to Role would let ROLE_ADMIN (or ADMIN) mint an out-of-contract
-  // session that the role guards would accept as a lecturer.
-  // Review: 2026-10-04, Pullfrog (ROLE_ fallback bypassed the allow-list)
+  // then accept the result only when it is LECTURER, STUDENT or ADMIN. Casting an
+  // untested `normalized` to Role would let any other realm role mint an
+  // out-of-contract session. ADMIN is deliberately admitted here (bulk user import,
+  // UC-17) — it never falls through to a lecturer or student route because every
+  // route still declares its own RequireRole.
+  // Review: 2026-10-04, Pullfrog (ROLE_ fallback bypassed the allow-list);
+  // 2026-10-09, bulk user import plan (ADMIN admitted deliberately).
   const role =
     roles
       .map((r) => (r.startsWith('ROLE_') ? r.slice('ROLE_'.length) : r))
-      .find((r): r is Role => r === 'LECTURER' || r === 'STUDENT') ?? null
+      .find((r): r is Role => r === 'LECTURER' || r === 'STUDENT' || r === 'ADMIN') ?? null
   if (!role) throw new Error('token_no_allowed_role')
   return {
     accessToken: tokens.access_token,

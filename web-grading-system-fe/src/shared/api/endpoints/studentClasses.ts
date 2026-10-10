@@ -1,5 +1,5 @@
 import { getData } from '../http'
-import type { ClassResponse } from '../../types/class'
+import type { ClassResponse, StudentRoster } from '../../types/class'
 import type { StudentScoresResponse } from '../../types/score'
 import type { Page } from '../../types/pagination'
 
@@ -22,4 +22,14 @@ export function getStudentClass(classId: string, options?: { signal?: AbortSigna
 /** GET /api/v1/student/classes/{id}/my-scores — caller's own scores. */
 export function getMyScores(classId: string, options?: { signal?: AbortSignal }): Promise<StudentScoresResponse> {
   return getData<StudentScoresResponse>(`/api/v1/student/classes/${classId}/my-scores`, undefined, options)
+}
+
+/** GET /api/v1/student/classes/{id}/students — enrolled classmates, codes and names only. */
+export function listClassRoster(
+  classId: string,
+  page: number,
+  size: number,
+  options?: { signal?: AbortSignal },
+): Promise<Page<StudentRoster>> {
+  return getData<Page<StudentRoster>>(`/api/v1/student/classes/${classId}/students`, { page, size }, options)
 }

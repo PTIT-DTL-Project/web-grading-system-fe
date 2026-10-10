@@ -5,6 +5,7 @@ import { ArrowLeftOutlined } from '@ant-design/icons'
 import { useStudentClass } from './useStudentClass'
 import { StudentClassAssignmentsTab } from './tabs/StudentClassAssignmentsTab'
 import { StudentScoresTab } from './tabs/StudentScoresTab'
+import { StudentRosterTab } from './tabs/StudentRosterTab'
 import { colors } from '../../shared/theme/tokens'
 import { useApiErrorMessage } from '../../shared/api/errors'
 
@@ -82,6 +83,7 @@ export function StudentClassDetailPage() {
           items={[
             { key: 'assignments', label: t('detail.tabAssignments'), children: <StudentClassAssignmentsTab classId={klass.id} archived={isArchived} /> },
             { key: 'scores', label: t('detail.tabMyScores'), children: <StudentScoresTab classId={klass.id} /> },
+            { key: 'students', label: t('detail.tabStudents'), children: <StudentRosterTab classId={klass.id} /> },
           ]}
         />
       </div>

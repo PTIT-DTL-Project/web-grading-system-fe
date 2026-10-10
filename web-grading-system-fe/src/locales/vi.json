@@ -35,7 +35,8 @@
     "expandSidebar": "Mở rộng thanh bên",
     "back": "Quay lại",
     "studentAssignments": "Bài tập",
-    "studentMySubmissions": "Bài nộp của tôi"
+    "studentMySubmissions": "Bài nộp của tôi",
+    "adminUsers": "Import tài khoản"
   },
   "classes": {
     "title": "Lớp học",
@@ -234,7 +235,8 @@
     "emptyHint": "Nhập sinh viên từ CSV để bắt đầu",
     "loadFailed": "Không tải được sinh viên",
     "downloadTemplate": "Tải mẫu CSV",
-    "importInvalidFile": "Vui lòng chọn tệp CSV"
+    "importInvalidFile": "Vui lòng chọn tệp CSV",
+    "emptyRosterHint": "Chưa có bạn học nào trong lớp"
   },
   "components": {
     "title": "Thành phần điểm",
@@ -330,6 +332,7 @@
     "changePasswordSuccess": "Đổi mật khẩu thành công.",
     "lecturer": "Giảng viên",
     "student": "Sinh viên",
+    "admin": "Quản trị viên",
     "invalidField": "Trường không hợp lệ"
   },
   "errors": {
@@ -384,6 +387,31 @@
     "viewResult": "Xem kết quả",
     "submit": "Nộp bài",
     "failed": "Nộp bài thất bại"
+  },
+  "admin": {
+    "title": "Import tài khoản hàng loạt",
+    "hint": "Tải lên CSV danh sách tài khoản. Mỗi tài khoản mới lấy username làm mật khẩu khởi tạo và bắt buộc đổi ở lần đăng nhập đầu tiên.",
+    "import": "Import tài khoản",
+    "downloadTemplate": "Tải mẫu CSV",
+    "createdStudents": "Sinh viên đã tạo",
+    "createdLecturers": "Giảng viên đã tạo",
+    "skipped": "Bỏ qua (đã tồn tại)",
+    "failedTitle": "Các dòng cần xử lý",
+    "colRow": "Dòng",
+    "colUsername": "Username",
+    "colRole": "Vai trò",
+    "colReason": "Lý do",
+    "reasonDuplicateUsername": "Username đã tồn tại",
+    "reasonDuplicateEmail": "Email đã tồn tại",
+    "reasonUnknownRole": "Vai trò không hợp lệ (dùng STUDENT hoặc LECTURER)",
+    "reasonNotEnoughColumns": "Dòng thiếu username, họ tên hoặc email",
+    "reasonBlankUsernameOrEmail": "Username hoặc email trống",
+    "reasonInvalidInput": "Keycloak từ chối dòng này",
+    "reasonWeakPassword": "Mật khẩu khởi tạo bị chính sách từ chối",
+    "reasonProviderError": "Lỗi identity provider, thử lại sau",
+    "reasonRoleNotAssigned": "Đã tạo nhưng chưa gán vai trò — gán thủ công",
+    "fileTooLarge": "File quá lớn (tối đa 2 MB)",
+    "tooManyRows": "Quá nhiều dòng (tối đa 2000)"
   },
   "submission": {
     "title": "Lịch sử nộp bài",

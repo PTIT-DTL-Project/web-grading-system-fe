@@ -17,6 +17,7 @@ import { StudentAssignmentsPage } from '../features/student/assignments/StudentA
 import { StudentAssignmentDetailPage } from '../features/student/assignments/StudentAssignmentDetailPage'
 import { MySubmissionsPage } from '../features/student/submissions/MySubmissionsPage'
 import { SubmissionResultPage } from '../features/student/results/SubmissionResultPage'
+import { AdminUsersPage } from '../features/admin/AdminUsersPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -112,6 +113,14 @@ export const router = createBrowserRouter([
             element: (
               <RequireRole role="STUDENT">
                 <SubmissionResultPage />
+              </RequireRole>
+            ),
+          },
+          {
+            path: 'admin/users',
+            element: (
+              <RequireRole role="ADMIN">
+                <AdminUsersPage />
               </RequireRole>
             ),
           },

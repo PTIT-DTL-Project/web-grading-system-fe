@@ -1,4 +1,4 @@
-import { GlobalOutlined, HistoryOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, TeamOutlined } from '@ant-design/icons'
+import { GlobalOutlined, HistoryOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons'
 import { Dropdown, Layout, Menu, Segmented, Space, Tag, Typography } from 'antd'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -12,7 +12,9 @@ import { colors } from '../theme/tokens'
 const { Sider, Header, Content } = Layout
 
 function menuKeyFor(role: Role): string {
-  return role === 'LECTURER' ? '/classes' : '/student/classes'
+  if (role === 'LECTURER') return '/classes'
+  if (role === 'ADMIN') return '/admin/users'
+  return '/student/classes'
 }
 
 export function AppLayout() {
@@ -32,7 +34,9 @@ export function AppLayout() {
   const items =
     identity.role === 'LECTURER'
       ? [{ key: '/classes', icon: <ReadOutlined />, label: t('nav.classes') }]
-      : [
+      : identity.role === 'ADMIN'
+        ? [{ key: '/admin/users', icon: <UserAddOutlined />, label: t('nav.adminUsers') }]
+        : [
           { key: '/student/classes', icon: <TeamOutlined />, label: t('nav.studentClasses') },
           { key: '/student/assignments', icon: <ReadOutlined />, label: t('nav.studentAssignments') },
           { key: '/student/submissions', icon: <HistoryOutlined />, label: t('nav.studentMySubmissions') },
@@ -176,7 +180,11 @@ export function AppLayout() {
                 fontWeight: 500,
               }}
             >
-              {identity.role === 'LECTURER' ? t('auth.lecturer') : t('auth.student')}
+              {identity.role === 'LECTURER'
+                ? t('auth.lecturer')
+                : identity.role === 'ADMIN'
+                  ? t('auth.admin')
+                  : t('auth.student')}
             </Tag>
 
             <Dropdown

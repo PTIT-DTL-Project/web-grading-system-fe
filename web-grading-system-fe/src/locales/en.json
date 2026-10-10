@@ -35,7 +35,8 @@
     "expandSidebar": "Expand sidebar",
     "back": "Back",
     "studentAssignments": "Assignments",
-    "studentMySubmissions": "My submissions"
+    "studentMySubmissions": "My submissions",
+    "adminUsers": "User import"
   },
   "classes": {
     "title": "Classes",
@@ -234,7 +235,8 @@
     "emptyHint": "Import students from CSV to get started",
     "loadFailed": "Could not load students",
     "downloadTemplate": "Download sample CSV",
-    "importInvalidFile": "Please choose a CSV file"
+    "importInvalidFile": "Please choose a CSV file",
+    "emptyRosterHint": "No classmates enrolled yet"
   },
   "components": {
     "title": "Score components",
@@ -330,6 +332,7 @@
     "changePasswordSuccess": "Password changed successfully.",
     "lecturer": "Lecturer",
     "student": "Student",
+    "admin": "Administrator",
     "invalidField": "Invalid field"
   },
   "errors": {
@@ -384,6 +387,31 @@
     "viewResult": "View result",
     "submit": "Submit",
     "failed": "Submission failed"
+  },
+  "admin": {
+    "title": "Bulk user import",
+    "hint": "Upload a CSV of accounts. Each new account gets its username as the initial password and must change it on first sign-in.",
+    "import": "Import users",
+    "downloadTemplate": "Download sample CSV",
+    "createdStudents": "Students created",
+    "createdLecturers": "Lecturers created",
+    "skipped": "Skipped (already exist)",
+    "failedTitle": "Rows that need attention",
+    "colRow": "Row",
+    "colUsername": "Username",
+    "colRole": "Role",
+    "colReason": "Reason",
+    "reasonDuplicateUsername": "Username already exists",
+    "reasonDuplicateEmail": "Email already exists",
+    "reasonUnknownRole": "Unknown role (use STUDENT or LECTURER)",
+    "reasonNotEnoughColumns": "Row needs username, full name and email",
+    "reasonBlankUsernameOrEmail": "Username or email is blank",
+    "reasonInvalidInput": "Keycloak rejected the row",
+    "reasonWeakPassword": "Initial password rejected by policy",
+    "reasonProviderError": "Identity provider error, retry later",
+    "reasonRoleNotAssigned": "Created but role not assigned — assign manually",
+    "fileTooLarge": "File is too large (max 2 MB)",
+    "tooManyRows": "Too many rows (max 2000)"
   },
   "submission": {
     "title": "Submission history",

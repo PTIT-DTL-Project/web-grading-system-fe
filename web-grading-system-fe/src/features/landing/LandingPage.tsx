@@ -31,7 +31,13 @@ export function LandingPage() {
   }, [navigate])
 
   const handleEnterClasses = useCallback(() => {
-    navigate(identity?.role === 'STUDENT' ? '/student/classes' : '/classes')
+    navigate(
+      identity?.role === 'STUDENT'
+        ? '/student/classes'
+        : identity?.role === 'ADMIN'
+          ? '/admin/users'
+          : '/classes',
+    )
   }, [identity?.role, navigate])
 
   if (identity) {
@@ -46,11 +52,19 @@ export function LandingPage() {
             {t('landing.welcome', { name: identity.email || identity.userId })}
           </Typography.Title>
           <Typography.Title level={5} type="secondary" style={{ marginBottom: 32, fontWeight: 400 }}>
-            {identity.role === 'LECTURER' ? t('auth.lecturer') : t('auth.student')}
+            {identity.role === 'LECTURER'
+              ? t('auth.lecturer')
+              : identity.role === 'ADMIN'
+                ? t('auth.admin')
+                : t('auth.student')}
           </Typography.Title>
           <Space size={16}>
             <Button type="primary" size="large" onClick={handleEnterClasses} style={{ minWidth: 200 }}>
-              {identity.role === 'STUDENT' ? t('landing.myClasses') : t('landing.enterClasses')}
+              {identity.role === 'STUDENT'
+                ? t('landing.myClasses')
+                : identity.role === 'ADMIN'
+                  ? t('nav.adminUsers')
+                  : t('landing.enterClasses')}
             </Button>
             <Button size="large" icon={<LogoutOutlined />} onClick={handleLogout}>
               {t('landing.logout')}
