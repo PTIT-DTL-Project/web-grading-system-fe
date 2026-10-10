@@ -4,6 +4,8 @@ import { Table, Tag, Spin, Empty, Typography, Button, Space } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { useResults } from './useResults'
+import { useTestPlans } from './useTestPlans'
+import { ResultScopeBadge } from '../../shared/ui/ResultScopeBadge'
 import { useParams } from 'react-router'
 import { useApiErrorMessage } from '../../shared/api/errors'
 import type { AssignmentResultStepResponse, StudentResultResponse } from '../../shared/types/assignment'
@@ -14,6 +16,8 @@ export function AssignmentResultsPage() {
   const { t } = useTranslation()
   const toMessage = useApiErrorMessage()
   const { data, isLoading, isFetching, isError, error, refetch } = useResults(assignmentId ?? '', true)
+  const { plans } = useTestPlans(assignmentId ?? '')
+  const planName = (planId: string | null) => plans.find((p) => p.id === planId)?.name ?? null
 
   return (
     <div>
@@ -62,7 +66,13 @@ export function AssignmentResultsPage() {
                     title: t('assignment.plan'),
                     dataIndex: 'planId',
                     key: 'planId',
-                    render: (v: string) => v.slice(0, 8),
+                    // Review: 2026-10-10 — course-service rows carry no scope
+                    // field yet, so FULL vs question derives from planId null
+                    // (matches the backfilled backend convention); null-safe,
+                    // the old v.slice(0, 8) crashed on whole-run rows.
+                    render: (v: string | null) => (
+                      <ResultScopeBadge scope={v === null ? 'FULL' : 'PLAN'} planName={planName(v)} />
+                    ),
                   },
                   {
                     title: t('assignment.score'),

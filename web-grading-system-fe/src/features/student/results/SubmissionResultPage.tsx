@@ -23,6 +23,9 @@ import {
 import type { TableColumnsType } from 'antd'
 import { useSubmissionResult } from './useSubmissionResult'
 import { AssignmentTitle } from '../submissions/AssignmentTitle'
+import { ResultScopeBadge } from '../../../shared/ui/ResultScopeBadge'
+import { useQuery } from '@tanstack/react-query'
+import { getAssignmentPlans } from '../../../shared/api/endpoints/studentAssignments'
 import { useApiErrorMessage } from '../../../shared/api/errors'
 import { colors } from '../../../shared/theme/tokens'
 import type { ResultResponse, StepResultResponse } from '../../../shared/types/result'
@@ -33,6 +36,14 @@ export function SubmissionResultPage() {
   const navigate = useNavigate()
   const toMessage = useApiErrorMessage()
   const { results, loading, error, isReady, timedOut, retry } = useSubmissionResult(submissionId ?? '')
+  const assignmentId = results[0]?.assignmentId
+  const { data: plans } = useQuery({
+    queryKey: ['student-assignment-plans', assignmentId],
+    queryFn: () => getAssignmentPlans(assignmentId ?? ''),
+    enabled: !!assignmentId,
+    staleTime: 10 * 60 * 1000,
+  })
+  const planName = (planId: string | null) => plans?.find((p) => p.id === planId)?.name ?? null
 
   if (loading && !isReady) {
     return (
@@ -199,6 +210,7 @@ export function SubmissionResultPage() {
           title={
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span>{t('result.plan')}</span>
+              <ResultScopeBadge scope={result.scope} planName={planName(result.planId)} />
               <Tag color={colors.info}>
                 {t('assignments.planWeight', { weight: result.planWeight })}
               </Tag>

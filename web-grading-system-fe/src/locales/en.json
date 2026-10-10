@@ -449,6 +449,8 @@
     "durationMs": "Duration (ms)",
     "backToSubmissions": "Back to history",
     "totalScore": "Total: {{score}}/{{max}}",
+    "scopeFull": "Full assignment",
+    "scopePlan": "Question: {{name}}",
     "statusPASS": "PASS",
     "statusFAIL": "FAIL"
   }

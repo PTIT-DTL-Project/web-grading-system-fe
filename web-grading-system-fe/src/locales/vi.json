@@ -449,6 +449,8 @@
     "durationMs": "Thời gian (ms)",
     "backToSubmissions": "Quay lại lịch sử",
     "totalScore": "Tổng điểm: {{score}}/{{max}}",
+    "scopeFull": "Toàn bài",
+    "scopePlan": "Câu: {{name}}",
     "statusPASS": "PASS",
     "statusFAIL": "FAIL"
   }
