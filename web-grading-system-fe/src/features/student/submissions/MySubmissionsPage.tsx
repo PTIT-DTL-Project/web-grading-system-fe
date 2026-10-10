@@ -6,6 +6,7 @@ import { EyeOutlined } from '@ant-design/icons'
 import { ListPage } from '../../../shared/ui/ListPage'
 import { listMySubmissions } from '../../../shared/api/endpoints/submissions'
 import { AssignmentTitle } from './AssignmentTitle'
+import { SubmissionScopeCell } from './SubmissionScopeCell'
 import { formatDateTime } from '../../../shared/format/formatDateTime'
 import type { SubmissionResponse, SubmissionStatus } from '../../../shared/types/submission'
 import { colors } from '../../../shared/theme/tokens'
@@ -38,6 +39,14 @@ export function MySubmissionsPage() {
       render: (id: string) => <AssignmentTitle assignmentId={id} />,
     },
     { title: t('submission.fileName'), dataIndex: 'zipFileName', key: 'zipFileName' },
+    {
+      title: t('submission.scope'),
+      key: 'scope',
+      width: 170,
+      render: (_, record) => (
+        <SubmissionScopeCell assignmentId={record.assignmentId} planId={record.planId} />
+      ),
+    },
     {
       title: t('submission.status'),
       dataIndex: 'status',

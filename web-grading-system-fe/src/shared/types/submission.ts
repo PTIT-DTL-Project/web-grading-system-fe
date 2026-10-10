@@ -27,4 +27,6 @@ export interface SubmissionResponse {
   status: SubmissionStatus
   latest: boolean
   createdAt: string | null
+  /** Null = whole-assignment submission; set when one plan was picked. */
+  planId: string | null
 }
