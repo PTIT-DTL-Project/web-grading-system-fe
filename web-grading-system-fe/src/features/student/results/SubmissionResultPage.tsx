@@ -107,7 +107,12 @@ export function SubmissionResultPage() {
       dataIndex: 'passed',
       key: 'passed',
       width: 90,
-      render: (passed: boolean) => {
+      // Review: 2026-10-10 — skipped steps (cascaded after a required-step
+      // failure) are neither pass nor fail; show them neutrally.
+      render: (passed: boolean, r: StepResultResponse) => {
+        if (r.skipped) {
+          return <Tag>{t('result.skipped')}</Tag>
+        }
         if (passed) {
           return <CheckCircleOutlined style={{ color: colors.success, fontSize: 18 }} />
         }

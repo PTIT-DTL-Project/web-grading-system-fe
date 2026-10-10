@@ -281,6 +281,7 @@
     "total": "Total",
     "letterGrade": "Grade",
     "gpa": "GPA",
+    "exerciseHighestHint": "Exercise score takes the best attempt of each question.",
     "action": "Action",
     "enterScores": "Enter scores",
     "totalStudents": "Total students: {{total}}"
@@ -443,6 +444,7 @@
     "stepName": "Step name",
     "stepType": "Type",
     "passed": "Passed",
+    "skipped": "Skipped",
     "errorMessage": "Error",
     "durationMs": "Duration (ms)",
     "backToSubmissions": "Back to history",
