@@ -7,6 +7,7 @@ export interface StepResultResponse {
   stepName: string
   stepType: string
   passed: boolean
+  skipped: boolean
   weight: number
   score: number
   actualValue: string | null
@@ -23,6 +24,8 @@ export interface ResultResponse {
   studentId: string
   planId: string
   planWeight: number
+  /** FULL = whole-assignment run, PLAN = single-plan run. */
+  scope: 'FULL' | 'PLAN' | null
   score: number
   maxScore: number
   status: string

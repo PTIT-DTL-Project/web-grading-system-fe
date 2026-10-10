@@ -100,6 +100,10 @@ export function StudentScoresTab({ classId }: StudentScoresTabProps) {
         pagination={false}
         size="middle"
       />
+      {/* Review: 2026-10-10 — max-per-plan policy. */}
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {t('transcript.exerciseHighestHint')}
+      </Typography.Text>
     </Space>
   )
 }

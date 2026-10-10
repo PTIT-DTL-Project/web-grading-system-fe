@@ -281,6 +281,7 @@
     "total": "Tổng điểm",
     "letterGrade": "Xếp loại",
     "gpa": "GPA",
+    "exerciseHighestHint": "Điểm bài tập lấy lần cao nhất của mỗi câu.",
     "action": "Thao tác",
     "enterScores": "Nhập điểm",
     "totalStudents": "Tổng số sinh viên: {{total}}"
@@ -443,10 +444,13 @@
     "stepName": "Tên bước",
     "stepType": "Loại",
     "passed": "Đạt",
+    "skipped": "Bỏ qua",
     "errorMessage": "Lỗi",
     "durationMs": "Thời gian (ms)",
     "backToSubmissions": "Quay lại lịch sử",
     "totalScore": "Tổng điểm: {{score}}/{{max}}",
+    "scopeFull": "Toàn bài",
+    "scopePlan": "Câu: {{name}}",
     "statusPASS": "PASS",
     "statusFAIL": "FAIL"
   }
