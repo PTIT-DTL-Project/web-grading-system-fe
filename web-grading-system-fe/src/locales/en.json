@@ -81,8 +81,10 @@
   "assignment": {
     "title": "Assignments",
     "create": "Add assignment",
+    "edit": "Edit assignment",
     "publish": "Publish",
     "created": "Assignment created",
+    "updated": "Assignment updated",
     "deleted": "Assignment deleted",
     "published": "Assignment published",
     "empty": "No assignments yet",
@@ -121,12 +123,14 @@
       "startupTimeout": "Startup Timeout (ms)",
       "executionTimeout": "Execution Timeout (ms)",
       "maxMemory": "Max Memory (MB)",
-      "maxCpu": "Max CPU"
+      "maxCpu": "Max CPU",
+      "strategyChangeWarning": "Already-graded results keep the previous strategy. New submissions use the new one."
     }
   },
   "plan": {
     "title": "Test cases",
     "create": "Add test case",
+    "edit": "Edit test case",
     "empty": "No test cases yet"
   },
   "step": {

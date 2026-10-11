@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { App, Space, Typography, Tag, Button, Popconfirm } from 'antd'
+import { App, Space, Typography, Tag, Button, Popconfirm, Modal, Form, Input } from 'antd'
 import { useTranslation } from 'react-i18next'
 import type { TestPlan, TestStep } from '../../shared/types/assignment'
 import { StepEditor } from './StepEditor'
@@ -16,9 +16,10 @@ interface PlanCardProps {
   assignmentId: string
   archived?: boolean
   onDelete: (planId: string) => void
+  onRename: (planId: string, body: { name: string; description?: string }) => Promise<unknown>
 }
 
-export function PlanCard({ plan, assignmentId, archived = false, onDelete }: PlanCardProps) {
+export function PlanCard({ plan, assignmentId, archived = false, onDelete, onRename }: PlanCardProps) {
   const { t } = useTranslation()
   const { message } = App.useApp()
   const toMessage = useApiErrorMessage()
@@ -27,6 +28,9 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete }: Pla
   const [stepEditorOpen, setStepEditorOpen] = useState(false)
   const [editingStep, setEditingStep] = useState<TestStep | null>(null)
   const [savingStep, setSavingStep] = useState(false)
+  const [renameOpen, setRenameOpen] = useState(false)
+  const [renaming, setRenaming] = useState(false)
+  const [renameForm] = Form.useForm()
   const {
     steps,
     loading: stepsLoading,
@@ -116,6 +120,18 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete }: Pla
     setStepEditorOpen(true)
   }
 
+  const handleRename = async (values: { name: string; description?: string }) => {
+    setRenaming(true)
+    try {
+      await onRename(plan.id, values)
+      setRenameOpen(false)
+    } catch (err: unknown) {
+      message.error(toMessage(err))
+    } finally {
+      setRenaming(false)
+    }
+  }
+
   const openEdit = (step: TestStep) => {
     setEditingStep(step)
     setExpanded(true)
@@ -141,6 +157,17 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete }: Pla
           <Button type="link" size="small" disabled={archived} onClick={openCreate}>
             {t('step.create')}
           </Button>
+          <Button
+            type="link"
+            size="small"
+            disabled={archived}
+            onClick={() => {
+              renameForm.setFieldsValue({ name: plan.name, description: plan.description })
+              setRenameOpen(true)
+            }}
+          >
+            {t('common.edit')}
+          </Button>
           <Popconfirm title={t('common.delete')} onConfirm={() => onDelete(plan.id)}>
             <Button type="link" danger size="small" disabled={archived}>
               {t('common.delete')}
@@ -148,6 +175,27 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete }: Pla
           </Popconfirm>
         </Space>
       </div>
+      <Modal
+        open={renameOpen}
+        title={t('plan.edit')}
+        footer={null}
+        onCancel={() => { setRenameOpen(false); renameForm.resetFields() }}
+        destroyOnHidden
+      >
+        <Form form={renameForm} layout="vertical" onFinish={handleRename} style={{ marginTop: 16 }}>
+          <Form.Item name="name" label={t('plan.title')} rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="description" label={t('assignment.description')}>
+            <Input.TextArea />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={renaming}>
+              {t('common.save')}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
       {plan.description && (
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>{plan.description}</Typography.Text>
       )}
