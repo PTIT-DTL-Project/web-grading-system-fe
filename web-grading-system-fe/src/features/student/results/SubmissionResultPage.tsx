@@ -30,6 +30,59 @@ import { useApiErrorMessage } from '../../../shared/api/errors'
 import { colors } from '../../../shared/theme/tokens'
 import type { ResultResponse, StepResultResponse } from '../../../shared/types/result'
 
+// Review: 2026-10-10, phase A0 verbose logs — evidence the backend already
+// sends (actual/expected/error) rendered on demand; one expanded row at a time
+// so long bodies never wreck the table layout.
+function StepEvidence({ step }: { step: StepResultResponse }) {
+  const { t } = useTranslation()
+  return (
+    <Space direction="vertical" style={{ width: '100%' }} size={8}>
+      {step.actualValue ? (
+        <div>
+          <Typography.Text strong style={{ fontSize: 12 }}>
+            {t('result.actualValue')}
+          </Typography.Text>
+          <Typography.Paragraph
+            code
+            copyable
+            style={{ fontSize: 12, whiteSpace: 'pre-wrap', margin: '4px 0 0' }}
+          >
+            {step.actualValue}
+          </Typography.Paragraph>
+        </div>
+      ) : null}
+      {step.expectedValue ? (
+        <div>
+          <Typography.Text strong style={{ fontSize: 12 }}>
+            {t('result.expectedValue')}
+          </Typography.Text>
+          <Typography.Paragraph
+            code
+            copyable
+            style={{ fontSize: 12, whiteSpace: 'pre-wrap', margin: '4px 0 0' }}
+          >
+            {step.expectedValue}
+          </Typography.Paragraph>
+        </div>
+      ) : null}
+      {step.errorMessage ? (
+        <div>
+          <Typography.Text strong style={{ fontSize: 12 }}>
+            {t('result.errorMessage')}
+          </Typography.Text>
+          <Typography.Paragraph
+            type="danger"
+            copyable
+            style={{ fontSize: 12, whiteSpace: 'pre-wrap', margin: '4px 0 0' }}
+          >
+            {step.errorMessage}
+          </Typography.Paragraph>
+        </div>
+      ) : null}
+    </Space>
+  )
+}
+
 export function SubmissionResultPage() {
   const { t } = useTranslation()
   const { submissionId } = useParams<{ submissionId: string }>()
@@ -240,6 +293,11 @@ export function SubmissionResultPage() {
             dataSource={result.steps}
             pagination={false}
             size="small"
+            expandable={{
+              expandedRowRender: (step) => <StepEvidence step={step} />,
+              rowExpandable: (step) =>
+                !!(step.actualValue || step.expectedValue || step.errorMessage),
+            }}
           />
         </Card>
       ))}
