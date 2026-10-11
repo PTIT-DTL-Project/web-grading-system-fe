@@ -6,11 +6,12 @@ import { Table, Button, Space, Popconfirm, message, Tag } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useAssignments } from '../../assignments/useAssignments'
 import { CreateAssignmentModal } from '../../assignments/CreateAssignmentModal'
+import { EditAssignmentModal } from '../../assignments/EditAssignmentModal'
 import { TestPlanEditor } from '../../assignments/TestPlanEditor'
 import { useApiErrorMessage } from '../../../shared/api/errors'
 import { standardPagination } from '../../../shared/ui/StandardPagination'
 import { colors } from '../../../shared/theme/tokens'
-import type { AssignmentResponse } from '../../../shared/types/assignment'
+import type { AssignmentResponse, UpdateAssignmentRequest } from '../../../shared/types/assignment'
 
 interface AssignmentTabProps {
   classId: string
@@ -26,9 +27,11 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
   const toMessage = useApiErrorMessage()
   const [page, setPage] = useState(0)
   // Review: 2026-10-05, Pullfrog — refresh classroom-wide mutations into this tab instead of leaving it stale.
-  const { data, loading, error, refetch, create, remove, publish } = useAssignments(classId, refreshToken, page)
+  const { data, loading, error, refetch, create, update, remove, publish } = useAssignments(classId, refreshToken, page)
   const [modalOpen, setModalOpen] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<AssignmentResponse | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const handleCreate = async (values: {
     title: string
@@ -62,6 +65,22 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
       onSaved?.()
     } catch (err: unknown) {
       message.error(toMessage(err))
+    }
+  }
+
+  const handleSaveEdit = async (req: UpdateAssignmentRequest) => {
+    if (!editing) return
+    setSaving(true)
+    try {
+      await update(editing.id, req)
+      message.success(t('assignment.updated'))
+      setEditing(null)
+      onSaved?.()
+    } catch (err: unknown) {
+      message.error(toMessage(err))
+      throw err
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -141,6 +160,9 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
               {t('common.delete')}
             </Button>
           </Popconfirm>
+          <Button type="link" size="small" disabled={archived} onClick={() => setEditing(record)}>
+            {t('common.edit')}
+          </Button>
         </Space>
       ),
     },
@@ -198,6 +220,17 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
         creating={creating}
         createFn={handleCreate}
       />
+      {editing && (
+        <EditAssignmentModal
+          key={editing.id}
+          open
+          record={editing}
+          onSaved={() => { setEditing(null); refetch() }}
+          onCancel={() => setEditing(null)}
+          saving={saving}
+          saveFn={handleSaveEdit}
+        />
+      )}
     </Space>
   )
 }

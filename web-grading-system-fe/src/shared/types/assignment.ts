@@ -144,6 +144,10 @@ export interface SubmissionResponse {
   status: string
   latest: boolean | null
   createdAt: string | null
+  /** Roster code/name enriched by course-service; nulls when the student left the roster.
+   * Absent entirely until the mirror backend deploys (Pullfrog contract check). */
+  studentCode?: string | null
+  studentName?: string | null
 }
 
 export interface DockerImageResponse {
@@ -171,6 +175,7 @@ export interface CreateAssignmentRequest {
 export interface UpdateAssignmentRequest {
   title?: string
   description?: string
+  gradingStrategy?: GradingStrategy
   dockerComposeTemplate?: string
   dockerComposePort?: number
   startupTimeoutMs?: number

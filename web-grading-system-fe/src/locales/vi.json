@@ -81,8 +81,10 @@
   "assignment": {
     "title": "Bài tập",
     "create": "Thêm bài tập",
+    "edit": "Sửa bài tập",
     "publish": "Công bố",
     "created": "Đã tạo bài tập",
+    "updated": "Đã cập nhật bài tập",
     "deleted": "Đã xóa bài tập",
     "published": "Đã công bố",
     "empty": "Chưa có bài tập nào",
@@ -121,12 +123,14 @@
       "startupTimeout": "Timeout khởi động (ms)",
       "executionTimeout": "Timeout thực thi (ms)",
       "maxMemory": "Bộ nhớ tối đa (MB)",
-      "maxCpu": "CPU tối đa"
+      "maxCpu": "CPU tối đa",
+      "strategyChangeWarning": "Kết quả đã chấm giữ chiến lược cũ. Bài nộp mới dùng chiến lược mới."
     }
   },
   "plan": {
     "title": "Câu kiểm tra",
     "create": "Thêm câu kiểm tra",
+    "edit": "Sửa câu kiểm tra",
     "empty": "Chưa có câu kiểm tra nào"
   },
   "step": {

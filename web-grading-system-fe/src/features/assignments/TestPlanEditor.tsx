@@ -13,7 +13,7 @@ interface TestPlanEditorProps {
 export function TestPlanEditor({ assignmentId, archived = false }: TestPlanEditorProps) {
   const { t } = useTranslation()
   const toMessage = useApiErrorMessage()
-  const { plans, loading, error, remove, create } = useTestPlans(assignmentId)
+  const { plans, loading, error, remove, create, update } = useTestPlans(assignmentId)
   const [modalOpen, setModalOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [form] = Form.useForm()
@@ -58,6 +58,7 @@ export function TestPlanEditor({ assignmentId, archived = false }: TestPlanEdito
           assignmentId={assignmentId}
           archived={archived}
           onDelete={(planId) => remove(planId)}
+          onRename={(planId, body) => update(planId, body)}
         />
       ))}
 
