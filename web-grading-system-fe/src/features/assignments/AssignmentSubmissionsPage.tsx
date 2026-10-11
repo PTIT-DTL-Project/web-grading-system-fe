@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { useSubmissions } from './useSubmissions'
 import { useApiErrorMessage } from '../../shared/api/errors'
+import type { SubmissionResponse } from '../../shared/types/assignment'
 import { formatDateTime } from '../../shared/format/formatDateTime'
 
 export function AssignmentSubmissionsPage() {
@@ -35,9 +36,19 @@ export function AssignmentSubmissionsPage() {
           columns={[
             {
               title: t('assignment.student'),
-              dataIndex: 'studentId',
-              key: 'studentId',
-              render: (v: string) => v.slice(0, 8),
+              key: 'student',
+              // Review: 2026-10-10 — code/name enriched by course-service;
+              // departed students keep nulls, fall back to the raw id slice.
+              render: (_: unknown, r: SubmissionResponse) => (
+                r.studentCode || r.studentName ? (
+                  <div>
+                    <div>{r.studentCode ?? '—'}</div>
+                    <Typography.Text type="secondary">{r.studentName ?? ''}</Typography.Text>
+                  </div>
+                ) : (
+                  <Typography.Text type="secondary">{r.studentId.slice(0, 8)}</Typography.Text>
+                )
+              ),
             },
             {
               title: t('assignment.file'),
