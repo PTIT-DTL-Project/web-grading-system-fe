@@ -450,6 +450,8 @@
     "stepType": "Type",
     "passed": "Passed",
     "skipped": "Skipped",
+    "actualValue": "Actual",
+    "expectedValue": "Expected",
     "errorMessage": "Error",
     "durationMs": "Duration (ms)",
     "backToSubmissions": "Back to history",

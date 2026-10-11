@@ -450,6 +450,8 @@
     "stepType": "Loại",
     "passed": "Đạt",
     "skipped": "Bỏ qua",
+    "actualValue": "Thực tế",
+    "expectedValue": "Kỳ vọng",
     "errorMessage": "Lỗi",
     "durationMs": "Thời gian (ms)",
     "backToSubmissions": "Quay lại lịch sử",
