@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router'
+import { useState, type Key } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Button,
@@ -89,6 +90,9 @@ export function SubmissionResultPage() {
   const navigate = useNavigate()
   const toMessage = useApiErrorMessage()
   const { results, loading, error, isReady, timedOut, retry } = useSubmissionResult(submissionId ?? '')
+  // Review: 2026-10-10, Pullfrog — single-expand accordion so the "one expanded
+  // row at a time" layout claim holds on long step tables.
+  const [expandedKeys, setExpandedKeys] = useState<Key[]>([])
   const assignmentId = results[0]?.assignmentId
   const { data: plans } = useQuery({
     queryKey: ['student-assignment-plans', assignmentId],
@@ -297,6 +301,8 @@ export function SubmissionResultPage() {
               expandedRowRender: (step) => <StepEvidence step={step} />,
               rowExpandable: (step) =>
                 !!(step.actualValue || step.expectedValue || step.errorMessage),
+              expandedRowKeys: expandedKeys,
+              onExpandedRowsChange: (keys) => setExpandedKeys(keys.slice(-1)),
             }}
           />
         </Card>

@@ -450,7 +450,7 @@
     "stepType": "Loại",
     "passed": "Đạt",
     "skipped": "Bỏ qua",
-    "actualValue": "Body server trả về",
+    "actualValue": "Thực tế",
     "expectedValue": "Kỳ vọng",
     "errorMessage": "Lỗi",
     "durationMs": "Thời gian (ms)",

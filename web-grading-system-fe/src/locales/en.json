@@ -450,7 +450,7 @@
     "stepType": "Type",
     "passed": "Passed",
     "skipped": "Skipped",
-    "actualValue": "Response body",
+    "actualValue": "Actual",
     "expectedValue": "Expected",
     "errorMessage": "Error",
     "durationMs": "Duration (ms)",
