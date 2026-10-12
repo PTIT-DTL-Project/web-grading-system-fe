@@ -14,6 +14,12 @@ export interface StepResultResponse {
   expectedValue: string | null
   errorMessage: string | null
   durationMs: number | null
+  /** Phase A2 verbose evidence; null = not captured (historical rows). */
+  assertionDetails: string | null
+  extractedVars: string | null
+  requestUrl: string | null
+  requestBody: string | null
+  responseStatus: number | null
 }
 
 /** result-service ResultResponse — GET /api/v1/results/{submissionId} */
