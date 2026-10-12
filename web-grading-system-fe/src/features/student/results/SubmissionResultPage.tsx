@@ -124,13 +124,25 @@ function StepEvidence({ step }: { step: StepResultResponse }) {
                 title: t('result.expectedValue'),
                 dataIndex: 'expected',
                 key: 'expected',
-                render: (v: unknown) => (v === null || v === undefined ? '—' : String(v)),
+                // Review: 2026-10-11, Pullfrog — body_equals/structure store
+                // Gson JsonElements, which String() renders as [object Object].
+                render: (v: unknown) =>
+                  v === null || v === undefined
+                    ? '—'
+                    : typeof v === 'object'
+                      ? JSON.stringify(v)
+                      : String(v),
               },
               {
                 title: t('result.actualValue'),
                 dataIndex: 'actual',
                 key: 'actual',
-                render: (v: unknown) => (v === null || v === undefined ? '—' : String(v)),
+                render: (v: unknown) =>
+                  v === null || v === undefined
+                    ? '—'
+                    : typeof v === 'object'
+                      ? JSON.stringify(v)
+                      : String(v),
               },
               {
                 title: t('result.passed'),
@@ -416,8 +428,13 @@ export function SubmissionResultPage() {
             size="small"
             expandable={{
               expandedRowRender: (step) => <StepEvidence step={step} />,
+              // Review: 2026-10-11, Pullfrog — every evidence field gates
+              // expansion (a 204/empty body with request details must open);
+              // undefined pre-BE-#42 stays falsy so nothing changes early.
               rowExpandable: (step) =>
-                !!(step.actualValue || step.expectedValue || step.errorMessage),
+                !!(step.actualValue || step.expectedValue || step.errorMessage ||
+                   step.assertionDetails || step.extractedVars || step.requestUrl ||
+                   step.requestBody || step.responseStatus != null),
               expandedRowKeys: expandedKeys,
               onExpandedRowsChange: (keys) => setExpandedKeys(keys.slice(-1)),
             }}
