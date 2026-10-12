@@ -37,13 +37,14 @@ interface StepEditorProps {
   availableVariables?: string[]
 }
 
+// Creation dropdown options. Standalone EXTRACT/DELAY are rejected at
+// validation (no executor) — Review 2026-10-11, phase A3. Legacy rows still
+// render via the StepType union + warning banner below.
 const STEP_TYPES: StepType[] = [
   'HTTP_REQUEST',
   'DB_QUERY',
   'DB_SCHEMA_CHECK',
   'DB_MIGRATION',
-  'EXTRACT',
-  'DELAY',
 ]
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']

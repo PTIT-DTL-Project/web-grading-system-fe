@@ -34,8 +34,39 @@ import type { ResultResponse, StepResultResponse } from '../../../shared/types/r
 // Review: 2026-10-10, phase A0 verbose logs — evidence the backend already
 // sends (actual/expected/error) rendered on demand; one expanded row at a time
 // so long bodies never wreck the table layout.
+interface AssertionDetail {
+  kind?: string
+  expected?: string | number | boolean | null
+  actual?: string | number | boolean | null
+  passed?: boolean
+  message?: string
+}
+
+function parseAssertions(raw: string | null): AssertionDetail[] | null {
+  if (!raw) return null
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return null
+    return parsed.filter(
+      (e): e is AssertionDetail => !!e && typeof e === 'object' && !Array.isArray(e),
+    )
+  } catch {
+    return null
+  }
+}
+
+function prettyJson(raw: string): string {
+  try {
+    return JSON.stringify(JSON.parse(raw), null, 2)
+  } catch {
+    return raw
+  }
+}
+
 function StepEvidence({ step }: { step: StepResultResponse }) {
   const { t } = useTranslation()
+  const assertions = parseAssertions(step.assertionDetails)
+  const shownAssertions = assertions ? assertions.slice(0, 20) : null
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={8}>
       {step.actualValue ? (
@@ -77,6 +108,92 @@ function StepEvidence({ step }: { step: StepResultResponse }) {
             style={{ fontSize: 12, whiteSpace: 'pre-wrap', margin: '4px 0 0' }}
           >
             {step.errorMessage}
+          </Typography.Paragraph>
+        </div>
+      ) : null}
+      {shownAssertions && shownAssertions.length > 0 ? (
+        <div>
+          <Typography.Text strong style={{ fontSize: 12 }}>
+            {t('result.assertions')}
+          </Typography.Text>
+          <Table
+            rowKey={(_, index) => String(index)}
+            columns={[
+              { title: t('result.assertionKind'), dataIndex: 'kind', key: 'kind', width: 130 },
+              {
+                title: t('result.expectedValue'),
+                dataIndex: 'expected',
+                key: 'expected',
+                render: (v: unknown) => (v === null || v === undefined ? '—' : String(v)),
+              },
+              {
+                title: t('result.actualValue'),
+                dataIndex: 'actual',
+                key: 'actual',
+                render: (v: unknown) => (v === null || v === undefined ? '—' : String(v)),
+              },
+              {
+                title: t('result.passed'),
+                dataIndex: 'passed',
+                key: 'passed',
+                width: 70,
+                render: (v: boolean) =>
+                  v ? (
+                    <CheckCircleOutlined style={{ color: colors.success, fontSize: 16 }} />
+                  ) : (
+                    <CloseCircleOutlined style={{ color: colors.error, fontSize: 16 }} />
+                  ),
+              },
+            ]}
+            dataSource={shownAssertions}
+            pagination={false}
+            size="small"
+            style={{ marginTop: 4 }}
+          />
+          {assertions && assertions.length > shownAssertions.length ? (
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              {t('result.andMore', { count: assertions.length - shownAssertions.length })}
+            </Typography.Text>
+          ) : null}
+        </div>
+      ) : null}
+      {step.requestUrl || step.requestBody ? (
+        <div>
+          <Typography.Text strong style={{ fontSize: 12 }}>
+            {t('result.request')}
+          </Typography.Text>
+          {step.requestUrl ? (
+            <Typography.Paragraph
+              code
+              copyable
+              style={{ fontSize: 12, margin: '4px 0 0' }}
+            >
+              {step.requestUrl}
+            </Typography.Paragraph>
+          ) : null}
+          {step.requestBody ? (
+            <Typography.Paragraph
+              code
+              copyable
+              ellipsis={{ rows: 6, expandable: true, symbol: t('result.showMore') }}
+              style={{ fontSize: 12, whiteSpace: 'pre-wrap', margin: '4px 0 0' }}
+            >
+              {step.requestBody}
+            </Typography.Paragraph>
+          ) : null}
+        </div>
+      ) : null}
+      {step.extractedVars ? (
+        <div>
+          <Typography.Text strong style={{ fontSize: 12 }}>
+            {t('result.extractVars')}
+          </Typography.Text>
+          <Typography.Paragraph
+            code
+            copyable
+            style={{ fontSize: 12, whiteSpace: 'pre-wrap', margin: '4px 0 0' }}
+          >
+            {prettyJson(step.extractedVars)}
           </Typography.Paragraph>
         </div>
       ) : null}
