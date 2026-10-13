@@ -3,12 +3,14 @@
 import { Table, Tag, Spin, Empty, Typography, Button, Space } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { useResults } from './useResults'
 import { useTestPlans } from './useTestPlans'
 import { ResultScopeBadge } from '../../shared/ui/ResultScopeBadge'
+import { LecturerStepEvidence } from './LecturerStepEvidence'
 import { useParams } from 'react-router'
 import { useApiErrorMessage } from '../../shared/api/errors'
-import type { AssignmentResultStepResponse, StudentResultResponse } from '../../shared/types/assignment'
+import type { AssignmentResultResponse, AssignmentResultStepResponse, StudentResultResponse } from '../../shared/types/assignment'
 
 export function AssignmentResultsPage() {
   const { assignmentId } = useParams<{ assignmentId: string }>()
@@ -18,6 +20,64 @@ export function AssignmentResultsPage() {
   const { data, isLoading, isFetching, isError, error, refetch } = useResults(assignmentId ?? '', true)
   const { plans } = useTestPlans(assignmentId ?? '')
   const planName = (planId: string | null) => plans.find((p) => p.id === planId)?.name ?? null
+  // Deep-link from the submissions table (?student=<userId>): narrow to that
+  // student and expand their row on mount. Unknown ids simply match nothing.
+  const [searchParams] = useSearchParams()
+  const focusedStudent = searchParams.get('student')
+  const visibleData = focusedStudent ? (data ?? []).filter((r) => r.studentUserId === focusedStudent) : (data ?? [])
+
+  const stepTable = (steps: AssignmentResultStepResponse[] | null | undefined) => (
+    <Table
+      dataSource={steps ?? []}
+      columns={[
+        { title: t('result.stepName'), dataIndex: 'stepName', key: 'stepName' },
+        { title: t('result.stepType'), dataIndex: 'stepType', key: 'stepType', width: 120 },
+        {
+          title: t('result.passed'),
+          dataIndex: 'passed',
+          key: 'passed',
+          width: 90,
+          // Review: 2026-10-05, Pullfrog — null means no verdict yet, not a failure.
+          render: (passed: boolean | null, s: AssignmentResultStepResponse) =>
+            s.skipped ? (
+              <Tag>{t('result.skipped')}</Tag>
+            ) : passed === null ? (
+              <Tag>{t('assignment.pending')}</Tag>
+            ) : passed ? (
+              <Tag color="green">{t('assignment.passed')}</Tag>
+            ) : (
+              <Tag color="red">{t('assignment.failed')}</Tag>
+            ),
+        },
+        {
+          title: t('result.score'),
+          key: 'score',
+          width: 100,
+          render: (_: unknown, s: AssignmentResultStepResponse) =>
+            s.score !== null && s.score !== undefined ? `${s.score}/${s.weight ?? '—'}` : '—',
+        },
+        {
+          title: t('result.durationMs'),
+          dataIndex: 'durationMs',
+          key: 'durationMs',
+          width: 120,
+          render: (v: number | null) => (v != null ? `${v} ms` : '—'),
+        },
+      ]}
+      rowKey="id"
+      pagination={false}
+      size="small"
+      expandable={{
+        expandedRowRender: (step: AssignmentResultStepResponse) => (
+          <LecturerStepEvidence step={step} />
+        ),
+        rowExpandable: (step) =>
+          !!(step.actualValue || step.expectedValue || step.errorMessage ||
+             step.assertionDetails || step.extractedVars || step.requestUrl ||
+             step.requestBody || step.responseStatus != null),
+      }}
+    />
+  )
 
   return (
     <div>
@@ -32,10 +92,10 @@ export function AssignmentResultsPage() {
       </div>
       {isLoading ? <Spin size="large" style={{ display: 'block', margin: '40px auto' }} /> : null}
       {isError ? <Typography.Text type="danger">{toMessage(error)}</Typography.Text> : null}
-      {!isLoading && !isError && !data?.length ? <Empty description={t('assignment.noResults')} /> : null}
-      {!isLoading && !isError && data?.length ? (
+      {!isLoading && !isError && !visibleData.length ? <Empty description={t('assignment.noResults')} /> : null}
+      {!isLoading && !isError && visibleData.length ? (
         <Table
-          dataSource={data}
+          dataSource={visibleData}
           columns={[
             {
               title: t('assignment.student'),
@@ -58,6 +118,7 @@ export function AssignmentResultsPage() {
           pagination={false}
           size="small"
           expandable={{
+            expandedRowKeys: focusedStudent ? [focusedStudent] : undefined,
             expandedRowRender: (record: StudentResultResponse) => (
               <Table
                 dataSource={record.results}
@@ -66,15 +127,11 @@ export function AssignmentResultsPage() {
                     title: t('assignment.plan'),
                     dataIndex: 'planId',
                     key: 'planId',
-                    // Review: 2026-10-10 — course-service rows carry no scope
-                    // field yet, so FULL vs question derives from planId null
-                    // (matches the backfilled backend convention); null-safe,
-                    // the old v.slice(0, 8) crashed on whole-run rows. Absent
-                    // (undefined, pre-mirror-field) reads as FULL like the
-                    // student history cell — explicit check, lint-clean.
-                    render: (v: string | null | undefined) => (
+                    // Real scope field when the mirror backend has deployed;
+                    // planId-null fallback before that (backfilled convention).
+                    render: (v: string | null | undefined, r: AssignmentResultResponse) => (
                       <ResultScopeBadge
-                        scope={v === null || v === undefined ? 'FULL' : 'PLAN'}
+                        scope={r.scope ?? (v === null || v === undefined ? 'FULL' : 'PLAN')}
                         planName={planName(v ?? null)}
                       />
                     ),
@@ -101,33 +158,14 @@ export function AssignmentResultsPage() {
                       </Tag>
                     ),
                   },
-                  {
-                    title: t('assignment.step'),
-                    dataIndex: 'steps',
-                    key: 'steps',
-                    // Review: 2026-10-05, Pullfrog — null means no verdict yet, not a failure.
-                    render: (steps: AssignmentResultStepResponse[] | null | undefined) =>
-                      steps?.length
-                        ? steps.map((s) => {
-                            const color = s.passed === null ? 'default' : s.passed ? 'green' : 'red'
-                            const verdict =
-                              s.passed === null
-                                ? t('assignment.pending')
-                                : s.passed
-                                  ? t('assignment.passed')
-                                  : t('assignment.failed')
-                            return (
-                              <Tag key={s.id} color={color}>
-                                {s.stepName}: {verdict}
-                              </Tag>
-                            )
-                          })
-                        : '—',
-                  },
                 ]}
                 rowKey="id"
                 pagination={false}
                 size="small"
+                expandable={{
+                  expandedRowRender: (result: AssignmentResultResponse) =>
+                    stepTable(result.steps),
+                }}
               />
             ),
           }}

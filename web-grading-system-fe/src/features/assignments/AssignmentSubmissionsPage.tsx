@@ -10,7 +10,7 @@ import type { SubmissionResponse } from '../../shared/types/assignment'
 import { formatDateTime } from '../../shared/format/formatDateTime'
 
 export function AssignmentSubmissionsPage() {
-  const { assignmentId } = useParams<{ assignmentId: string }>()
+  const { classId, assignmentId } = useParams<{ classId: string; assignmentId: string }>()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const toMessage = useApiErrorMessage()
@@ -76,6 +76,27 @@ export function AssignmentSubmissionsPage() {
               dataIndex: 'createdAt',
               key: 'createdAt',
               render: (v: string | null) => (v ? formatDateTime(v, i18n.language) : '—'),
+            },
+            {
+              title: t('common.actions'),
+              key: 'actions',
+              width: 150,
+              // Review: 2026-10-12 — deep-link into the results view filtered
+              // to this student (auto-expanded there); lecturer drill-down
+              // without losing the submission context.
+              render: (_: unknown, r: SubmissionResponse) => (
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={() =>
+                    navigate(
+                      `/classes/${classId}/assignments/${assignmentId}/results?student=${r.studentId}`,
+                    )
+                  }
+                >
+                  {t('submission.viewResult')}
+                </Button>
+              ),
             },
           ]}
           rowKey="id"
