@@ -109,6 +109,13 @@ export interface AssignmentResultStepResponse {
   expectedValue: string | null
   errorMessage: string | null
   durationMs: number | null
+  /** Lecturer evidence parity (mirrors result-service; absent pre-deploy). */
+  skipped?: boolean | null
+  assertionDetails?: string | null
+  extractedVars?: string | null
+  requestUrl?: string | null
+  requestBody?: string | null
+  responseStatus?: number | null
 }
 
 export interface AssignmentResultResponse {
@@ -116,8 +123,10 @@ export interface AssignmentResultResponse {
   submissionId: string
   assignmentId: string
   studentId: string
-  planId: string
+  planId: string | null
   planWeight: number | null
+  /** FULL = whole-assignment run (mirrors result-service; absent pre-deploy). */
+  scope?: 'FULL' | 'PLAN' | string | null
   score: number | null
   maxScore: number | null
   status: string
