@@ -466,5 +466,23 @@
     "scopePlan": "Question: {{name}}",
     "statusPASS": "PASS",
     "statusFAIL": "FAIL"
+  },
+  "ai": {
+    "analyzeSubmission": "✨ AI Analyze Submission",
+    "alreadyAnalyzed": "AI Analysis Available",
+    "analyzing": "AI is analyzing...",
+    "panelTitle": "✨ AI Tutor: Analysis & Code Quality Report",
+    "cachedBadge": "Cached Result",
+    "diagnosis": "Diagnosis",
+    "suspectedLocation": "Suspected Location",
+    "actionableHints": "Actionable Hints",
+    "learningKeywords": "Learning Keywords",
+    "telemetryAudit": "Telemetry & Quality Audit",
+    "nPlusOneWarning": "N+1 Query Warning!",
+    "duration": "Duration: {{ms}}ms (Benchmark: <{{threshold}}ms)",
+    "queryCount": "DB Query Count: {{count}}",
+    "peakMemory": "Peak Memory: {{mb}} MB",
+    "debugFail": "Debugging Diagnosis",
+    "optimizePass": "Optimization Review"
   }
 }

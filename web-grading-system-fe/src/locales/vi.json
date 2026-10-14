@@ -466,5 +466,23 @@
     "scopePlan": "Câu: {{name}}",
     "statusPASS": "PASS",
     "statusFAIL": "FAIL"
+  },
+  "ai": {
+    "analyzeSubmission": "✨ AI Phân tích bài nộp",
+    "alreadyAnalyzed": "Đã có phân tích AI",
+    "analyzing": "AI đang phân tích...",
+    "panelTitle": "✨ Trợ giảng AI: Phân tích & Đánh giá bài nộp",
+    "cachedBadge": "Kết quả đã lưu",
+    "diagnosis": "Chẩn đoán nguyên nhân",
+    "suspectedLocation": "Vị trí nghi vấn",
+    "actionableHints": "Gợi ý hướng xử lý (Hints)",
+    "learningKeywords": "Từ khóa tự học",
+    "telemetryAudit": "Chỉ số Telemetry & Chất lượng",
+    "nPlusOneWarning": "Cảnh báo N+1 Query!",
+    "duration": "Thời gian: {{ms}}ms (Chuẩn: <{{threshold}}ms)",
+    "queryCount": "Số câu query DB: {{count}}",
+    "peakMemory": "Bộ nhớ đỉnh: {{mb}} MB",
+    "debugFail": "Chẩn đoán lỗi",
+    "optimizePass": "Đánh giá tối ưu"
   }
 }

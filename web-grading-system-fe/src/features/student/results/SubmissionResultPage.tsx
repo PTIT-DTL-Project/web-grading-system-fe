@@ -20,9 +20,12 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   LoadingOutlined,
+  BulbOutlined,
 } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import { useSubmissionResult } from './useSubmissionResult'
+import { useAiExplanation } from './useAiExplanation'
+import { AiAnalysisPanel } from './AiAnalysisPanel'
 import { AssignmentTitle } from '../submissions/AssignmentTitle'
 import { ResultScopeBadge } from '../../../shared/ui/ResultScopeBadge'
 import { useQuery } from '@tanstack/react-query'
@@ -219,6 +222,7 @@ export function SubmissionResultPage() {
   const navigate = useNavigate()
   const toMessage = useApiErrorMessage()
   const { results, loading, error, isReady, timedOut, retry } = useSubmissionResult(submissionId ?? '')
+  const { aiData, isAnalyzing, hasAnalysis, triggerAnalysis } = useAiExplanation(submissionId)
   // Review: 2026-10-10, Pullfrog — single-expand accordion so the "one expanded
   // row at a time" layout claim holds on long step tables.
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([])
@@ -348,24 +352,46 @@ export function SubmissionResultPage() {
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Button
-          type="text"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/student/submissions')}
-        >
-          {t('result.backToSubmissions')}
-        </Button>
-        <div>
-          <Typography.Title level={4} style={{ margin: 0 }}>
-            {t('result.title')}
-          </Typography.Title>
-          {results[0] ? (
-            <Typography.Text type="secondary">
-              <AssignmentTitle assignmentId={results[0].assignmentId} />
-            </Typography.Text>
-          ) : null}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/student/submissions')}
+          >
+            {t('result.backToSubmissions')}
+          </Button>
+          <div>
+            <Typography.Title level={4} style={{ margin: 0 }}>
+              {t('result.title')}
+            </Typography.Title>
+            {results[0] ? (
+              <Typography.Text type="secondary">
+                <AssignmentTitle assignmentId={results[0].assignmentId} />
+              </Typography.Text>
+            ) : null}
+          </div>
         </div>
+
+        <Button
+          type="primary"
+          icon={<BulbOutlined />}
+          loading={isAnalyzing}
+          disabled={hasAnalysis || isAnalyzing}
+          onClick={() => triggerAnalysis()}
+          style={
+            hasAnalysis
+              ? undefined
+              : {
+                  background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                  borderColor: 'transparent',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(99, 102, 241, 0.35)',
+                }
+          }
+        >
+          {hasAnalysis ? t('ai.alreadyAnalyzed') : t('ai.analyzeSubmission')}
+        </Button>
       </div>
 
       <Row gutter={[16, 16]}>
@@ -441,6 +467,8 @@ export function SubmissionResultPage() {
           />
         </Card>
       ))}
+
+      {aiData && <AiAnalysisPanel data={aiData} />}
     </Space>
   )
 }
