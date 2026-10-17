@@ -8,6 +8,7 @@ import { useResults } from './useResults'
 import { useTestPlans } from './useTestPlans'
 import { ResultScopeBadge } from '../../shared/ui/ResultScopeBadge'
 import { LecturerStepEvidence } from './LecturerStepEvidence'
+import { AiExplanationCard } from '../../shared/ui/AiExplanationCard'
 import { useParams } from 'react-router'
 import { useApiErrorMessage } from '../../shared/api/errors'
 import type { AssignmentResultResponse, AssignmentResultStepResponse, StudentResultResponse } from '../../shared/types/assignment'
@@ -163,8 +164,19 @@ export function AssignmentResultsPage() {
                 pagination={false}
                 size="small"
                 expandable={{
-                  expandedRowRender: (result: AssignmentResultResponse) =>
-                    stepTable(result.steps),
+                  expandedRowRender: (result: AssignmentResultResponse) => (
+                    <>
+                      {/* Lecturer view: the result row proves grading rows exist, and
+                          result.assignmentId is the id the backend checks ownership
+                          against, so this route authorizes against the row it came from. */}
+                      <AiExplanationCard
+                        submissionId={result.submissionId}
+                        assignmentId={result.assignmentId}
+                        enabled
+                      />
+                      {stepTable(result.steps)}
+                    </>
+                  ),
                 }}
               />
             ),

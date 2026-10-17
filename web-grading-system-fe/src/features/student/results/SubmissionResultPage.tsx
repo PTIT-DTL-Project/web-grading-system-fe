@@ -23,7 +23,7 @@ import {
 } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import { useSubmissionResult } from './useSubmissionResult'
-import { AiExplanationCard } from './AiExplanationCard'
+import { AiExplanationCard } from '../../../shared/ui/AiExplanationCard'
 import { AssignmentTitle } from '../submissions/AssignmentTitle'
 import { ResultScopeBadge } from '../../../shared/ui/ResultScopeBadge'
 import { useQuery } from '@tanstack/react-query'

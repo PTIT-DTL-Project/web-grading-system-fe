@@ -1,11 +1,11 @@
 import { App, Alert, Button, Card, List, Skeleton, Space, Tag, Typography } from 'antd'
 import { CheckCircleOutlined, CloseCircleOutlined, HistoryOutlined, RobotOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
-import { useAiExplanation } from './useAiExplanation'
-import { useApiErrorMessage } from '../../../shared/api/errors'
-import { formatDateTime } from '../../../shared/format/formatDateTime'
-import { colors } from '../../../shared/theme/tokens'
-import type { StepAnalysis } from '../../../shared/types/aiExplanation'
+import { useAiExplanation } from '../hooks/useAiExplanation'
+import { useApiErrorMessage } from '../api/errors'
+import { formatDateTime } from '../format/formatDateTime'
+import { colors } from '../theme/tokens'
+import type { StepAnalysis } from '../types/aiExplanation'
 
 function StepAnalysisRow({ step }: { step: StepAnalysis }) {
   const { t } = useTranslation()
@@ -71,24 +71,33 @@ function StepAnalysisRow({ step }: { step: StepAnalysis }) {
 
 interface AiExplanationCardProps {
   submissionId: string
-  /** False until the result page has grading rows — the POST 404s without them. */
+  /** False until the page has grading rows — the POST 404s without them. */
   enabled: boolean
+  /**
+   * Set by a lecturer viewing a submission inside one of their own assignments;
+   * omitted for a student viewing their own. Selects the backend route (and with
+   * it, the ownership rule the backend applies).
+   */
+  assignmentId?: string
 }
 
 /**
- * AI explanation panel for one submission.
+ * AI explanation panel for one submission. Lives in `shared/` because both
+ * audiences render it: a student on their result page, a lecturer on the
+ * assignment results table.
  *
  * GET on mount (cache hit renders instantly); the LLM POST runs only when the
- * student clicks Tạo giải thích AI, so scrolling results never triggers a paid
- * multi-second call. Placed on SubmissionResultPage below the score.
+ * viewer clicks Tạo giải thích AI, so scrolling results never triggers a paid
+ * multi-second call.
  */
-export function AiExplanationCard({ submissionId, enabled }: AiExplanationCardProps) {
+export function AiExplanationCard({ submissionId, enabled, assignmentId }: AiExplanationCardProps) {
   const { t, i18n } = useTranslation()
   const { message } = App.useApp()
   const toMessage = useApiErrorMessage()
   const { explanation, loading, error, generating, generate, retry } = useAiExplanation(
     submissionId,
     enabled,
+    assignmentId,
   )
 
   if (!enabled) return null
@@ -96,7 +105,7 @@ export function AiExplanationCard({ submissionId, enabled }: AiExplanationCardPr
   const handleGenerate = () => {
     generate().catch((err: unknown) => {
       // Keep the CTA on screen: a 502 (result-service down) or a network blip is
-      // retryable, so surface the mapped message and let the student click again.
+      // retryable, so surface the mapped message and let the viewer click again.
       message.error(toMessage(err))
     })
   }
