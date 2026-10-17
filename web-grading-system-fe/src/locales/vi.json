@@ -420,6 +420,7 @@
   },
   "submission": {
     "title": "Lịch sử nộp bài",
+    "search": "Tìm theo tên file…",
     "assignment": "Bài tập",
     "scope": "Phạm vi",
     "empty": "Chưa có bài nộp nào",

@@ -120,66 +120,77 @@ export function AssignmentResultsPage() {
           size="small"
           expandable={{
             expandedRowKeys: focusedStudent ? [focusedStudent] : undefined,
-            expandedRowRender: (record: StudentResultResponse) => (
-              <Table
-                dataSource={record.results}
-                columns={[
-                  {
-                    title: t('assignment.plan'),
-                    dataIndex: 'planId',
-                    key: 'planId',
-                    // Real scope field when the mirror backend has deployed;
-                    // planId-null fallback before that (backfilled convention).
-                    render: (v: string | null | undefined, r: AssignmentResultResponse) => (
-                      <ResultScopeBadge
-                        scope={r.scope ?? (v === null || v === undefined ? 'FULL' : 'PLAN')}
-                        planName={planName(v ?? null)}
-                      />
-                    ),
-                  },
-                  {
-                    title: t('assignment.score'),
-                    dataIndex: 'score',
-                    key: 'score',
-                    render: (v: number | null) => (v !== null ? v : '—'),
-                  },
-                  {
-                    title: t('assignment.maxScore'),
-                    dataIndex: 'maxScore',
-                    key: 'maxScore',
-                    render: (v: number | null) => (v !== null ? v : '—'),
-                  },
-                  {
-                    title: t('assignment.status'),
-                    dataIndex: 'status',
-                    key: 'status',
-                    render: (v: string) => (
-                      <Tag color={v === 'PASSED' ? 'green' : v === 'FAILED' ? 'red' : 'default'}>
-                        {v}
-                      </Tag>
-                    ),
-                  },
-                ]}
-                rowKey="id"
-                pagination={false}
-                size="small"
-                expandable={{
-                  expandedRowRender: (result: AssignmentResultResponse) => (
-                    <>
-                      {/* Lecturer view: the result row proves grading rows exist, and
-                          result.assignmentId is the id the backend checks ownership
-                          against, so this route authorizes against the row it came from. */}
-                      <AiExplanationCard
-                        submissionId={result.submissionId}
-                        assignmentId={result.assignmentId}
-                        enabled
-                      />
-                      {stepTable(result.steps)}
-                    </>
-                  ),
-                }}
-              />
-            ),
+            expandedRowRender: (record: StudentResultResponse) => {
+              // One explanation per student. The card used to hang off every inner
+              // result row, so a student with several rows (a FULL run plus per-plan
+              // runs) got the same comment repeated; it also needs a graded row to
+              // explain, hence the guard for an empty result list.
+              // result-service returns one row per plan scope with no ORDER BY, and a
+              // PLAN run demotes only its own scope — so a student's rows can come from
+              // different attempts; explain the most recent grading (completedAt desc),
+              // not an index-0 guess that can shift between loads.
+              const target = [...record.results]
+                .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))[0]
+              return (
+                <>
+                  {target ? (
+                    <AiExplanationCard
+                      submissionId={target.submissionId}
+                      assignmentId={target.assignmentId}
+                      enabled
+                    />
+                  ) : null}
+                  <Table
+                    dataSource={record.results}
+                    columns={[
+                      {
+                        title: t('assignment.plan'),
+                        dataIndex: 'planId',
+                        key: 'planId',
+                        // Real scope field when the mirror backend has deployed;
+                        // planId-null fallback before that (backfilled convention).
+                        render: (v: string | null | undefined, r: AssignmentResultResponse) => (
+                          <ResultScopeBadge
+                            scope={r.scope ?? (v === null || v === undefined ? 'FULL' : 'PLAN')}
+                            planName={planName(v ?? null)}
+                          />
+                        ),
+                      },
+                      {
+                        title: t('assignment.score'),
+                        dataIndex: 'score',
+                        key: 'score',
+                        render: (v: number | null) => (v !== null ? v : '—'),
+                      },
+                      {
+                        title: t('assignment.maxScore'),
+                        dataIndex: 'maxScore',
+                        key: 'maxScore',
+                        render: (v: number | null) => (v !== null ? v : '—'),
+                      },
+                      {
+                        title: t('assignment.status'),
+                        dataIndex: 'status',
+                        key: 'status',
+                        render: (v: string) => (
+                          <Tag color={v === 'PASSED' ? 'green' : v === 'FAILED' ? 'red' : 'default'}>
+                            {v}
+                          </Tag>
+                        ),
+                      },
+                    ]}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                    expandable={{
+                      expandedRowRender: (result: AssignmentResultResponse) => (
+                        stepTable(result.steps)
+                      ),
+                    }}
+                  />
+                </>
+              )
+            },
           }}
         />
       ) : null}

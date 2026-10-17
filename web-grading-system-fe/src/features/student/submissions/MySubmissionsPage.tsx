@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router'
 import type { TableColumnsType } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
 import { ListPage } from '../../../shared/ui/ListPage'
+import type { FilterConfig } from '../../../shared/ui/FilterBar'
 import { listMySubmissions } from '../../../shared/api/endpoints/submissions'
 import { AssignmentTitle } from './AssignmentTitle'
 import { SubmissionScopeCell } from './SubmissionScopeCell'
@@ -27,9 +28,14 @@ export function MySubmissionsPage() {
   const navigate = useNavigate()
 
   const fetcher = useCallback(
-    ({ page, size }: { page: number; size: number }) => listMySubmissions(page, size),
+    ({ page, size, search }: { page: number; size: number; search?: string }) =>
+      listMySubmissions(page, size, search),
     [],
   )
+
+  const filters: FilterConfig<{ search?: string }>[] = [
+    { key: 'search', type: 'text', label: t('submission.search'), placeholder: t('submission.search'), submitOnEnter: true },
+  ]
 
   const columns: TableColumnsType<SubmissionResponse> = [
     {
@@ -85,9 +91,9 @@ export function MySubmissionsPage() {
   ]
 
   return (
-    <ListPage<SubmissionResponse, Record<string, never>>
+    <ListPage<SubmissionResponse, { search?: string }>
       fetcher={fetcher}
-      filters={[]}
+      filters={filters}
       initialFilters={{}}
       columns={columns}
       rowKey="id"

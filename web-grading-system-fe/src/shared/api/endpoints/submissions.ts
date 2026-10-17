@@ -36,7 +36,12 @@ export async function uploadZipToStorage(uploadUrl: string, file: File): Promise
 export function listMySubmissions(
   page: number,
   size: number,
+  search?: string,
   options?: { signal?: AbortSignal },
 ): Promise<Page<SubmissionResponse>> {
-  return getData<Page<SubmissionResponse>>('/api/v1/submissions', { page, size }, options)
+  return getData<Page<SubmissionResponse>>(
+    '/api/v1/submissions',
+    { page, size, ...(search ? { search } : {}) },
+    options,
+  )
 }
