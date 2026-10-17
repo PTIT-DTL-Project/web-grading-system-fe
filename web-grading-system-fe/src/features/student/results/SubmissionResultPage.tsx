@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import { useSubmissionResult } from './useSubmissionResult'
+import { AiExplanationCard } from '../../../shared/ui/AiExplanationCard'
 import { AssignmentTitle } from '../submissions/AssignmentTitle'
 import { ResultScopeBadge } from '../../../shared/ui/ResultScopeBadge'
 import { useQuery } from '@tanstack/react-query'
@@ -389,6 +390,8 @@ export function SubmissionResultPage() {
           </Card>
         </Col>
       </Row>
+
+      <AiExplanationCard submissionId={submissionId ?? ''} enabled={isReady} />
 
       {results.map((result: ResultResponse) => (
         <Card
