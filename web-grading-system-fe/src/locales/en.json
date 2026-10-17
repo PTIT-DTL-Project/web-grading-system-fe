@@ -420,7 +420,7 @@
   },
   "submission": {
     "title": "Submission history",
-    "search": "Search submissions…",
+    "search": "Search by file name…",
     "assignment": "Assignment",
     "scope": "Scope",
     "empty": "No submissions yet",
