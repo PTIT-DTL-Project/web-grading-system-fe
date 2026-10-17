@@ -41,7 +41,7 @@ export function listMySubmissions(
 ): Promise<Page<SubmissionResponse>> {
   return getData<Page<SubmissionResponse>>(
     '/api/v1/submissions',
-    { page, size, ...(search ? { q: search } : {}) },
+    { page, size, ...(search ? { search } : {}) },
     options,
   )
 }
