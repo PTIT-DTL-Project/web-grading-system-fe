@@ -466,5 +466,21 @@
     "scopePlan": "Question: {{name}}",
     "statusPASS": "PASS",
     "statusFAIL": "FAIL"
+  },
+  "ai": {
+    "title": "AI explanation",
+    "generate": "Generate AI explanation",
+    "generating": "AI is analysing...",
+    "generatingHint": "This takes a few seconds and runs once per submission.",
+    "notGeneratedHint": "No explanation has been generated for this submission yet.",
+    "summary": "Summary",
+    "stepAnalyses": "Step-by-step analysis",
+    "suspectedLocation": "Suspected location",
+    "hints": "How to fix",
+    "keywords": "Learning keywords",
+    "noSteps": "The model returned no per-step analysis.",
+    "loadFailed": "Could not load the explanation",
+    "generatedAt": "Generated {{time}}",
+    "fromCache": "Cached"
   }
 }

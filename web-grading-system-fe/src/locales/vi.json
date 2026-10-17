@@ -466,5 +466,21 @@
     "scopePlan": "Câu: {{name}}",
     "statusPASS": "PASS",
     "statusFAIL": "FAIL"
+  },
+  "ai": {
+    "title": "Giải thích bằng AI",
+    "generate": "Tạo giải thích AI",
+    "generating": "AI đang phân tích...",
+    "generatingHint": "Quá trình này mất vài giây và chỉ chạy một lần cho mỗi bài nộp.",
+    "notGeneratedHint": "Chưa có giải thích cho bài nộp này.",
+    "summary": "Tóm tắt",
+    "stepAnalyses": "Phân tích theo bước",
+    "suspectedLocation": "Vị trí nghi vấn",
+    "hints": "Gợi ý khắc phục",
+    "keywords": "Từ khóa kiến thức",
+    "noSteps": "AI chưa đưa ra phân tích cho từng bước.",
+    "loadFailed": "Không tải được giải thích",
+    "generatedAt": "Tạo lúc {{time}}",
+    "fromCache": "Đã lưu"
   }
 }
