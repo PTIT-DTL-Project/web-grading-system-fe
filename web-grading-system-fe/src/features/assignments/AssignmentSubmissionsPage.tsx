@@ -11,6 +11,16 @@ import { listSubmissions } from '../../shared/api/endpoints/assignments'
 import type { SubmissionResponse } from '../../shared/types/assignment'
 import { formatDateTime } from '../../shared/format/formatDateTime'
 
+function statusColor(status: string): string {
+  return {
+    PENDING: 'yellow',
+    PASSED: 'green',
+    DONE: 'green',
+    GRADING: 'blue',
+    FAILED: 'red',
+  }[status] ?? 'default'
+}
+
 interface SubmissionsFilters {
   studentCode?: string
 }
@@ -54,14 +64,8 @@ export function AssignmentSubmissionsPage() {
           ),
       },
       { title: t('assignment.file'), dataIndex: 'zipFileName', key: 'zipFileName' },
-      {
-        title: t('assignment.status'),
-        dataIndex: 'status',
-        key: 'status',
-        render: (v: string) => (
-          <Tag color={v === 'PASSED' ? 'green' : v === 'FAILED' ? 'red' : 'default'}>{v}</Tag>
-        ),
-      },
+      { title: t('assignment.status'), dataIndex: 'status', key: 'status',
+        render: (v: string) => <Tag color={statusColor(v)}>{v}</Tag> },
       {
         title: t('assignment.latest'),
         dataIndex: 'latest',
