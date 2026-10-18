@@ -485,6 +485,7 @@
     "noSteps": "The model returned no per-step analysis.",
     "loadFailed": "Could not load the explanation",
     "generatedAt": "Generated {{time}}",
-    "fromCache": "Cached"
+    "fromCache": "Cached",
+    "searchGoogle": "Search \"{{keyword}}\" on Google"
   }
 }
