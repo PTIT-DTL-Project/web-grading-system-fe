@@ -10,37 +10,49 @@ import { standardPagination } from '../../shared/ui/StandardPagination'
 import { ErrorState } from '../../shared/ui/ErrorState'
 import { useTestPlans } from './useTestPlans'
 import { useAssignmentStudents } from './useAssignmentStudents'
-import { listResults } from '../../shared/api/endpoints/assignments'
+import { listResults, getAssignment } from '../../shared/api/endpoints/assignments'
 import { ResultScopeBadge } from '../../shared/ui/ResultScopeBadge'
 import { LecturerStepEvidence } from './LecturerStepEvidence'
 import { AiExplanationCard } from '../../shared/ui/AiExplanationCard'
+import { SubmissionDetailCard } from './SubmissionDetailCard'
 import type { FilterConfig } from '../../shared/ui/FilterBar'
 import type { AssignmentResultResponse, AssignmentResultStepResponse, StudentResultResponse } from '../../shared/types/assignment'
 
 import { useApiErrorMessage } from '../../shared/api/errors'
+import { useQuery } from '@tanstack/react-query'
 
 interface ResultsFilters {
   studentCode?: string
 }
 
-// Hoisted so the useList parent-sync effect ([filters]) keeps a stable identity and
-// does not refire every render — the original inline `{ studentCode: '' }` literal was
-// fresh per render and drove an unbounded update/fetch cycle (Review: 2026-10-18, Pullfrog).
 const EMPTY_FILTERS: ResultsFilters = { studentCode: '' }
 
 export function AssignmentResultsPage() {
-  const { assignmentId } = useParams<{ classId: string; assignmentId: string }>()
+  const { classId, assignmentId } = useParams<{ classId: string; assignmentId: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
-  // Deep-link from the submissions table (?student=<userId>): narrows the fetched rows to
-  // that student and auto-expands them. Client-side only; the dropdown filter below is the
-  // server-side (?studentCode=) path. When set, the fetcher fetches the whole class
-  // (page/size omitted so course-service returns a PageImpl of everything).
+  // Deep-link from the submissions table (?student=<userId>&submission=<id>):
+  // narrows fetched rows to that student and pre-expands the submission evidence.
+  // Client-side only; the dropdown filter below is the server-side (?studentCode=) path.
   const focusedStudent = searchParams.get('student') ?? null
+  const focusedSubmission = searchParams.get('submission') ?? null
 
   const { plans } = useTestPlans(assignmentId ?? '')
   const planName = (planId: string | null) => plans.find((p) => p.id === planId)?.name ?? null
+
+  // REVIEW: 2026-10-21 — fetch assignment title via lecturer-scoped endpoint so the
+  // deep-link card doesn't hit the student-only GET /api/v1/student/assignments/{id}.
+  // REVIEW: 2026-10-21, Pullfrog — only needed for the focusedSubmission branch, so gate
+  // the fetch there to avoid a network call on the normal class-table view.
+  const { data: assignment } = useQuery({
+    queryKey: ['assignment', assignmentId, focusedSubmission],
+    queryFn: () => getAssignment(assignmentId ?? ''),
+    enabled: !!assignmentId && !!focusedSubmission,
+    staleTime: 10 * 60 * 1000,
+  })
+
+  const { data: studentOptions } = useAssignmentStudents(classId ?? '')
 
   const {
     rows,
@@ -55,8 +67,17 @@ export function AssignmentResultsPage() {
     resetFilters,
   } = useList<StudentResultResponse, ResultsFilters>({
     fetcher: useCallback(
-      ({ page, size, studentCode }) =>
-        listResults(
+      // REVIEW: 2026-10-21 — when deep-linking via ?submission=<id>, we render
+      // SubmissionDetailCard and bypass the class table entirely. Short-circuit
+      // to an empty page so listResults (a full-class fetch) is never called.
+      ({ page, size, studentCode }) => {
+        if (focusedSubmission) {
+          return Promise.resolve({
+            result: [] as StudentResultResponse[],
+            meta: { page: 0, pageSize: 0, pages: 0, total: 0 },
+          })
+        }
+        return listResults(
           assignmentId ?? '',
           true,
           // Deep-link path: fetch the whole class (no page/size => server returns full list)
@@ -64,22 +85,19 @@ export function AssignmentResultsPage() {
           focusedStudent ? undefined : studentCode,
           focusedStudent ? undefined : page,
           focusedStudent ? undefined : size,
-        ),
-      [assignmentId, focusedStudent],
+        )
+      },
+      [assignmentId, focusedStudent, focusedSubmission],
     ),
     filters: EMPTY_FILTERS,
     pageSize: 20,
-   })
+  })
 
-   const { data: studentOptions } = useAssignmentStudents(assignmentId ?? '', 'results')
+  // Overlay the deep-link userId filter on the fetched rows.
+  const visibleRows = focusedStudent ? rows.filter((r) => r.studentUserId === focusedStudent) : rows
 
-   // Overlay the deep-link userId filter on the fetched rows.
-   const visibleRows = focusedStudent
-     ? rows.filter((r) => r.studentUserId === focusedStudent)
-     : rows
-
-   const toMessage = useApiErrorMessage()
-   const errMsg = error ? toMessage(error) : null
+  const toMessage = useApiErrorMessage()
+  const errMsg = error ? toMessage(error) : null
 
   const stepTable = (steps: AssignmentResultStepResponse[] | null | undefined) => (
     <Table
@@ -103,33 +121,25 @@ export function AssignmentResultsPage() {
             ) : (
               <Tag color="red">{t('assignment.failed')}</Tag>
             ),
-        },
-        {
-          title: t('result.score'),
-          key: 'score',
-          width: 100,
-          render: (_: unknown, s: AssignmentResultStepResponse) =>
-            s.score !== null && s.score !== undefined ? `${s.score}/${s.weight ?? '—'}` : '—',
-        },
-        {
-          title: t('result.durationMs'),
-          dataIndex: 'durationMs',
-          key: 'durationMs',
-          width: 120,
-          render: (v: number | null) => (v != null ? `${v} ms` : '—'),
-        },
+          },
+           { title: t('result.score'), key: 'score', width: 100, render: (_: unknown, s: AssignmentResultStepResponse) => (s.score != null ? `${s.score}/${s.weight ?? '—'}` : '—') },
+          {
+            title: t('result.durationMs'),
+            dataIndex: 'durationMs',
+            key: 'durationMs',
+            width: 120,
+            render: (v: number | null) => (v != null ? `${v} ms` : '—'),
+          },
       ]}
       rowKey="id"
       pagination={false}
       size="small"
       expandable={{
-        expandedRowRender: (step: AssignmentResultStepResponse) => (
-          <LecturerStepEvidence step={step} />
-        ),
+        expandedRowRender: (step: AssignmentResultStepResponse) => <LecturerStepEvidence step={step} />,
         rowExpandable: (step) =>
           !!(step.actualValue || step.expectedValue || step.errorMessage ||
-            step.assertionDetails || step.extractedVars || step.requestUrl ||
-            step.requestBody || step.responseStatus != null),
+             step.assertionDetails || step.extractedVars || step.requestUrl ||
+             step.requestBody || step.responseStatus != null),
       }}
     />
   )
@@ -162,6 +172,27 @@ export function AssignmentResultsPage() {
       options: [{ label: t('assignment.filterStudent'), value: '' }, ...(studentOptions ?? [])],
     },
   ]
+
+  // REVIEW: 2026-10-21, lecturer single-submission deep-link — when the grader
+  // clicks "Xem kết quả" from the submissions table, render the same detail
+  // card as the student view (flat result + AI explanation) rather than the
+  // class-aggregation table. (tại vì phần điểm là có show cái đó rồi mà)
+  // Rendered as conditional JSX at the return point so rules-of-hooks stays
+  // valid — all data hooks above run unconditionally, this only swaps the JSX.
+  if (focusedSubmission) {
+    return (
+      <SubmissionDetailCard
+        submissionId={focusedSubmission}
+        assignmentId={assignmentId}
+        onBack={() =>
+          navigate(`/classes/${classId ?? ''}/assignments/${assignmentId ?? ''}/submissions`)
+        }
+         backLabelKey="assignment.submissions"
+         planName={planName}
+         title={assignment?.title}
+       />
+    )
+  }
 
   if (loading && !rows.length) {
     return <Spin size="large" style={{ display: 'block', margin: '40px auto' }} />
@@ -243,11 +274,13 @@ export function AssignmentResultsPage() {
             return (
               <>
                 {target ? (
-                  <AiExplanationCard
-                    submissionId={target.submissionId}
-                    assignmentId={target.assignmentId}
-                    enabled
-                  />
+                  <div id={`submission-${target.submissionId}`}>
+                    <AiExplanationCard
+                      submissionId={target.submissionId}
+                      assignmentId={target.assignmentId}
+                      enabled
+                    />
+                  </div>
                 ) : null}
                 <Table
                   dataSource={record.results}
