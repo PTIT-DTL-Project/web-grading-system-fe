@@ -409,7 +409,11 @@ export function SubmissionDetailCard({
         </Col>
       </Row>
 
-      <AiExplanationCard submissionId={submissionId} enabled={isReady} />
+      <AiExplanationCard
+      submissionId={submissionId}
+      assignmentId={resolvedAssignmentId}
+      enabled={isReady}
+    />
 
       {results.map((result: ResultResponse) => (
         <Card
