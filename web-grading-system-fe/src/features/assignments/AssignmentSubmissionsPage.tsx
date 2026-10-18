@@ -24,7 +24,7 @@ export function AssignmentSubmissionsPage() {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
 
-  const { data: studentOptions } = useAssignmentStudents(classId ?? '')
+  const { data: studentOptions } = useAssignmentStudents(assignmentId ?? '', 'submissions')
 
   // Server-side pagination: listSubmissions now returns Page<SubmissionResponse> and
   // forwards page/size to course-service → submission-service. (Review: 2026-10-19,
@@ -83,9 +83,9 @@ export function AssignmentSubmissionsPage() {
           <Button
             type="link"
             size="small"
-              onClick={() =>
-                navigate(`/classes/${classId}/assignments/${assignmentId}/results?student=${r.studentId}&submission=${r.id}`)
-              }
+            onClick={() =>
+              navigate(`/classes/${classId}/assignments/${assignmentId}/results?student=${r.studentId}`)
+            }
           >
             {t('submission.viewResult')}
           </Button>

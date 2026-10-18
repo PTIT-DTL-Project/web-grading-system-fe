@@ -1,7 +1,7 @@
 "use client"
 
 import { Table, Tag, Spin, Empty, Typography, Button, Space, Alert } from 'antd'
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useList } from '../../shared/hooks/useList'
@@ -29,20 +29,18 @@ interface ResultsFilters {
 const EMPTY_FILTERS: ResultsFilters = { studentCode: '' }
 
 export function AssignmentResultsPage() {
-  const { classId, assignmentId } = useParams<{ classId: string; assignmentId: string }>()
+  const { assignmentId } = useParams<{ classId: string; assignmentId: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
-  // Deep-link from the submissions table (?student=<userId>&submission=<id>):
-  // narrows fetched rows to that student and pre-expands the submission evidence.
-  // Client-side only; the dropdown filter below is the server-side (?studentCode=) path.
+  // Deep-link from the submissions table (?student=<userId>): narrows the fetched rows to
+  // that student and auto-expands them. Client-side only; the dropdown filter below is the
+  // server-side (?studentCode=) path. When set, the fetcher fetches the whole class
+  // (page/size omitted so course-service returns a PageImpl of everything).
   const focusedStudent = searchParams.get('student') ?? null
-  const focusedSubmission = searchParams.get('submission') ?? null
 
   const { plans } = useTestPlans(assignmentId ?? '')
   const planName = (planId: string | null) => plans.find((p) => p.id === planId)?.name ?? null
-
-  const { data: studentOptions } = useAssignmentStudents(classId ?? '')
 
   const {
     rows,
@@ -71,22 +69,17 @@ export function AssignmentResultsPage() {
     ),
     filters: EMPTY_FILTERS,
     pageSize: 20,
-  })
+   })
 
-  // Overlay the deep-link userId filter on the fetched rows.
-  const visibleRows = focusedStudent ? rows.filter((r) => r.studentUserId === focusedStudent) : rows
+   const { data: studentOptions } = useAssignmentStudents(assignmentId ?? '', 'results')
 
-  const toMessage = useApiErrorMessage()
-  const errMsg = error ? toMessage(error) : null
+   // Overlay the deep-link userId filter on the fetched rows.
+   const visibleRows = focusedStudent
+     ? rows.filter((r) => r.studentUserId === focusedStudent)
+     : rows
 
-  // Deep-link auto-focus: scroll the requested submission's evidence card into view after
-  // the row is rendered. Review: 2026-10-20 (submission detail deep-link UX).
-  useEffect(() => {
-    if (focusedSubmission && !loading) {
-      const id = `submission-${focusedSubmission}`
-      requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'center' }))
-    }
-  }, [focusedSubmission, loading])
+   const toMessage = useApiErrorMessage()
+   const errMsg = error ? toMessage(error) : null
 
   const stepTable = (steps: AssignmentResultStepResponse[] | null | undefined) => (
     <Table
@@ -250,13 +243,11 @@ export function AssignmentResultsPage() {
             return (
               <>
                 {target ? (
-                  <div id={`submission-${target.submissionId}`}>
-                    <AiExplanationCard
-                      submissionId={target.submissionId}
-                      assignmentId={target.assignmentId}
-                      enabled
-                    />
-                  </div>
+                  <AiExplanationCard
+                    submissionId={target.submissionId}
+                    assignmentId={target.assignmentId}
+                    enabled
+                  />
                 ) : null}
                 <Table
                   dataSource={record.results}
