@@ -122,7 +122,7 @@ export function AssignmentResultsPage() {
               <Tag color="red">{t('assignment.failed')}</Tag>
             ),
           },
-          { title: t('result.score'), key: 'score', width: 100, render: (_: unknown, s: AssignmentResultStepResponse) => `${s.score}/${s.weight}` },
+           { title: t('result.score'), key: 'score', width: 100, render: (_: unknown, s: AssignmentResultStepResponse) => (s.score != null ? `${s.score}/${s.weight ?? '—'}` : '—') },
           {
             title: t('result.durationMs'),
             dataIndex: 'durationMs',
