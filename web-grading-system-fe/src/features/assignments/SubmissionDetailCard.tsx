@@ -229,7 +229,8 @@ export function SubmissionDetailCard({
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([])
   const resolvedAssignmentId = assignmentId ?? results[0]?.assignmentId
 
-  // Use injected (lecturer) resolver when provided; otherwise fetch via student endpoint.
+  // Use injected (lecturer) resolver when provided; otherwise fetch via
+  // lecturer-scoped listPlans endpoint.
   const { data: plans } = useQuery({
     queryKey: ['assignment-plans', resolvedAssignmentId],
     queryFn: () => listPlans(resolvedAssignmentId ?? ''),
@@ -238,8 +239,7 @@ export function SubmissionDetailCard({
   })
   const resolvedPlanName = planNameProp ?? ((planId: string | null) => plans?.find((p) => p.id === planId)?.name ?? null)
 
-  // For the student view (no title prop), fetch via lecturer-scoped endpoint;
-  // for lecturer deep-link, AssignmentResultsPage passes title to avoid the call.
+  // Fetch assignment title via lecturer-scoped getAssignment when not prop-supplied.
   const { data: assignment } = useQuery({
     queryKey: ['assignment', resolvedAssignmentId],
     queryFn: () => getAssignment(resolvedAssignmentId ?? ''),
