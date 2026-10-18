@@ -1,7 +1,7 @@
 "use client"
 
 import { Table, Tag, Spin, Empty, Typography, Button, Space, Alert } from 'antd'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useList } from '../../shared/hooks/useList'
@@ -14,7 +14,6 @@ import { listResults } from '../../shared/api/endpoints/assignments'
 import { ResultScopeBadge } from '../../shared/ui/ResultScopeBadge'
 import { LecturerStepEvidence } from './LecturerStepEvidence'
 import { AiExplanationCard } from '../../shared/ui/AiExplanationCard'
-import { SubmissionDetailCard } from './SubmissionDetailCard'
 import type { FilterConfig } from '../../shared/ui/FilterBar'
 import type { AssignmentResultResponse, AssignmentResultStepResponse, StudentResultResponse } from '../../shared/types/assignment'
 
@@ -24,6 +23,9 @@ interface ResultsFilters {
   studentCode?: string
 }
 
+// Hoisted so the useList parent-sync effect ([filters]) keeps a stable identity and
+// does not refire every render — the original inline `{ studentCode: '' }` literal was
+// fresh per render and drove an unbounded update/fetch cycle (Review: 2026-10-18, Pullfrog).
 const EMPTY_FILTERS: ResultsFilters = { studentCode: '' }
 
 export function AssignmentResultsPage() {
@@ -77,6 +79,15 @@ export function AssignmentResultsPage() {
   const toMessage = useApiErrorMessage()
   const errMsg = error ? toMessage(error) : null
 
+  // Deep-link auto-focus: scroll the requested submission's evidence card into view after
+  // the row is rendered. Review: 2026-10-20 (submission detail deep-link UX).
+  useEffect(() => {
+    if (focusedSubmission && !loading) {
+      const id = `submission-${focusedSubmission}`
+      requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'center' }))
+    }
+  }, [focusedSubmission, loading])
+
   const stepTable = (steps: AssignmentResultStepResponse[] | null | undefined) => (
     <Table
       dataSource={steps ?? []}
@@ -99,25 +110,33 @@ export function AssignmentResultsPage() {
             ) : (
               <Tag color="red">{t('assignment.failed')}</Tag>
             ),
-          },
-          { title: t('result.score'), key: 'score', width: 100, render: (_: unknown, s: AssignmentResultStepResponse) => `${s.score}/${s.weight}` },
-          {
-            title: t('result.durationMs'),
-            dataIndex: 'durationMs',
-            key: 'durationMs',
-            width: 120,
-            render: (v: number | null) => (v != null ? `${v} ms` : '—'),
-          },
+        },
+        {
+          title: t('result.score'),
+          key: 'score',
+          width: 100,
+          render: (_: unknown, s: AssignmentResultStepResponse) =>
+            s.score !== null && s.score !== undefined ? `${s.score}/${s.weight ?? '—'}` : '—',
+        },
+        {
+          title: t('result.durationMs'),
+          dataIndex: 'durationMs',
+          key: 'durationMs',
+          width: 120,
+          render: (v: number | null) => (v != null ? `${v} ms` : '—'),
+        },
       ]}
       rowKey="id"
       pagination={false}
       size="small"
       expandable={{
-        expandedRowRender: (step: AssignmentResultStepResponse) => <LecturerStepEvidence step={step} />,
+        expandedRowRender: (step: AssignmentResultStepResponse) => (
+          <LecturerStepEvidence step={step} />
+        ),
         rowExpandable: (step) =>
           !!(step.actualValue || step.expectedValue || step.errorMessage ||
-             step.assertionDetails || step.extractedVars || step.requestUrl ||
-             step.requestBody || step.responseStatus != null),
+            step.assertionDetails || step.extractedVars || step.requestUrl ||
+            step.requestBody || step.responseStatus != null),
       }}
     />
   )
@@ -150,25 +169,6 @@ export function AssignmentResultsPage() {
       options: [{ label: t('assignment.filterStudent'), value: '' }, ...(studentOptions ?? [])],
     },
   ]
-
-  // REVIEW: 2026-10-21, lecturer single-submission deep-link — when the grader
-  // clicks "Xem kết quả" from the submissions table, render the same detail
-  // card as the student view (flat result + AI explanation) rather than the
-  // class-aggregation table. (tại vì phần điểm là có show cái đó rồi mà)
-  // Rendered as conditional JSX at the return point so rules-of-hooks stays
-  // valid — all data hooks above run unconditionally, this only swaps the JSX.
-  if (focusedSubmission) {
-    return (
-      <SubmissionDetailCard
-        submissionId={focusedSubmission}
-        assignmentId={assignmentId}
-        onBack={() =>
-          navigate(`/classes/${classId ?? ''}/assignments/${assignmentId ?? ''}/submissions`)
-        }
-        backLabelKey="assignment.submissions"
-      />
-    )
-  }
 
   if (loading && !rows.length) {
     return <Spin size="large" style={{ display: 'block', margin: '40px auto' }} />
