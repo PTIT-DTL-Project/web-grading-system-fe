@@ -43,10 +43,12 @@ export function AssignmentResultsPage() {
 
   // REVIEW: 2026-10-21 — fetch assignment title via lecturer-scoped endpoint so the
   // deep-link card doesn't hit the student-only GET /api/v1/student/assignments/{id}.
+  // REVIEW: 2026-10-21, Pullfrog — only needed for the focusedSubmission branch, so gate
+  // the fetch there to avoid a network call on the normal class-table view.
   const { data: assignment } = useQuery({
-    queryKey: ['assignment', assignmentId],
+    queryKey: ['assignment', assignmentId, focusedSubmission],
     queryFn: () => getAssignment(assignmentId ?? ''),
-    enabled: !!assignmentId,
+    enabled: !!assignmentId && !!focusedSubmission,
     staleTime: 10 * 60 * 1000,
   })
 
