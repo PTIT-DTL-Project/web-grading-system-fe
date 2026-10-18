@@ -1,5 +1,5 @@
 import { App, Alert, Button, Card, List, Skeleton, Space, Tag, Typography } from 'antd'
-import { CheckCircleOutlined, CloseCircleOutlined, HistoryOutlined, RobotOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined, CloseCircleOutlined, HistoryOutlined, RobotOutlined, SearchOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAiExplanation } from '../hooks/useAiExplanation'
 import { useApiErrorMessage } from '../api/errors'
@@ -59,7 +59,22 @@ function StepAnalysisRow({ step }: { step: StepAnalysis }) {
           <div style={{ marginTop: 4 }}>
             <Space size={[4, 4]} wrap>
               {keywords.map((keyword, index) => (
-                <Tag key={index}>{keyword}</Tag>
+                <a
+                  key={index}
+                  href={`https://www.google.com/search?q=${encodeURIComponent(keyword)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'none' }}
+                >
+                  <Tag
+                    icon={<SearchOutlined />}
+                    color="processing"
+                    style={{ cursor: 'pointer' }}
+                    title={t('ai.searchGoogle', { keyword })}
+                  >
+                    {keyword}
+                  </Tag>
+                </a>
               ))}
             </Space>
           </div>
