@@ -16,18 +16,11 @@ import { LecturerStepEvidence } from './LecturerStepEvidence'
 import { AiExplanationCard } from '../../shared/ui/AiExplanationCard'
 import type { FilterConfig } from '../../shared/ui/FilterBar'
 import type { AssignmentResultResponse, AssignmentResultStepResponse, StudentResultResponse } from '../../shared/types/assignment'
-import type { Page } from '../../shared/types/pagination'
+
+import { useApiErrorMessage } from '../../shared/api/errors'
 
 interface ResultsFilters {
   studentCode?: string
-}
-
-function pageOf(rows: StudentResultResponse[], page: number, size: number): Page<StudentResultResponse> {
-  const total = rows.length
-  return {
-    meta: { page, pageSize: size, pages: Math.max(1, Math.ceil(total / size)), total },
-    result: rows.slice(page * size, (page + 1) * size),
-  }
 }
 
 // Hoisted so the useList parent-sync effect ([filters]) keeps a stable identity and
@@ -40,9 +33,10 @@ export function AssignmentResultsPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
-  // Deep-link from the submissions table (?student=<userId>): narrows the already-
-  // fetched rows to that student and auto-expands them. This is client-side only; the
-  // dropdown filter below is the server-side (?studentCode=) path.
+  // Deep-link from the submissions table (?student=<userId>): narrows the fetched rows to
+  // that student and auto-expands them. Client-side only; the dropdown filter below is the
+  // server-side (?studentCode=) path. When set, the fetcher fetches the whole class
+  // (page/size omitted so course-service returns a PageImpl of everything).
   const focusedStudent = searchParams.get('student') ?? null
 
   const { plans } = useTestPlans(assignmentId ?? '')
@@ -62,27 +56,30 @@ export function AssignmentResultsPage() {
   } = useList<StudentResultResponse, ResultsFilters>({
     fetcher: useCallback(
       ({ page, size, studentCode }) =>
-        listResults(assignmentId ?? '', true, studentCode).then((r) => {
-          // Deep-link path: materialize the whole class in one page so a student not on
-          // page 1 is still visible, then filter client-side. Avoids a render loop because
-          // the fetcher identity is stable (deps change only when the URL-bound id flips).
-          if (focusedStudent) {
-            return pageOf(r, 0, r.length)
-          }
-          return pageOf(r, page, size)
-        }),
+        listResults(
+          assignmentId ?? '',
+          true,
+          // Deep-link path: fetch the whole class (no page/size => server returns full list)
+          // so a student not on page 1 is still visible, then filter client-side.
+          focusedStudent ? undefined : studentCode,
+          focusedStudent ? undefined : page,
+          focusedStudent ? undefined : size,
+        ),
       [assignmentId, focusedStudent],
     ),
     filters: EMPTY_FILTERS,
     pageSize: 20,
-  })
+   })
 
-  const { data: studentOptions } = useAssignmentStudents(assignmentId ?? '', 'results')
+   const { data: studentOptions } = useAssignmentStudents(assignmentId ?? '', 'results')
 
-  // Overlay the deep-link userId filter on the fetched rows.
-  const visibleRows = focusedStudent
-    ? rows.filter((r) => r.studentUserId === focusedStudent)
-    : rows
+   // Overlay the deep-link userId filter on the fetched rows.
+   const visibleRows = focusedStudent
+     ? rows.filter((r) => r.studentUserId === focusedStudent)
+     : rows
+
+   const toMessage = useApiErrorMessage()
+   const errMsg = error ? toMessage(error) : null
 
   const stepTable = (steps: AssignmentResultStepResponse[] | null | undefined) => (
     <Table
@@ -191,16 +188,12 @@ export function AssignmentResultsPage() {
         showActions
       />
 
-      {error ? (
-        <ErrorState message={error instanceof Error ? error.message : String(error)} onRetry={reload} />
-      ) : null}
-
       {error && rows.length > 0 ? (
         // Stale-rows case: keep showing the previous page while flagging the failed reload.
         <Alert
           type="error"
           showIcon
-          title={error instanceof Error ? error.message : String(error)}
+          title={errMsg}
           action={
             <Button type="primary" onClick={reload} style={{ marginRight: 0 }}>
               {t('common.retry')}
@@ -208,6 +201,10 @@ export function AssignmentResultsPage() {
           }
           style={{ marginBottom: 16 }}
         />
+      ) : null}
+
+      {error && !rows.length ? (
+        <ErrorState message={errMsg ?? 'Something went wrong'} onRetry={reload} />
       ) : null}
 
       {!loading && !error && !visibleRows.length ? (

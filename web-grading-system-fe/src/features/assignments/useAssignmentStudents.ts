@@ -18,9 +18,9 @@ export function useAssignmentStudents(
   return useQuery({
     queryKey: ['assignment-students', assignmentId, mode],
     queryFn: () =>
-      mode === 'results'
-        ? listResults(assignmentId, false).then((rows) => rowsToStudents(resultsShape(rows)))
-        : listSubmissions(assignmentId).then((rows) => rowsToStudents(submissionShape(rows))),
+       mode === 'results'
+         ? listResults(assignmentId, false).then((page) => rowsToStudents(resultsShape(page.result)))
+         : listSubmissions(assignmentId).then((page) => rowsToStudents(submissionShape(page.result))),
     enabled: !!assignmentId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

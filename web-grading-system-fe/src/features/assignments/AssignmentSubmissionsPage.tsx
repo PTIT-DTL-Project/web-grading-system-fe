@@ -9,7 +9,6 @@ import type { FilterConfig } from '../../shared/ui/FilterBar'
 import { useAssignmentStudents } from './useAssignmentStudents'
 import { listSubmissions } from '../../shared/api/endpoints/assignments'
 import type { SubmissionResponse } from '../../shared/types/assignment'
-import type { Page } from '../../shared/types/pagination'
 import { formatDateTime } from '../../shared/format/formatDateTime'
 
 interface SubmissionsFilters {
@@ -20,16 +19,6 @@ interface SubmissionsFilters {
 // (dep [filters]) does not refire every render. (Review: 2026-10-18, Pullfrog)
 const EMPTY_FILTERS: SubmissionsFilters = { studentCode: '' }
 
-// The endpoint returns the filtered list (course-service applies ?studentCode=
-// server-side); page it here for the ListPage shell since class sizes are bounded.
-function pageOf(rows: SubmissionResponse[], page: number, size: number): Page<SubmissionResponse> {
-  const total = rows.length
-  return {
-    meta: { page, pageSize: size, pages: Math.max(1, Math.ceil(total / size)), total },
-    result: rows.slice(page * size, page * size + size),
-  }
-}
-
 export function AssignmentSubmissionsPage() {
   const { classId, assignmentId } = useParams<{ classId: string; assignmentId: string }>()
   const navigate = useNavigate()
@@ -37,12 +26,12 @@ export function AssignmentSubmissionsPage() {
 
   const { data: studentOptions } = useAssignmentStudents(assignmentId ?? '', 'submissions')
 
-  // Stable data/refresh wiring: ListPage feeds `fetcher` and `initialFilters` into useList,
-  // whose parent-sync effect refires on a fresh identity — so both must be stable refs or
-  // the page loops like the old ResultsPage. (Review: 2026-10-18, Pullfrog)
+  // Server-side pagination: listSubmissions now returns Page<SubmissionResponse> and
+  // forwards page/size to course-service → submission-service. (Review: 2026-10-19,
+  // pagination-via-course-service.)
   const fetcher = useCallback(
     ({ page, size, studentCode }: { page: number; size: number; studentCode?: string }) =>
-      listSubmissions(assignmentId ?? '', studentCode).then((rows) => pageOf(rows, page, size)),
+      listSubmissions(assignmentId ?? '', studentCode, page, size),
     [assignmentId],
   )
   const [refreshKey, setRefreshKey] = useState(0)
