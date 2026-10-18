@@ -94,6 +94,8 @@
     "noResults": "Chưa có kết quả",
     "noSubmissions": "Chưa có nộp bài",
     "student": "Sinh viên",
+    "filterStudent": "Lọc theo sinh viên",
+    "filterStudentPlaceholder": "Chọn sinh viên",
     "score": "Điểm",
     "maxScore": "Tối đa",
     "plan": "Kế hoạch",

@@ -94,6 +94,8 @@
     "noResults": "No results yet",
     "noSubmissions": "No submissions yet",
     "student": "Student",
+    "filterStudent": "Filter by student",
+    "filterStudentPlaceholder": "Select a student",
     "score": "Score",
     "maxScore": "Max score",
     "plan": "Plan",

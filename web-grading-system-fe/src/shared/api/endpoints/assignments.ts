@@ -109,16 +109,25 @@ export function deleteStep(assignmentId: string, planId: string, stepId: string)
 
 /* --------------------------------------------------------------- results */
 
-export function listResults(assignmentId: string, includeSteps?: boolean): Promise<StudentResultResponse[]> {
+/** GET /api/v1/assignments/{id}/results — lecturer grading view.
+ * `studentCode` (roster code) narrows to one student; absent = whole class
+ * (incl. non-submitters synthesised as 0 by course-service). Returns the flat
+ * list; the page component wraps it into a paged shape for ListPage. */
+export function listResults(assignmentId: string, includeSteps?: boolean, studentCode?: string): Promise<StudentResultResponse[]> {
   return getData<StudentResultResponse[]>(`/api/v1/assignments/${assignmentId}/results`, {
     ...(includeSteps !== undefined ? { includeSteps } : {}),
+    ...(studentCode ? { studentCode } : {}),
   })
 }
 
 /* ------------------------------------------------------------- submissions */
 
-export function listSubmissions(assignmentId: string): Promise<SubmissionResponse[]> {
-  return getData<SubmissionResponse[]>(`/api/v1/assignments/${assignmentId}/submissions`)
+/** GET /api/v1/assignments/{id}/submissions — lecturer submission list.
+ * `studentCode` (roster code) filters to one student's submissions; absent = whole class. */
+export function listSubmissions(assignmentId: string, studentCode?: string): Promise<SubmissionResponse[]> {
+  return getData<SubmissionResponse[]>(`/api/v1/assignments/${assignmentId}/submissions`, {
+    ...(studentCode ? { studentCode } : {}),
+  })
 }
 
 /* ---------------------------------------------------------------- docker */
