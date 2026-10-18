@@ -486,6 +486,7 @@
     "loadFailed": "Không tải được giải thích",
     "generatedAt": "Tạo lúc {{time}}",
     "fromCache": "Đã lưu",
-    "searchGoogle": "Tìm kiếm \"{{keyword}}\" trên Google"
+    "searchGoogle": "Tìm kiếm \"{{keyword}}\" trên Google",
+    "generatingReassuring": "Sắp xong rồi, đang hoàn thiện giải thích cho bạn..."
   }
 }

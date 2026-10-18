@@ -486,6 +486,7 @@
     "loadFailed": "Could not load the explanation",
     "generatedAt": "Generated {{time}}",
     "fromCache": "Cached",
-    "searchGoogle": "Search \"{{keyword}}\" on Google"
+    "searchGoogle": "Search \"{{keyword}}\" on Google",
+    "generatingReassuring": "Almost ready, finalizing your explanation..."
   }
 }

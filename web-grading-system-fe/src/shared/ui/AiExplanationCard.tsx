@@ -134,6 +134,47 @@ interface AiExplanationCardProps {
  * viewer clicks Tạo giải thích AI, so scrolling results never triggers a paid
  * multi-second call.
  */
+const geminiWaveStyles = `
+@keyframes geminiWave {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes geminiPulse {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 4px 14px rgba(155, 114, 207, 0.4);
+  }
+  50% {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(66, 133, 244, 0.55);
+  }
+}
+
+.gemini-btn-generating {
+  background: linear-gradient(90deg, #4285f4, #9b72cf, #d96570, #4285f4) !important;
+  background-size: 300% 100% !important;
+  animation: geminiWave 3s ease infinite, geminiPulse 2s ease-in-out infinite !important;
+  border: none !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+.gemini-btn-generating:hover,
+.gemini-btn-generating:focus,
+.gemini-btn-generating:active {
+  background: linear-gradient(90deg, #4285f4, #9b72cf, #d96570, #4285f4) !important;
+  background-size: 300% 100% !important;
+  color: #ffffff !important;
+}
+`
+
 export function AiExplanationCard({ submissionId, enabled, assignmentId }: AiExplanationCardProps) {
   const { t, i18n } = useTranslation()
   const { message } = App.useApp()
@@ -186,6 +227,7 @@ export function AiExplanationCard({ submissionId, enabled, assignmentId }: AiExp
 
       {!loading && !hasError && explanation === null ? (
         <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          <style>{geminiWaveStyles}</style>
           <Typography.Text type="secondary">{t('ai.notGeneratedHint')}</Typography.Text>
           <div>
             <Button
@@ -193,12 +235,21 @@ export function AiExplanationCard({ submissionId, enabled, assignmentId }: AiExp
               icon={<RobotOutlined />}
               loading={generating}
               onClick={handleGenerate}
+              className={generating ? 'gemini-btn-generating' : undefined}
             >
               {generating ? t('ai.generating') : t('ai.generate')}
             </Button>
           </div>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            {t('ai.generatingHint')}
+          <Typography.Text
+            type="secondary"
+            style={{
+              fontSize: 12,
+              color: generating ? '#722ed1' : undefined,
+              fontWeight: generating ? 500 : 400,
+              transition: 'all 0.3s ease',
+            }}
+          >
+            {generating ? t('ai.generatingReassuring') : t('ai.generatingHint')}
           </Typography.Text>
         </Space>
       ) : null}
