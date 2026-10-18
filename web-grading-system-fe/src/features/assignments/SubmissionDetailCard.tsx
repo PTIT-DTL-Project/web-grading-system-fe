@@ -18,9 +18,10 @@ import { ArrowLeftOutlined, CheckCircleOutlined, CloseCircleOutlined, LoadingOut
 import type { TableColumnsType } from 'antd'
 import { useSubmissionResult } from '../student/results/useSubmissionResult'
 import { AiExplanationCard } from '../../shared/ui/AiExplanationCard'
+import { AssignmentTitle } from '../student/submissions/AssignmentTitle'
 import { ResultScopeBadge } from '../../shared/ui/ResultScopeBadge'
 import { useQuery } from '@tanstack/react-query'
-import { getAssignment, listPlans } from '../../shared/api/endpoints/assignments'
+import { getAssignmentPlans } from '../../shared/api/endpoints/studentAssignments'
 import { useApiErrorMessage } from '../../shared/api/errors'
 import { colors } from '../../shared/theme/tokens'
 import type { ResultResponse, StepResultResponse } from '../../shared/types/result'
@@ -209,10 +210,6 @@ export interface SubmissionDetailCardProps {
   assignmentId?: string
   onBack?: () => void
   backLabelKey?: string
-  /** Pre-resolved plan name resolver — avoids a student-only endpoint call from the lecturer context. */
-  planName?: (planId: string | null) => string | null
-  /** Pre-resolved assignment title — avoids a student-only endpoint call from the lecturer context. */
-  title?: React.ReactNode
 }
 
 export function SubmissionDetailCard({
@@ -220,33 +217,19 @@ export function SubmissionDetailCard({
   assignmentId,
   onBack,
   backLabelKey = 'result.backToSubmissions',
-  planName: planNameProp,
-  title: titleProp,
 }: SubmissionDetailCardProps) {
   const { t } = useTranslation()
   const toMessage = useApiErrorMessage()
   const { results, loading, error, isReady, timedOut, retry } = useSubmissionResult(submissionId)
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([])
   const resolvedAssignmentId = assignmentId ?? results[0]?.assignmentId
-
-  // Use injected (lecturer) resolver when provided; otherwise fetch via student endpoint.
   const { data: plans } = useQuery({
-    queryKey: ['assignment-plans', resolvedAssignmentId],
-    queryFn: () => listPlans(resolvedAssignmentId ?? ''),
-    enabled: !!resolvedAssignmentId && !planNameProp,
+    queryKey: ['student-assignment-plans', resolvedAssignmentId],
+    queryFn: () => getAssignmentPlans(resolvedAssignmentId ?? ''),
+    enabled: !!resolvedAssignmentId,
     staleTime: 10 * 60 * 1000,
   })
-  const resolvedPlanName = planNameProp ?? ((planId: string | null) => plans?.find((p) => p.id === planId)?.name ?? null)
-
-  // For the student view (no title prop), fetch via lecturer-scoped endpoint;
-  // for lecturer deep-link, AssignmentResultsPage passes title to avoid the call.
-  const { data: assignment } = useQuery({
-    queryKey: ['assignment', resolvedAssignmentId],
-    queryFn: () => getAssignment(resolvedAssignmentId ?? ''),
-    enabled: !!resolvedAssignmentId && !titleProp,
-    staleTime: 10 * 60 * 1000,
-  })
-  const resolvedTitle = titleProp ?? assignment?.title ?? '—'
+  const planName = (planId: string | null) => plans?.find((p) => p.id === planId)?.name ?? null
 
   if (loading && !isReady) {
     return (
@@ -381,7 +364,7 @@ export function SubmissionDetailCard({
           </Typography.Title>
           {results[0] ? (
             <Typography.Text type="secondary">
-              {resolvedTitle}
+              <AssignmentTitle assignmentId={results[0].assignmentId} />
             </Typography.Text>
           ) : null}
         </div>
@@ -417,7 +400,7 @@ export function SubmissionDetailCard({
           title={
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span>{t('result.plan')}</span>
-              <ResultScopeBadge scope={result.scope} planName={resolvedPlanName(result.planId)} />
+              <ResultScopeBadge scope={result.scope} planName={planName(result.planId)} />
               <Tag color={colors.info}>
                 {t('assignments.planWeight', { weight: result.planWeight })}
               </Tag>

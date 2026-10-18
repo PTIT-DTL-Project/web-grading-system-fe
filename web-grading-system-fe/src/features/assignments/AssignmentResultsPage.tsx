@@ -10,7 +10,7 @@ import { standardPagination } from '../../shared/ui/StandardPagination'
 import { ErrorState } from '../../shared/ui/ErrorState'
 import { useTestPlans } from './useTestPlans'
 import { useAssignmentStudents } from './useAssignmentStudents'
-import { listResults, getAssignment } from '../../shared/api/endpoints/assignments'
+import { listResults } from '../../shared/api/endpoints/assignments'
 import { ResultScopeBadge } from '../../shared/ui/ResultScopeBadge'
 import { LecturerStepEvidence } from './LecturerStepEvidence'
 import { AiExplanationCard } from '../../shared/ui/AiExplanationCard'
@@ -19,7 +19,6 @@ import type { FilterConfig } from '../../shared/ui/FilterBar'
 import type { AssignmentResultResponse, AssignmentResultStepResponse, StudentResultResponse } from '../../shared/types/assignment'
 
 import { useApiErrorMessage } from '../../shared/api/errors'
-import { useQuery } from '@tanstack/react-query'
 
 interface ResultsFilters {
   studentCode?: string
@@ -41,15 +40,6 @@ export function AssignmentResultsPage() {
   const { plans } = useTestPlans(assignmentId ?? '')
   const planName = (planId: string | null) => plans.find((p) => p.id === planId)?.name ?? null
 
-  // REVIEW: 2026-10-21 — fetch assignment title via lecturer-scoped endpoint so the
-  // deep-link card doesn't hit the student-only GET /api/v1/student/assignments/{id}.
-  const { data: assignment } = useQuery({
-    queryKey: ['assignment', assignmentId],
-    queryFn: () => getAssignment(assignmentId ?? ''),
-    enabled: !!assignmentId,
-    staleTime: 10 * 60 * 1000,
-  })
-
   const { data: studentOptions } = useAssignmentStudents(classId ?? '')
 
   const {
@@ -65,17 +55,8 @@ export function AssignmentResultsPage() {
     resetFilters,
   } = useList<StudentResultResponse, ResultsFilters>({
     fetcher: useCallback(
-      // REVIEW: 2026-10-21 — when deep-linking via ?submission=<id>, we render
-      // SubmissionDetailCard and bypass the class table entirely. Short-circuit
-      // to an empty page so listResults (a full-class fetch) is never called.
-      ({ page, size, studentCode }) => {
-        if (focusedSubmission) {
-          return Promise.resolve({
-            result: [] as StudentResultResponse[],
-            meta: { page: 0, pageSize: 0, pages: 0, total: 0 },
-          })
-        }
-        return listResults(
+      ({ page, size, studentCode }) =>
+        listResults(
           assignmentId ?? '',
           true,
           // Deep-link path: fetch the whole class (no page/size => server returns full list)
@@ -83,9 +64,8 @@ export function AssignmentResultsPage() {
           focusedStudent ? undefined : studentCode,
           focusedStudent ? undefined : page,
           focusedStudent ? undefined : size,
-        )
-      },
-      [assignmentId, focusedStudent, focusedSubmission],
+        ),
+      [assignmentId, focusedStudent],
     ),
     filters: EMPTY_FILTERS,
     pageSize: 20,
@@ -185,10 +165,8 @@ export function AssignmentResultsPage() {
         onBack={() =>
           navigate(`/classes/${classId ?? ''}/assignments/${assignmentId ?? ''}/submissions`)
         }
-         backLabelKey="assignment.submissions"
-         planName={planName}
-         title={assignment?.title}
-       />
+        backLabelKey="assignment.submissions"
+      />
     )
   }
 
