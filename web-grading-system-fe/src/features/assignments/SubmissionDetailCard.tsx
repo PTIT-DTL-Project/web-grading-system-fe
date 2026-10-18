@@ -341,7 +341,7 @@ export function SubmissionDetailCard({
       title: t('result.score'),
       key: 'score',
       width: 100,
-      render: (_, r) => `${r.score}/${r.weight}`,
+      render: (_, r) => (r.score != null ? `${r.score}/${r.weight ?? '—'}` : '—'),
     },
     {
       title: t('result.durationMs'),
