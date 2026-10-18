@@ -92,6 +92,7 @@
     "submissions": "Nộp bài",
     "dockerImages": "Docker images",
     "noResults": "Chưa có kết quả",
+    "noStudentResults": "Không có kết quả cho sinh viên này",
     "noSubmissions": "Chưa có nộp bài",
     "student": "Sinh viên",
     "filterStudent": "Lọc theo sinh viên",

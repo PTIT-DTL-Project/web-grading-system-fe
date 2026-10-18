@@ -39,6 +39,10 @@ function rowsToStudents(
     if (seen.has(r.studentUserId)) continue
     seen.add(r.studentUserId)
     const label = [r.studentCode, r.studentName].filter(Boolean).join(' — ') || r.studentUserId.slice(0, 8)
+    // Bot review (2026-10-18): students lacking a roster code (left the roster) can't be
+    // resolved server-side by ?studentCode= (the API returns empty), so the userId-slice
+    // fallback here produces a selectable-but-always-empty option. Omitting them is an
+    // intentional future choice; until decided, they remain selectable for completeness.
     out.push({ label, value: r.studentCode ?? r.studentUserId })
   }
   // Stable order: by roster code when present, else by user id slice.

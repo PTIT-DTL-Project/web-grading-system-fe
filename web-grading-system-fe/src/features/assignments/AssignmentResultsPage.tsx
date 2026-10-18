@@ -1,6 +1,7 @@
 "use client"
 
-import { Table, Tag, Spin, Empty, Typography, Button, Space } from 'antd'
+import { Table, Tag, Spin, Empty, Typography, Button, Space, Alert } from 'antd'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useList } from '../../shared/hooks/useList'
@@ -25,9 +26,14 @@ function pageOf(rows: StudentResultResponse[], page: number, size: number): Page
   const total = rows.length
   return {
     meta: { page, pageSize: size, pages: Math.max(1, Math.ceil(total / size)), total },
-    result: rows.slice(page * size, page * size + size),
+    result: rows.slice(page * size, (page + 1) * size),
   }
 }
+
+// Hoisted so the useList parent-sync effect ([filters]) keeps a stable identity and
+// does not refire every render — the original inline `{ studentCode: '' }` literal was
+// fresh per render and drove an unbounded update/fetch cycle (Review: 2026-10-18, Pullfrog).
+const EMPTY_FILTERS: ResultsFilters = { studentCode: '' }
 
 export function AssignmentResultsPage() {
   const { assignmentId } = useParams<{ classId: string; assignmentId: string }>()
@@ -54,9 +60,20 @@ export function AssignmentResultsPage() {
     setFilter,
     resetFilters,
   } = useList<StudentResultResponse, ResultsFilters>({
-    fetcher: ({ page, size, studentCode }) =>
-      listResults(assignmentId ?? '', true, studentCode).then((r) => pageOf(r, page, size)),
-    filters: { studentCode: '' },
+    fetcher: useCallback(
+      ({ page, size, studentCode }) =>
+        listResults(assignmentId ?? '', true, studentCode).then((r) => {
+          // Deep-link path: materialize the whole class in one page so a student not on
+          // page 1 is still visible, then filter client-side. Avoids a render loop because
+          // the fetcher identity is stable (deps change only when the URL-bound id flips).
+          if (focusedStudent) {
+            return pageOf(r, 0, r.length)
+          }
+          return pageOf(r, page, size)
+        }),
+      [assignmentId, focusedStudent],
+    ),
+    filters: EMPTY_FILTERS,
     pageSize: 20,
   })
 
@@ -174,8 +191,23 @@ export function AssignmentResultsPage() {
         showActions
       />
 
-      {error && rows.length === 0 ? (
+      {error ? (
         <ErrorState message={error instanceof Error ? error.message : String(error)} onRetry={reload} />
+      ) : null}
+
+      {error && rows.length > 0 ? (
+        // Stale-rows case: keep showing the previous page while flagging the failed reload.
+        <Alert
+          type="error"
+          showIcon
+          title={error instanceof Error ? error.message : String(error)}
+          action={
+            <Button type="primary" onClick={reload} style={{ marginRight: 0 }}>
+              {t('common.retry')}
+            </Button>
+          }
+          style={{ marginBottom: 16 }}
+        />
       ) : null}
 
       {!loading && !error && !visibleRows.length ? (
@@ -188,12 +220,16 @@ export function AssignmentResultsPage() {
         rowKey="studentUserId"
         loading={loading}
         onChange={() => {}}
-        pagination={standardPagination({
-          meta,
-          currentPage: page,
-          onPageChange: setPage,
-          showTotal: (total) => t('common.total', { total }),
-        })}
+        pagination={
+          focusedStudent
+            ? false
+            : standardPagination({
+                meta,
+                currentPage: page,
+                onPageChange: setPage,
+                showTotal: (total) => t('students.total', { total }),
+              })
+        }
         expandable={{
           expandedRowKeys: focusedStudent ? [focusedStudent] : undefined,
           expandedRowRender: (record: StudentResultResponse) => {

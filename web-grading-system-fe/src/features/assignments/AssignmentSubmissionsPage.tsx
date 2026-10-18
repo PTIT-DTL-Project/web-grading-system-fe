@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Tag, Typography, Button, Space } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
@@ -15,6 +15,10 @@ import { formatDateTime } from '../../shared/format/formatDateTime'
 interface SubmissionsFilters {
   studentCode?: string
 }
+
+// Hoisted for a stable identity so ListPage's useList parent-sync effect
+// (dep [filters]) does not refire every render. (Review: 2026-10-18, Pullfrog)
+const EMPTY_FILTERS: SubmissionsFilters = { studentCode: '' }
 
 // The endpoint returns the filtered list (course-service applies ?studentCode=
 // server-side); page it here for the ListPage shell since class sizes are bounded.
@@ -32,6 +36,16 @@ export function AssignmentSubmissionsPage() {
   const { t, i18n } = useTranslation()
 
   const { data: studentOptions } = useAssignmentStudents(assignmentId ?? '', 'submissions')
+
+  // Stable data/refresh wiring: ListPage feeds `fetcher` and `initialFilters` into useList,
+  // whose parent-sync effect refires on a fresh identity — so both must be stable refs or
+  // the page loops like the old ResultsPage. (Review: 2026-10-18, Pullfrog)
+  const fetcher = useCallback(
+    ({ page, size, studentCode }: { page: number; size: number; studentCode?: string }) =>
+      listSubmissions(assignmentId ?? '', studentCode).then((rows) => pageOf(rows, page, size)),
+    [assignmentId],
+  )
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const columns = useMemo(
     () => [
@@ -107,24 +121,25 @@ export function AssignmentSubmissionsPage() {
 
   return (
     <ListPage<SubmissionResponse, SubmissionsFilters>
-      fetcher={({ page, size, studentCode }) =>
-        listSubmissions(assignmentId ?? '', studentCode).then((rows) => pageOf(rows, page, size))
-      }
-      filters={filterConfig}
-      initialFilters={{ studentCode: '' }}
-      columns={columns}
-      pageSize={20}
-      rowKey="id"
-      headerTitle={t('assignment.submissions')}
-      headerActions={
-        <Space>
-          <Button onClick={() => navigate(-1)}>← {t('common.back')}</Button>
-        </Space>
-      }
-      emptyTitle={t('assignment.noSubmissions')}
-      emptyHint={undefined}
-      showTotal={(total) => t('common.total', { total })}
-      refreshToken={0}
-    />
+       fetcher={fetcher}
+       filters={filterConfig}
+       initialFilters={EMPTY_FILTERS}
+       columns={columns}
+       pageSize={20}
+       rowKey="id"
+       headerTitle={t('assignment.submissions')}
+       headerActions={
+         <Space>
+           <Button onClick={() => navigate(-1)}>← {t('common.back')}</Button>
+           <Button type="primary" onClick={() => setRefreshKey((k) => k + 1)}>
+             {t('common.refresh')}
+           </Button>
+         </Space>
+       }
+       emptyTitle={t('assignment.noSubmissions')}
+       emptyHint={undefined}
+       showTotal={(total) => t('submission.total', { total })}
+       refreshToken={refreshKey}
+     />
   )
 }

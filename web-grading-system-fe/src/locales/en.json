@@ -92,6 +92,7 @@
     "submissions": "Submissions",
     "dockerImages": "Docker images",
     "noResults": "No results yet",
+    "noStudentResults": "No results for this student",
     "noSubmissions": "No submissions yet",
     "student": "Student",
     "filterStudent": "Filter by student",
