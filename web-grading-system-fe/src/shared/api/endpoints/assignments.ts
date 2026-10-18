@@ -109,16 +109,32 @@ export function deleteStep(assignmentId: string, planId: string, stepId: string)
 
 /* --------------------------------------------------------------- results */
 
-export function listResults(assignmentId: string, includeSteps?: boolean): Promise<StudentResultResponse[]> {
-  return getData<StudentResultResponse[]>(`/api/v1/assignments/${assignmentId}/results`, {
+/** GET /api/v1/assignments/{id}/results — lecturer grading view.
+ * `studentCode` (roster code) narrows to one student; absent = whole class
+ * (incl. non-submitters synthesised as 0 by course-service). Server-side
+ * pagination via `page`/`size`; omitting both returns the full class in one
+ * PageImpl (backward compatible) — FE ListPage reads meta.total either way.
+ * Review: 2026-10-19, pagination-via-course-service. */
+export function listResults(assignmentId: string, includeSteps?: boolean, studentCode?: string, page?: number, size?: number): Promise<Page<StudentResultResponse>> {
+  return getData<Page<StudentResultResponse>>(`/api/v1/assignments/${assignmentId}/results`, {
     ...(includeSteps !== undefined ? { includeSteps } : {}),
+    ...(studentCode ? { studentCode } : {}),
+    ...(page !== undefined ? { page } : {}),
+    ...(size !== undefined ? { size } : {}),
   })
 }
 
 /* ------------------------------------------------------------- submissions */
 
-export function listSubmissions(assignmentId: string): Promise<SubmissionResponse[]> {
-  return getData<SubmissionResponse[]>(`/api/v1/assignments/${assignmentId}/submissions`)
+/** GET /api/v1/assignments/{id}/submissions — lecturer submission list.
+ * `studentCode` filters to one student's submissions; absent = whole class.
+ * Server-side pagination via `page`/`size` (forwarded to submission-service). */
+export function listSubmissions(assignmentId: string, studentCode?: string, page?: number, size?: number): Promise<Page<SubmissionResponse>> {
+  return getData<Page<SubmissionResponse>>(`/api/v1/assignments/${assignmentId}/submissions`, {
+    ...(studentCode ? { studentCode } : {}),
+    ...(page !== undefined ? { page } : {}),
+    ...(size !== undefined ? { size } : {}),
+  })
 }
 
 /* ---------------------------------------------------------------- docker */
