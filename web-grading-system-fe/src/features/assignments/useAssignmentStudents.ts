@@ -1,66 +1,40 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
-import { listResults, listSubmissions } from '../../shared/api/endpoints/assignments'
-import type { StudentResultResponse, SubmissionResponse } from '../../shared/types/assignment'
+import { listStudents } from '../../shared/api/endpoints/classes'
+import type { ClassStudentResponse } from '../../shared/types/class'
 
 export interface StudentOption {
   label: string
   value: string
 }
 
-// The dropdown's canonical student list: fetched unfiltered so it stays complete
-// after a student has been selected and the row set narrows. For results the
-// endpoint returns every class student (non-submitters synthesised as score 0),
-// so the dropdown can address anyone; for submissions it is the set of submitters.
-export function useAssignmentStudents(
-  assignmentId: string,
-  mode: 'results' | 'submissions',
-): UseQueryResult<StudentOption[]> {
+/**
+ * The dropdown's canonical student list: fetched from the class roster
+ * (GET /api/v1/classes/{id}/students) so it stays complete — including
+ * students who have not yet submitted — regardless of which assignment
+ * view is open. The former approach derived options from listResults /
+ * listSubmissions, which only returned students with graded data and left
+ * the dropdown empty on assignments with no submissions yet. Those calls
+ * also duplicated the assignment fetch and triggered spurious 500s.
+ *
+ * Review: 2026-10-20, Pullfrog (redundant-call / 500 fix).
+ */
+export function useAssignmentStudents(classId: string): UseQueryResult<StudentOption[]> {
   return useQuery({
-    queryKey: ['assignment-students', assignmentId, mode],
+    queryKey: ['class-students', classId],
     queryFn: () =>
-       mode === 'results'
-         ? listResults(assignmentId, false).then((page) => rowsToStudents(resultsShape(page.result)))
-         : listSubmissions(assignmentId).then((page) => rowsToStudents(submissionShape(page.result))),
-    enabled: !!assignmentId,
+      listStudents(classId, 0, 1000).then((page) => page.result.map(toStudentOption)),
+    enabled: !!classId,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   })
 }
 
-// Normalise both response shapes to the {studentUserId, studentCode, studentName} view
-// the dropdown needs. Result rows already carry studentUserId; submission rows carry
-// studentId (course-service fills it from the submission's owner before serving).
-function rowsToStudents(
-  rows: Array<{ studentUserId: string; studentCode?: string | null; studentName?: string | null }>,
-): StudentOption[] {
-  const out: StudentOption[] = []
-  const seen = new Set<string>()
-  for (const r of rows) {
-    if (seen.has(r.studentUserId)) continue
-    seen.add(r.studentUserId)
-    const label = [r.studentCode, r.studentName].filter(Boolean).join(' — ') || r.studentUserId.slice(0, 8)
-    // Bot review (2026-10-18): students lacking a roster code (left the roster) can't be
-    // resolved server-side by ?studentCode= (the API returns empty), so the userId-slice
-    // fallback here produces a selectable-but-always-empty option. Omitting them is an
-    // intentional future choice; until decided, they remain selectable for completeness.
-    out.push({ label, value: r.studentCode ?? r.studentUserId })
-  }
-  // Stable order: by roster code when present, else by user id slice.
-  return out.sort((a, b) => a.value.localeCompare(b.value))
-}
-
-function resultsShape(rows: StudentResultResponse[]) {
-  return rows.map((r) => ({
-    studentUserId: r.studentUserId,
-    studentCode: r.studentCode,
-    studentName: r.studentName,
-  }))
-}
-
-function submissionShape(rows: SubmissionResponse[]) {
-  return rows.map((r) => ({
-    studentUserId: r.studentId,
-    studentCode: r.studentCode,
-    studentName: r.studentName,
-  }))
+/** Roster rows carry the roster code/name the dropdown shows plus a stable fallback id. */
+function toStudentOption(student: ClassStudentResponse): StudentOption {
+  const label = [student.studentCode, student.studentName].filter(Boolean).join(' — ') || student.id.slice(0, 8)
+  // The dropdown's select value is the studentCode so useList forwards it as
+  // ?studentCode= to course-service, which resolves it back to a user id. A departed
+  // student (no roster code) is still selectable via its row id — selecting them returns
+  // empty data rather than crashing the page. Review: 2026-10-20.
+  return { label, value: student.studentCode ?? student.id }
 }
