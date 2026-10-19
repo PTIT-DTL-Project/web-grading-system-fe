@@ -1,5 +1,5 @@
 import { getData } from '../http'
-import type { AssignmentResponse, PlanResponse, DockerImageResponse } from '../../types/assignment'
+import type { AssignmentResponse, PlanResponse } from '../../types/assignment'
 import type { Page } from '../../types/pagination'
 
 /** GET /api/v1/student/assignments */
@@ -31,16 +31,4 @@ export function getAssignmentPlans(
   options?: { signal?: AbortSignal },
 ): Promise<PlanResponse[]> {
   return getData<PlanResponse[]>(`/api/v1/student/assignments/${id}/plans`, undefined, options)
-}
-
-/** GET /api/v1/student/assignments/{id}/docker-images */
-export function getAssignmentDockerImages(
-  id: string,
-  options?: { signal?: AbortSignal },
-): Promise<DockerImageResponse[]> {
-  return getData<DockerImageResponse[]>(
-    `/api/v1/student/assignments/${id}/docker-images`,
-    undefined,
-    options,
-  )
 }

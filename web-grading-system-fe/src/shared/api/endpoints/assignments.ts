@@ -1,5 +1,5 @@
 import { getData, sendData, http } from '../http'
-import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest, TestPlan, TestStep, StepType, StepResponseDto, StepCreateBody, StepUpdateBody, StudentResultResponse, SubmissionResponse, DockerImageResponse } from '../../types/assignment'
+import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest, TestPlan, TestStep, StepType, StepResponseDto, StepCreateBody, StepUpdateBody, StudentResultResponse, SubmissionResponse } from '../../types/assignment'
 import type { Page } from '../../types/pagination'
 
 export function listAssignments(
@@ -135,26 +135,4 @@ export function listSubmissions(assignmentId: string, studentCode?: string, page
     ...(page !== undefined ? { page } : {}),
     ...(size !== undefined ? { size } : {}),
   })
-}
-
-/* ---------------------------------------------------------------- docker */
-
-export function listDockerImages(name?: string, page?: number, size?: number, options?: { signal?: AbortSignal }): Promise<Page<DockerImageResponse>> {
-  return getData<Page<DockerImageResponse>>('/api/v1/docker-images', {
-    ...(name ? { name } : {}),
-    ...(page !== undefined ? { page } : {}),
-    ...(size !== undefined ? { size } : {}),
-  }, { signal: options?.signal })
-}
-
-export function createDockerImage(body: { name: string; imageUrl: string; description?: string }): Promise<DockerImageResponse> {
-  return sendData<DockerImageResponse, typeof body>('/api/v1/docker-images', 'post', body)
-}
-
-export function updateDockerImage(id: string, body: { name?: string; imageUrl?: string; description?: string }): Promise<DockerImageResponse> {
-  return sendData<DockerImageResponse, typeof body>(`/api/v1/docker-images/${id}`, 'put', body)
-}
-
-export function deleteDockerImage(id: string): Promise<void> {
-  return http.delete(`/api/v1/docker-images/${id}`).then((response) => response.data)
 }

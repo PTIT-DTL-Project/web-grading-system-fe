@@ -22,7 +22,6 @@ import {
   ClockCircleOutlined,
   CodeOutlined,
   HistoryOutlined,
-  RobotOutlined,
   UploadOutlined,
 } from '@ant-design/icons'
 import { useStudentAssignment } from './useStudentAssignment'
@@ -85,7 +84,7 @@ export function StudentAssignmentDetailPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const toMessage = useApiErrorMessage()
-  const { assignment, plans, images, loading, error, reload } = useStudentAssignment(id ?? '')
+  const { assignment, plans, loading, error, reload } = useStudentAssignment(id ?? '')
   const [submitOpen, setSubmitOpen] = useState(false)
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null)
 
@@ -300,25 +299,6 @@ export function StudentAssignmentDetailPage() {
         )}
       </Card>
 
-      {images.length > 0 && (
-        <Card
-          title={
-            <Space>
-              <RobotOutlined style={{ color: colors.primary }} />
-              {t('assignments.dockerImages')}
-            </Space>
-          }
-          style={{ borderColor: colors.border }}
-        >
-          <Space wrap>
-            {images.map((img) => (
-              <Tag key={img.id} style={{ padding: '4px 12px' }}>
-                {img.name}:{img.tag}
-              </Tag>
-            ))}
-          </Space>
-        </Card>
-      )}
 
       <SubmitAssignmentModal
         assignmentId={assignment.id}
