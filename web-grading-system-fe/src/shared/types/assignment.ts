@@ -159,14 +159,6 @@ export interface SubmissionResponse {
   studentName?: string | null
 }
 
-export interface DockerImageResponse {
-  id: string
-  name: string
-  imageUrl?: string
-  tag?: string
-  description: string | null
-}
-
 export interface CreateAssignmentRequest {
   classId: string
   ownerId: string

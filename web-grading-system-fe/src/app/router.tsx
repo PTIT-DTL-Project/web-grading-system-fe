@@ -10,7 +10,6 @@ import { NotFoundPage } from '../features/NotFoundPage'
 import { StudentClassesPage } from '../features/student/StudentClassesPage'
 import { StudentClassDetailPage } from '../features/student/StudentClassDetailPage'
 import { LandingPage } from '../features/landing/LandingPage'
-import { DockerImagePage } from '../features/docker/DockerImagePage'
 import { AssignmentResultsPage } from '../features/assignments/AssignmentResultsPage'
 import { AssignmentSubmissionsPage } from '../features/assignments/AssignmentSubmissionsPage'
 import { StudentAssignmentsPage } from '../features/student/assignments/StudentAssignmentsPage'
@@ -73,14 +72,6 @@ export const router = createBrowserRouter([
             element: (
               <RequireRole role="LECTURER">
                 <AssignmentSubmissionsPage />
-              </RequireRole>
-            ),
-          },
-          {
-            path: 'docker-images',
-            element: (
-              <RequireRole role="LECTURER">
-                <DockerImagePage />
               </RequireRole>
             ),
           },
