@@ -39,10 +39,6 @@ export function publishAssignment(id: string): Promise<AssignmentResponse> {
   return sendData<AssignmentResponse, undefined>(`/api/v1/assignments/${id}/publish`, 'post')
 }
 
-export function assignDockerImages(id: string, imageIds: string[]): Promise<void> {
-  return sendData<void, string[]>(`/api/v1/assignments/${id}/docker-images`, 'put', imageIds)
-}
-
 /* ---------------------------------------------------------------- test plans */
 
 export function listPlans(assignmentId: string): Promise<TestPlan[]> {
