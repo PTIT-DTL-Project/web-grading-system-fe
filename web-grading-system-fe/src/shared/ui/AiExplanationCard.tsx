@@ -125,15 +125,6 @@ interface AiExplanationCardProps {
   assignmentId?: string
 }
 
-/**
- * AI explanation panel for one submission. Lives in `shared/` because both
- * audiences render it: a student on their result page, a lecturer on the
- * assignment results table.
- *
- * GET on mount (cache hit renders instantly); the LLM POST runs only when the
- * viewer clicks Tạo giải thích AI, so scrolling results never triggers a paid
- * multi-second call.
- */
 const geminiWaveStyles = `
 @keyframes geminiWave {
   0% {
@@ -175,6 +166,15 @@ const geminiWaveStyles = `
 }
 `
 
+/**
+ * AI explanation panel for one submission. Lives in `shared/` because both
+ * audiences render it: a student on their result page, a lecturer on the
+ * assignment results table.
+ *
+ * GET on mount (cache hit renders instantly); the LLM POST runs only when the
+ * viewer clicks Tạo giải thích AI, so scrolling results never triggers a paid
+ * multi-second call.
+ */
 export function AiExplanationCard({ submissionId, enabled, assignmentId }: AiExplanationCardProps) {
   const { t, i18n } = useTranslation()
   const { message } = App.useApp()

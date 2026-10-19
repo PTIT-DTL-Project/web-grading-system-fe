@@ -9,8 +9,8 @@ In the AI explanation card (`AiExplanationCard.tsx`), each step analysis present
 - **Opening Behavior:** Opens in a new tab with `target="_blank"` and `rel="noopener noreferrer"` for security and isolation.
 - **Visual Design:**
   - Semantic HTML anchor `<a>` tag wrapping `<Tag>` or embedded within it with `text-decoration: none`.
-  - Add search icon `SearchOutlined` to the `<Tag>`.
-  - Add cursor pointer styling and `color="processing"` (or subtle primary tint) to indicate interactivity.
+  - Add custom SVG Google icon `<GoogleIcon />` to the `<Tag>`.
+  - Add cursor pointer styling and `color="purple"` to indicate interactivity.
   - Add tooltip / `title` attribute for user clarity (e.g. "Tìm kiếm [keyword] trên Google").
 - **Localization (i18n):**
   - Add `searchGoogle` key to `vi.json` and `en.json`.
@@ -22,7 +22,7 @@ In the AI explanation card (`AiExplanationCard.tsx`), each step analysis present
 
 ## 3. Architecture & Code Changes
 - File: `web-grading-system-fe/src/shared/ui/AiExplanationCard.tsx`
-  - Import `SearchOutlined` from `@ant-design/icons`.
+  - Add `<GoogleIcon />` SVG component.
   - Update `keywords.map`:
     ```tsx
     {keywords.map((keyword, index) => (
@@ -34,8 +34,8 @@ In the AI explanation card (`AiExplanationCard.tsx`), each step analysis present
         style={{ textDecoration: 'none' }}
       >
         <Tag
-          icon={<SearchOutlined />}
-          color="processing"
+          icon={<GoogleIcon />}
+          color="purple"
           style={{ cursor: 'pointer' }}
           title={t('ai.searchGoogle', { keyword })}
         >
@@ -52,4 +52,4 @@ In the AI explanation card (`AiExplanationCard.tsx`), each step analysis present
 ## 4. Risks & Mitigations
 - Special characters in keywords: Handled safely using `encodeURIComponent(keyword)`.
 - Security: `rel="noopener noreferrer"` prevents tab-nabbing / reverse-tabnabbing vulnerabilities.
-- Broken layout: `Space` wrap is already in place with `size={[4, 4]}` and `textDecoration: 'none'` ensures tags look identical to standard AntD tags with the added search icon.
+- Broken layout: `Space` wrap is already in place with `size={[4, 4]}` and `textDecoration: 'none'` ensures tags look identical to standard AntD tags with the added Google icon.

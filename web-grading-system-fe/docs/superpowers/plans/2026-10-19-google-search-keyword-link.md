@@ -4,12 +4,12 @@
 
 **Goal:** Allow users to click on AI learning keywords in the submission explanation card to open Google Search in a new tab with the keyword query.
 
-**Architecture:** Wrap the keyword `Tag` in `AiExplanationCard.tsx` with a standard HTML `<a>` link pointed to `https://www.google.com/search?q=${encodeURIComponent(keyword)}` with `target="_blank"` and `rel="noopener noreferrer"`. Style the tag with `SearchOutlined` icon, pointer cursor, and tooltip/title. Provide translations for Vietnamese and English.
+**Architecture:** Wrap the keyword `Tag` in `AiExplanationCard.tsx` with a standard HTML `<a>` link pointed to `https://www.google.com/search?q=${encodeURIComponent(keyword)}` with `target="_blank"` and `rel="noopener noreferrer"`. Style the tag with custom `GoogleIcon` SVG icon, `color="purple"`, pointer cursor, and tooltip/title. Provide translations for Vietnamese and English.
 
 **Tech Stack:** React 19, TypeScript, Ant Design 6, react-i18next, Vite.
 
 ## Global Constraints
-- Target workspace: `d:\Project\DATN\web-grading-system-fe\web-grading-system-fe`
+- Target workspace: `web-grading-system-fe/web-grading-system-fe`
 - All translation keys must exist in both `vi.json` and `en.json`.
 - Strict typing: `npm run build` (`tsc -b && vite build`) and `npm run lint` (`oxlint`) must pass cleanly.
 - Target URL: `https://www.google.com/search?q=${encodeURIComponent(keyword)}`
@@ -50,11 +50,11 @@ git commit -m "feat(i18n): add searchGoogle translation key for ai learning keyw
 - Modify: `src/shared/ui/AiExplanationCard.tsx:1-68`
 
 **Interfaces:**
-- Consumes: `ai.searchGoogle` from i18n, `SearchOutlined` from `@ant-design/icons`.
-- Produces: Clickable `<a>` tags around `<Tag>` elements in `StepAnalysisRow`.
+- Consumes: `ai.searchGoogle` from i18n.
+- Produces: `GoogleIcon` component and clickable `<a>` tags around `<Tag>` elements in `StepAnalysisRow`.
 
-- [ ] **Step 1: Import SearchOutlined icon**
-In `src/shared/ui/AiExplanationCard.tsx`, import `SearchOutlined` from `@ant-design/icons`.
+- [ ] **Step 1: Define GoogleIcon SVG component**
+In `src/shared/ui/AiExplanationCard.tsx`, create the `GoogleIcon` SVG component.
 
 - [ ] **Step 2: Update StepAnalysisRow keywords rendering**
 Update the keywords mapping in `StepAnalysisRow`:
@@ -75,8 +75,8 @@ Update the keywords mapping in `StepAnalysisRow`:
                   style={{ textDecoration: 'none' }}
                 >
                   <Tag
-                    icon={<SearchOutlined />}
-                    color="processing"
+                    icon={<GoogleIcon />}
+                    color="purple"
                     style={{ cursor: 'pointer' }}
                     title={t('ai.searchGoogle', { keyword })}
                   >
