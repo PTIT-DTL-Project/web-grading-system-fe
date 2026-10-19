@@ -485,6 +485,8 @@
     "noSteps": "AI chưa đưa ra phân tích cho từng bước.",
     "loadFailed": "Không tải được giải thích",
     "generatedAt": "Tạo lúc {{time}}",
-    "fromCache": "Đã lưu"
+    "fromCache": "Đã lưu",
+    "searchGoogle": "Tìm kiếm \"{{keyword}}\" trên Google",
+    "generatingReassuring": "Sắp xong rồi, đang hoàn thiện giải thích cho bạn..."
   }
 }
