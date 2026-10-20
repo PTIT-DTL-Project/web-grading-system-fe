@@ -1,5 +1,7 @@
 # Student Portal Implementation Plan - Part 1
 
+> **Đã xoá 2026-10-19 (PR #23):** Docker image management đã bị gỡ khỏi frontend và backend. Bỏ qua mọi `DockerImageResponse`, `getAssignmentDockerImages`, `assignDockerImages`, `dockerImages`/`noImages` bên dưới — chúng chỉ còn giá trị lịch sử.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Xây dựng toàn bộ giao diện Student Portal (danh sách bài tập, chi tiết bài tập + nộp bài, lịch sử nộp bài, xem kết quả chấm) tích hợp với các API backend đã có.
