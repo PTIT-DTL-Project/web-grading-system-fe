@@ -1,28 +1,36 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Input, Button } from 'antd'
 import { SendOutlined } from '@ant-design/icons'
 import { colors } from '../../../shared/theme/tokens'
 
 interface Props {
-  onSend: (text: string) => void
+  onSend: (text: string) => Promise<void>
   disabled?: boolean
   loading?: boolean
 }
 
 export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading }) => {
   const [text, setText] = useState('')
+  const sendingRef = useRef(false)
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = text.trim()
-    if (!trimmed || disabled || loading) return
-    onSend(trimmed)
+    if (!trimmed || disabled || loading || sendingRef.current) return
+    sendingRef.current = true
     setText('')
+    try {
+      await onSend(trimmed)
+    } finally {
+      sendingRef.current = false
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleSend()
+      if (!e.repeat && !e.nativeEvent.isComposing) {
+        void handleSend()
+      }
     }
   }
 
@@ -48,7 +56,7 @@ export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading }) => {
       <Button
         type="primary"
         icon={<SendOutlined />}
-        onClick={handleSend}
+        onClick={() => { void handleSend() }}
         loading={loading}
         disabled={disabled || !text.trim()}
         style={{
