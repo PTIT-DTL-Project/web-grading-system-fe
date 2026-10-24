@@ -3,9 +3,8 @@ import { Avatar } from 'antd'
 import { RobotOutlined } from '@ant-design/icons'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import rehypeRaw from 'rehype-raw'
-import rehypeSanitize from 'rehype-sanitize'
 import { colors } from '../../../shared/theme/tokens'
+import { formatAssistantContent } from './formatAssistantContent'
 import './assistant-message.css'
 
 interface Props {
@@ -43,8 +42,8 @@ export const AssistantMessage: React.FC<Props> = ({ content, isStreaming }) => {
         }}
       >
         <div className="ai-assistant-markdown">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeSanitize]}>
-            {content}
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {formatAssistantContent(content)}
           </ReactMarkdown>
           {isStreaming && (
             <span

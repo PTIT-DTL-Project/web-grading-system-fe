@@ -50,26 +50,6 @@ export function cancelRun(runId: string): Promise<void> {
   return sendData<void, undefined>(`/api/v1/ai/runs/${runId}/cancel`, 'post')
 }
 
-export interface PendingAiAction {
-  pendingActionId: string
-  toolName: string
-  arguments: Record<string, unknown>
-  status: string
-  expiresAt: string
-}
-
-export function listPendingAiActions(conversationId: string): Promise<PendingAiAction[]> {
-  return getData<PendingAiAction[]>(`/api/v1/ai/pending-actions/conversation/${conversationId}`)
-}
-
-export function confirmAiAction(id: string): Promise<{ status: string; result?: { success: boolean; message?: string; data?: unknown } }> {
-  return sendData(`/api/v1/ai/pending-actions/${id}/confirm`, 'post')
-}
-
-export function rejectAiAction(id: string): Promise<unknown> {
-  return sendData(`/api/v1/ai/pending-actions/${id}/reject`, 'post')
-}
-
 export function subscribeRunEvents(
   runId: string,
   onMessage: (event: MessageEvent) => void,

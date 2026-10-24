@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'
-import { Button, Empty, Spin, message, Card } from 'antd'
+import { Button, Empty, Spin, message } from 'antd'
 import { CloseOutlined, RobotOutlined } from '@ant-design/icons'
 import { ConversationSelector } from './components/ConversationSelector'
 import { RunStatusBar } from './components/RunStatusBar'
@@ -13,8 +13,6 @@ import { useMessages } from './hooks/useMessages'
 import { useSendMessage } from './hooks/useSendMessage'
 import { useRunEvents } from './hooks/useRunEvents'
 import { colors } from '../../shared/theme/tokens'
-import { listPendingAiActions, confirmAiAction, rejectAiAction } from '../../shared/api/endpoints/ai'
-import type { PendingAiAction } from '../../shared/api/endpoints/ai'
 
 interface Props {
   open: boolean
@@ -27,9 +25,6 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
   const [activeRunId, setActiveRunId] = useState<string | null>(null)
   const [pendingMessage, setPendingMessage] = useState<{ text: string; clientMessageId: string; convId: string | null } | null>(null)
   const [pendingTitleId, setPendingTitleId] = useState<string | null>(null)
-  const [pendingActions, setPendingActions] = useState<PendingAiAction[]>([])
-  const [busyActionId, setBusyActionId] = useState<string | null>(null)
-  const [actionResults, setActionResults] = useState<Array<{ id: string; status: string; result: unknown }>>([])
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const followMessagesRef = useRef(true)
 
@@ -46,42 +41,13 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
     refreshConversations()
   })
 
-  useEffect(() => { setActionResults([]) }, [activeConvId])
-
-  useEffect(() => {
-    if (!activeConvId || isStreaming) return
-    let cancelled = false
-    void listPendingAiActions(activeConvId)
-      .then((actions) => { if (!cancelled) setPendingActions(actions) })
-      .catch(() => { if (!cancelled) setPendingActions([]) })
-    return () => { cancelled = true }
-  }, [activeConvId, isStreaming, messages])
-
-  const decideAction = async (id: string, approve: boolean) => {
-    setBusyActionId(id)
-    try {
-      if (approve) {
-        const result = await confirmAiAction(id)
-        if (result.status === 'COMPLETED') message.success('Đã thực hiện thao tác')
-        else message.error(result.result?.message ?? 'Không thể hoàn tất thao tác')
-        setActionResults((items) => [...items, { id, status: result.status, result: result.result }])
-      } else {
-        await rejectAiAction(id)
-        message.info('Đã hủy thao tác')
-      }
-      setPendingActions((actions) => actions.filter((action) => action.pendingActionId !== id))
-    } catch {
-      message.error('Không thể xử lý yêu cầu duyệt')
-    } finally { setBusyActionId(null) }
-  }
-
   // Follow incoming text without restarting a smooth scroll on every stream chunk.
   useLayoutEffect(() => {
     const container = messagesContainerRef.current
     if (open && container && followMessagesRef.current) {
       container.scrollTop = container.scrollHeight
     }
-  }, [open, activeConvId, messages, streamedDelta, pendingMessage, pendingActions, actionResults])
+  }, [open, activeConvId, messages, streamedDelta, pendingMessage])
 
   useEffect(() => {
     if (!pendingTitleId) return
@@ -210,27 +176,6 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
               }
               return <AssistantMessage key={m.id} content={m.content ?? ''} createdAt={m.createdAt} />
             })}
-
-            {pendingActions.map((action) => (
-              <Card key={action.pendingActionId} size="small" title={`Chờ xác nhận: ${action.toolName}`} style={{ marginBottom: 12 }}>
-                <pre style={{ whiteSpace: 'pre-wrap', maxHeight: 220, overflow: 'auto' }}>
-                  {JSON.stringify(action.arguments, null, 2)}
-                </pre>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Button type="primary" loading={busyActionId === action.pendingActionId}
-                    onClick={() => void decideAction(action.pendingActionId, true)}>Xác nhận thực hiện</Button>
-                  <Button disabled={busyActionId === action.pendingActionId}
-                    onClick={() => void decideAction(action.pendingActionId, false)}>Hủy</Button>
-                </div>
-              </Card>
-            ))}
-            {actionResults.map((item) => (
-              <Card key={item.id} size="small" title={`Kết quả thao tác: ${item.status}`} style={{ marginBottom: 12 }}>
-                <pre style={{ whiteSpace: 'pre-wrap', maxHeight: 220, overflow: 'auto' }}>
-                  {JSON.stringify(item.result, null, 2)}
-                </pre>
-              </Card>
-            ))}
 
             {pendingVisible && pendingMessage && <UserMessage key={pendingMessage.clientMessageId} content={pendingMessage.text} />}
 
