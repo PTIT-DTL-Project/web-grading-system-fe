@@ -1,0 +1,15 @@
+.ai-assistant-markdown { min-width: 0; overflow-wrap: break-word; word-break: normal; }
+.ai-assistant-markdown > :first-child { margin-top: 0; }
+.ai-assistant-markdown > :last-child { margin-bottom: 0; }
+.ai-assistant-markdown p, .ai-assistant-markdown ul, .ai-assistant-markdown ol,
+.ai-assistant-markdown pre, .ai-assistant-markdown blockquote { margin: 0 0 0.75em; }
+.ai-assistant-markdown ul, .ai-assistant-markdown ol { padding-left: 1.5em; }
+.ai-assistant-markdown pre { overflow-x: auto; padding: 0.75em; border-radius: 6px; background: #f5f5f5; }
+.ai-assistant-markdown code { font-family: Consolas, Monaco, monospace; }
+.ai-assistant-markdown :not(pre) > code { overflow-wrap: anywhere; }
+.ai-assistant-markdown :not(pre) > code { padding: 0.1em 0.3em; border-radius: 3px; background: #f5f5f5; }
+.ai-assistant-markdown blockquote { padding-left: 0.75em; border-left: 3px solid #d9d9d9; color: #666; }
+.ai-assistant-markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin-bottom: 0.75em; }
+.ai-assistant-markdown th, .ai-assistant-markdown td { border: 1px solid #d9d9d9; padding: 0.35em 0.5em; }
+.ai-assistant-markdown a { overflow-wrap: anywhere; }
+.ai-assistant-markdown img { max-width: 100%; height: auto; }

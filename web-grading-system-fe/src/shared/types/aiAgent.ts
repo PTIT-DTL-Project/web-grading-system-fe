@@ -11,7 +11,7 @@ export type RunStatus =
 export interface ConversationResponse {
   id: string
   ownerId: string
-  title: string
+  title: string | null
   activeTaskId: string | null
   createdAt: string
   updatedAt: string

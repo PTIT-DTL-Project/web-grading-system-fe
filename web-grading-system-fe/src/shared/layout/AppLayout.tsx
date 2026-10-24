@@ -9,6 +9,7 @@ import { ChangePasswordModal } from '../../features/auth/ChangePasswordModal'
 import { AiChatSidebar } from '../../features/ai-chat/AiChatSidebar'
 import { changeLanguage, type Lang } from '../../locales/i18n'
 import { colors } from '../theme/tokens'
+import './app-layout.css'
 
 const { Sider, Header, Content } = Layout
 
@@ -151,7 +152,7 @@ export function AppLayout() {
         </div>
       </Sider>
 
-      <Layout>
+      <Layout className={aiChatOpen ? 'app-main-layout app-main-layout--chat-open' : 'app-main-layout'}>
         <Header
           style={{
             background: colors.surface,
@@ -219,7 +220,6 @@ export function AppLayout() {
           </Space>
 
           <ChangePasswordModal open={changePwdOpen} onClose={() => setChangePwdOpen(false)} />
-          <AiChatSidebar open={aiChatOpen} onClose={() => setAiChatOpen(false)} />
         </Header>
 
         <Content style={{ padding: 24 }}>
@@ -236,6 +236,7 @@ export function AppLayout() {
           </div>
         </Content>
       </Layout>
+      <AiChatSidebar open={aiChatOpen} onClose={() => setAiChatOpen(false)} />
     </Layout>
   )
 }

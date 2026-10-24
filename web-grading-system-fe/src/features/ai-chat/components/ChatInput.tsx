@@ -20,6 +20,8 @@ export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading }) => {
     setText('')
     try {
       await onSend(trimmed)
+    } catch {
+      setText((current) => current || trimmed)
     } finally {
       sendingRef.current = false
     }
@@ -50,8 +52,7 @@ export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading }) => {
         onKeyDown={handleKeyDown}
         placeholder="Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)"
         autoSize={{ minRows: 1, maxRows: 4 }}
-        disabled={disabled || loading}
-        style={{ borderRadius: 8, resize: 'none' }}
+        style={{ borderRadius: 8, resize: 'none', minWidth: 0 }}
       />
       <Button
         type="primary"

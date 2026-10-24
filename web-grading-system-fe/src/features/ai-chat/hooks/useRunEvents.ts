@@ -38,12 +38,26 @@ export function useRunEvents(runId: string | null, onRunComplete?: () => void) {
       lastEvent: 'connecting',
     }))
 
-    // Poll status initially
-    getRunStatus(runId)
-      .then((run) => {
-        setState((prev) => ({ ...prev, activeRun: run }))
-      })
-      .catch(() => {})
+    let cancelled = false
+    let completed = false
+    const refreshStatus = () => {
+      void getRunStatus(runId)
+        .then((run) => {
+          if (cancelled) return
+          setState((prev) => ({ ...prev, activeRun: run }))
+          if (!completed && ['SUCCEEDED', 'FAILED', 'CANCELLED', 'LIMIT_REACHED'].includes(run.status)) {
+            completed = true
+            setState((prev) => ({ ...prev, isStreaming: false }))
+            onRunCompleteRef.current?.()
+          }
+        })
+        .catch(() => {})
+    }
+
+    refreshStatus()
+    const statusInterval = window.setInterval(() => {
+      if (!completed) refreshStatus()
+    }, 1000)
 
     const unsubscribe = subscribeRunEvents(
       runId,
@@ -54,7 +68,7 @@ export function useRunEvents(runId: string | null, onRunComplete?: () => void) {
             setState((prev) => ({
               ...prev,
               lastEvent: type,
-              streamedDelta: prev.streamedDelta + event.data,
+              streamedDelta: type === 'assistant.replace' ? event.data : prev.streamedDelta + event.data,
             }))
           }
         } catch {
@@ -62,21 +76,13 @@ export function useRunEvents(runId: string | null, onRunComplete?: () => void) {
         }
       },
       () => {
-        // On error or close, check final status
-        getRunStatus(runId)
-          .then((run) => {
-            setState((prev) => ({ ...prev, activeRun: run, isStreaming: false }))
-            if (run.status === 'SUCCEEDED' || run.status === 'FAILED' || run.status === 'CANCELLED') {
-              onRunCompleteRef.current?.()
-            }
-          })
-          .catch(() => {
-            setState((prev) => ({ ...prev, isStreaming: false }))
-          })
+        refreshStatus()
       },
     )
 
     return () => {
+      cancelled = true
+      window.clearInterval(statusInterval)
       unsubscribe()
     }
   }, [runId])
