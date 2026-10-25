@@ -13,6 +13,7 @@ export interface ListPageProps<T, F extends ListFilters> {
   filters: FilterConfig<F>[]
   initialFilters: F
   columns: TableColumnsType<T>
+  tableScrollX?: number | string
   pageSize?: number
   rowKey: keyof T | ((row: T) => string)
   headerTitle?: string
@@ -33,6 +34,7 @@ export function ListPage<T, F extends ListFilters>({
   filters,
   initialFilters,
   columns,
+  tableScrollX,
   pageSize = 20,
   rowKey,
   headerTitle,
@@ -171,6 +173,7 @@ export function ListPage<T, F extends ListFilters>({
           <Table<T>
             rowKey={typeof rowKey === 'function' ? rowKey : (rowKey as string)}
             columns={columns}
+            scroll={tableScrollX ? { x: tableScrollX } : undefined}
             dataSource={sortedRows}
             loading={loading}
             onChange={handleTableChange}

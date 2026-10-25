@@ -1,13 +1,15 @@
-import { GlobalOutlined, HistoryOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons'
-import { Dropdown, Layout, Menu, Segmented, Space, Tag, Typography } from 'antd'
+import { GlobalOutlined, HistoryOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, RobotOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons'
+import { Button, Dropdown, Layout, Menu, Segmented, Space, Tag, Typography } from 'antd'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router'
 import { getSession, logout, type Role } from '../auth/keycloak'
 import { getIdentity } from '../auth/identity'
 import { ChangePasswordModal } from '../../features/auth/ChangePasswordModal'
+import { AiChatSidebar } from '../../features/ai-chat/AiChatSidebar'
 import { changeLanguage, type Lang } from '../../locales/i18n'
 import { colors } from '../theme/tokens'
+import './app-layout.css'
 
 const { Sider, Header, Content } = Layout
 
@@ -27,6 +29,7 @@ export function AppLayout() {
   // Hooks must run before the early `!identity` return below (rules of hooks).
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [changePwdOpen, setChangePwdOpen] = useState(false)
+  const [aiChatOpen, setAiChatOpen] = useState(false)
 
   if (!identity) return <Navigate to="/login" replace />
 
@@ -149,7 +152,7 @@ export function AppLayout() {
         </div>
       </Sider>
 
-      <Layout>
+      <Layout className={aiChatOpen ? 'app-main-layout app-main-layout--chat-open' : 'app-main-layout'}>
         <Header
           style={{
             background: colors.surface,
@@ -162,6 +165,16 @@ export function AppLayout() {
             height: 72,
           }}
         >
+          <Button
+            type="primary"
+            ghost
+            icon={<RobotOutlined />}
+            onClick={() => setAiChatOpen(true)}
+            style={{ borderRadius: 6 }}
+          >
+            {t('ai.assistant', 'Trợ lý AI')}
+          </Button>
+
           <Segmented
             value={lang}
             onChange={(value) => void changeLanguage(value as Lang)}
@@ -223,6 +236,7 @@ export function AppLayout() {
           </div>
         </Content>
       </Layout>
+      <AiChatSidebar open={aiChatOpen} onClose={() => setAiChatOpen(false)} />
     </Layout>
   )
 }
