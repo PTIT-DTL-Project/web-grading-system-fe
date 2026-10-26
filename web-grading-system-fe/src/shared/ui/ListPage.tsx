@@ -16,7 +16,6 @@ export interface ListPageProps<T, F extends ListFilters> {
   tableScrollX?: number | string
   pageSize?: number
   rowKey: keyof T | ((row: T) => string)
-  tableScrollX?: number
   headerTitle?: string
   headerActions?: React.ReactNode
   emptyTitle?: string
@@ -38,7 +37,6 @@ export function ListPage<T, F extends ListFilters>({
   tableScrollX,
   pageSize = 20,
   rowKey,
-  tableScrollX,
   headerTitle,
   headerActions,
   emptyTitle,
@@ -178,7 +176,6 @@ export function ListPage<T, F extends ListFilters>({
             scroll={tableScrollX ? { x: tableScrollX } : undefined}
             dataSource={sortedRows}
             loading={loading}
-            scroll={tableScrollX ? { x: tableScrollX } : undefined}
             onChange={handleTableChange}
             pagination={standardPagination({
               meta,
