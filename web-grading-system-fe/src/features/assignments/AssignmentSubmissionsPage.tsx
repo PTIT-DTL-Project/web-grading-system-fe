@@ -30,9 +30,12 @@ interface SubmissionsFilters {
 const EMPTY_FILTERS: SubmissionsFilters = { studentCode: '' }
 
 export function AssignmentSubmissionsPage() {
-  const { classId, assignmentId } = useParams<{ classId: string; assignmentId: string }>()
+  const { classId, assignmentId } = useParams<{ classId?: string; assignmentId: string }>()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+  // Bài tập luyện tập (classId undefined) không có roster lớp → ẩn bộ lọc sinh viên.
+  const isPractice = !classId
+  const base = isPractice ? `/practice/${assignmentId}` : `/classes/${classId}/assignments/${assignmentId}`
 
   const { data: studentOptions } = useAssignmentStudents(classId ?? '')
 
@@ -88,7 +91,7 @@ export function AssignmentSubmissionsPage() {
             type="link"
             size="small"
               onClick={() =>
-                navigate(`/classes/${classId}/assignments/${assignmentId}/results?student=${r.studentId}&submission=${r.id}`)
+                navigate(`${base}/results?student=${r.studentId}&submission=${r.id}`)
               }
           >
             {t('submission.viewResult')}
@@ -96,21 +99,23 @@ export function AssignmentSubmissionsPage() {
         ),
       },
     ],
-    [t, i18n.language, classId, assignmentId, navigate],
+    [t, i18n.language, base, navigate],
   )
 
-  const filterConfig: FilterConfig<SubmissionsFilters>[] = [
-    {
-      key: 'studentCode',
-      type: 'select',
-      label: t('assignment.filterStudent'),
-      placeholder: t('assignment.filterStudentPlaceholder'),
-      options: [
-        { label: t('assignment.filterStudent'), value: '' },
-        ...(studentOptions ?? []),
-      ],
-    },
-  ]
+  const filterConfig: FilterConfig<SubmissionsFilters>[] = isPractice
+    ? []
+    : [
+      {
+        key: 'studentCode',
+        type: 'select',
+        label: t('assignment.filterStudent'),
+        placeholder: t('assignment.filterStudentPlaceholder'),
+        options: [
+          { label: t('assignment.filterStudent'), value: '' },
+          ...(studentOptions ?? []),
+        ],
+      },
+    ]
 
   return (
     <ListPage<SubmissionResponse, SubmissionsFilters>

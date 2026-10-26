@@ -28,10 +28,13 @@ interface ResultsFilters {
 const EMPTY_FILTERS: ResultsFilters = { studentCode: '' }
 
 export function AssignmentResultsPage() {
-  const { classId, assignmentId } = useParams<{ classId: string; assignmentId: string }>()
+  const { classId, assignmentId } = useParams<{ classId?: string; assignmentId: string }>()
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
+  // Bài tập luyện tập (classId undefined) không có roster lớp → ẩn bộ lọc sinh viên.
+  const isPractice = !classId
+  const base = isPractice ? `/practice/${assignmentId}` : `/classes/${classId}/assignments/${assignmentId}`
   // Deep-link from the submissions table (?student=<userId>&submission=<id>):
   // narrows fetched rows to that student and pre-expands the submission evidence.
   // Client-side only; the dropdown filter below is the server-side (?studentCode=) path.
@@ -163,15 +166,17 @@ export function AssignmentResultsPage() {
     },
   ]
 
-  const filterConfig: FilterConfig<ResultsFilters>[] = [
-    {
-      key: 'studentCode',
-      type: 'select',
-      label: t('assignment.filterStudent'),
-      placeholder: t('assignment.filterStudentPlaceholder'),
-      options: [{ label: t('assignment.filterStudent'), value: '' }, ...(studentOptions ?? [])],
-    },
-  ]
+  const filterConfig: FilterConfig<ResultsFilters>[] = isPractice
+    ? []
+    : [
+      {
+        key: 'studentCode',
+        type: 'select',
+        label: t('assignment.filterStudent'),
+        placeholder: t('assignment.filterStudentPlaceholder'),
+        options: [{ label: t('assignment.filterStudent'), value: '' }, ...(studentOptions ?? [])],
+      },
+    ]
 
   // REVIEW: 2026-10-21, lecturer single-submission deep-link — when the grader
   // clicks "Xem kết quả" from the submissions table, render the same detail
@@ -184,9 +189,7 @@ export function AssignmentResultsPage() {
       <SubmissionDetailCard
         submissionId={focusedSubmission}
         assignmentId={assignmentId}
-        onBack={() =>
-          navigate(`/classes/${classId ?? ''}/assignments/${assignmentId ?? ''}/submissions`)
-        }
+        onBack={() => navigate(`${base}/submissions`)}
          backLabelKey="assignment.submissions"
          planName={planName}
          title={assignment?.title}

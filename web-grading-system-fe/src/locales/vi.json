@@ -36,7 +36,9 @@
     "back": "Quay lại",
     "studentAssignments": "Bài tập",
     "studentMySubmissions": "Bài nộp của tôi",
-    "adminUsers": "Import tài khoản"
+    "adminUsers": "Import tài khoản",
+    "practiceExercises": "Bài tập luyện tập",
+    "practice": "Luyện tập"
   },
   "classes": {
     "title": "Lớp học",
@@ -124,8 +126,11 @@
       "executionTimeout": "Timeout thực thi (ms)",
       "maxMemory": "Bộ nhớ tối đa (MB)",
       "maxCpu": "CPU tối đa",
-      "strategyChangeWarning": "Kết quả đã chấm giữ chiến lược cũ. Bài nộp mới dùng chiến lược mới."
-    }
+      "strategyChangeWarning": "Kết quả đã chấm giữ chiến lược cũ. Bài nộp mới dùng chiến lược mới.",
+      "topic": "Chủ đề"
+    },
+    "topic": "Chủ đề",
+    "topicPlaceholder": "Nhập chủ đề"
   },
   "plan": {
     "title": "Câu kiểm tra",
@@ -484,5 +489,11 @@
     "fromCache": "Đã lưu",
     "searchGoogle": "Tìm kiếm \"{{keyword}}\" trên Google",
     "generatingReassuring": "Sắp xong rồi, đang hoàn thiện giải thích cho bạn..."
+  },
+  "practice": {
+    "title": "Bài tập luyện tập",
+    "create": "Tạo bài tập luyện tập",
+    "empty": "Chưa có bài tập luyện tập nào",
+    "emptyHint": "Tạo bài tập luyện tập đầu tiên cho sinh viên"
   }
 }

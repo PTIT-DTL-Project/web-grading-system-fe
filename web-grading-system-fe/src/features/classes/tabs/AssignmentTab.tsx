@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Table, Button, Space, Popconfirm, message, Tag } from 'antd'
+import { Table, Button, Space, Popconfirm, message, Tag, Input } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useAssignments } from '../../assignments/useAssignments'
 import { CreateAssignmentModal } from '../../assignments/CreateAssignmentModal'
@@ -26,8 +26,15 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
   const navigate = useNavigate()
   const toMessage = useApiErrorMessage()
   const [page, setPage] = useState(0)
+  const [topic, setTopic] = useState<string>('')
   // Review: 2026-10-05, Pullfrog — refresh classroom-wide mutations into this tab instead of leaving it stale.
-  const { data, loading, error, refetch, create, update, remove, publish } = useAssignments(classId, refreshToken, page)
+  const { data, loading, error, refetch, create, update, remove, publish } = useAssignments({
+    classId,
+    purpose: 'GRADED',
+    topic: topic || undefined,
+    page,
+    refreshToken,
+  })
   const [modalOpen, setModalOpen] = useState(false)
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<AssignmentResponse | null>(null)
@@ -43,10 +50,11 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
     executionTimeoutMs?: number
     maxMemoryMb?: number
     maxCpu?: number
+    topic: string
   }) => {
     setCreating(true)
     try {
-      await create({ ...values, classId, ownerId })
+      await create({ ...values, classId, ownerId, purpose: 'GRADED' })
       message.success(t('assignment.created'))
       onSaved?.()
     } catch (err: unknown) {
@@ -105,6 +113,13 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
       dataIndex: 'title',
       key: 'title',
       render: (v: string) => <strong>{v}</strong>,
+    },
+    {
+      title: t('assignment.topic'),
+      dataIndex: 'topic',
+      key: 'topic',
+      width: 140,
+      render: (v: string) => <Tag color="blue">{v || '—'}</Tag>,
     },
     {
       title: t('assignment.strategy'),
@@ -170,10 +185,17 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
 
   return (
     <Space orientation="vertical" style={{ width: '100%' }} size={24}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
         <Button type="primary" onClick={() => setModalOpen(true)} disabled={archived}>
           {t('assignment.create')}
         </Button>
+        <Input
+          placeholder={t('assignment.topicPlaceholder')}
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          onPressEnter={() => refetch()}
+          style={{ width: 240 }}
+        />
       </div>
 
       {hasError && dataSource.length === 0 && (

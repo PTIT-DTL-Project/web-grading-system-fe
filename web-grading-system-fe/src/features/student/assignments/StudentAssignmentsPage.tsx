@@ -15,13 +15,14 @@ export function StudentAssignmentsPage() {
   const navigate = useNavigate()
 
   const fetcher = useCallback(
-    ({ page, size, search }: { page: number; size: number; search?: string }) =>
-      listStudentAssignments(page, size, search),
+    ({ page, size, search, topic }: { page: number; size: number; search?: string; topic?: string }) =>
+      listStudentAssignments(page, size, search, undefined, undefined, topic),
     [],
   )
 
-  const filters: FilterConfig<{ search?: string }>[] = [
+  const filters: FilterConfig<{ search?: string; topic?: string }>[] = [
     { key: 'search', type: 'text', label: t('assignments.search'), placeholder: t('assignments.search'), submitOnEnter: true },
+    { key: 'topic', type: 'text', label: t('assignment.topic'), placeholder: t('assignment.topicPlaceholder'), submitOnEnter: true },
   ]
 
   const columns: TableColumnsType<AssignmentResponse> = [
@@ -34,6 +35,13 @@ export function StudentAssignmentsPage() {
           {title}
         </Typography.Link>
       ),
+    },
+    {
+      title: t('assignment.topic'),
+      dataIndex: 'topic',
+      key: 'topic',
+      width: 150,
+      render: (v: string) => <span style={{ overflowWrap: 'anywhere' }}>{v || '—'}</span>,
     },
     {
       title: t('assignments.published'),

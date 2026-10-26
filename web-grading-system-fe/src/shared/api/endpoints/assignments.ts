@@ -1,21 +1,41 @@
 import { getData, sendData, http } from '../http'
-import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest, TestPlan, TestStep, StepType, StepResponseDto, StepCreateBody, StepUpdateBody, StudentResultResponse, SubmissionResponse } from '../../types/assignment'
+import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest, AssignmentPurpose, TestPlan, TestStep, StepType, StepResponseDto, StepCreateBody, StepUpdateBody, StudentResultResponse, SubmissionResponse } from '../../types/assignment'
 import type { Page } from '../../types/pagination'
 
+export interface ListAssignmentsParams {
+  classId?: string
+  purpose?: AssignmentPurpose
+  topic?: string
+  page: number
+  size: number
+  search?: string
+  published?: boolean
+}
+
 export function listAssignments(
-  classId: string,
-  page: number,
-  size: number,
-  search?: string,
-  published?: boolean,
+  params: ListAssignmentsParams,
   options?: { signal?: AbortSignal },
 ): Promise<Page<AssignmentResponse>> {
   return getData<Page<AssignmentResponse>>('/api/v1/assignments', {
-    classId,
-    page,
-    size,
-    ...(search ? { search } : {}),
-    ...(published !== undefined ? { published } : {}),
+    ...(params.classId ? { classId: params.classId } : {}),
+    ...(params.purpose ? { purpose: params.purpose } : {}),
+    ...(params.topic ? { topic: params.topic } : {}),
+    page: params.page,
+    size: params.size,
+    ...(params.search ? { search: params.search } : {}),
+    ...(params.published !== undefined ? { published: params.published } : {}),
+  }, { signal: options?.signal })
+}
+
+/** GET /api/v1/assignments/topics?purpose=&classId= — danh sách chủ đề distinct để lọc. */
+export function listAssignmentTopics(
+  purpose: AssignmentPurpose,
+  classId?: string,
+  options?: { signal?: AbortSignal },
+): Promise<string[]> {
+  return getData<string[]>('/api/v1/assignments/topics', {
+    purpose,
+    ...(classId ? { classId } : {}),
   }, { signal: options?.signal })
 }
 

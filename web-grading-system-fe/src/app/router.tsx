@@ -12,8 +12,10 @@ import { StudentClassDetailPage } from '../features/student/StudentClassDetailPa
 import { LandingPage } from '../features/landing/LandingPage'
 import { AssignmentResultsPage } from '../features/assignments/AssignmentResultsPage'
 import { AssignmentSubmissionsPage } from '../features/assignments/AssignmentSubmissionsPage'
+import { PracticePage } from '../features/practice/PracticePage'
 import { StudentAssignmentsPage } from '../features/student/assignments/StudentAssignmentsPage'
 import { StudentAssignmentDetailPage } from '../features/student/assignments/StudentAssignmentDetailPage'
+import { StudentPracticePage } from '../features/student/practice/StudentPracticePage'
 import { MySubmissionsPage } from '../features/student/submissions/MySubmissionsPage'
 import { SubmissionResultPage } from '../features/student/results/SubmissionResultPage'
 import { AdminUsersPage } from '../features/admin/AdminUsersPage'
@@ -76,6 +78,30 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: 'practice',
+            element: (
+              <RequireRole role="LECTURER">
+                <PracticePage />
+              </RequireRole>
+            ),
+          },
+          {
+            path: 'practice/:assignmentId/results',
+            element: (
+              <RequireRole role="LECTURER">
+                <AssignmentResultsPage />
+              </RequireRole>
+            ),
+          },
+          {
+            path: 'practice/:assignmentId/submissions',
+            element: (
+              <RequireRole role="LECTURER">
+                <AssignmentSubmissionsPage />
+              </RequireRole>
+            ),
+          },
+          {
             path: 'student/assignments',
             element: (
               <RequireRole role="STUDENT">
@@ -85,6 +111,22 @@ export const router = createBrowserRouter([
           },
           {
             path: 'student/assignments/:id',
+            element: (
+              <RequireRole role="STUDENT">
+                <StudentAssignmentDetailPage />
+              </RequireRole>
+            ),
+          },
+          {
+            path: 'student/practice',
+            element: (
+              <RequireRole role="STUDENT">
+                <StudentPracticePage />
+              </RequireRole>
+            ),
+          },
+          {
+            path: 'student/practice/:id',
             element: (
               <RequireRole role="STUDENT">
                 <StudentAssignmentDetailPage />

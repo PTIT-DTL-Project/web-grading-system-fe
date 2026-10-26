@@ -20,13 +20,14 @@ export function StudentClassAssignmentsTab({ classId, archived = false }: Studen
   const navigate = useNavigate()
 
   const fetcher = useCallback(
-    ({ page, size, search }: { page: number; size: number; search?: string }) =>
-      listStudentAssignments(page, size, search, classId),
+    ({ page, size, search, topic }: { page: number; size: number; search?: string; topic?: string }) =>
+      listStudentAssignments(page, size, search, classId, undefined, topic),
     [classId],
   )
 
-  const filters: FilterConfig<{ search?: string }>[] = [
+  const filters: FilterConfig<{ search?: string; topic?: string }>[] = [
     { key: 'search', type: 'text', label: t('assignments.search'), placeholder: t('assignments.search'), submitOnEnter: true },
+    { key: 'topic', type: 'text', label: t('assignment.topic'), placeholder: t('assignment.topicPlaceholder'), submitOnEnter: true },
   ]
 
   const columns: TableColumnsType<AssignmentResponse> = [
@@ -39,6 +40,13 @@ export function StudentClassAssignmentsTab({ classId, archived = false }: Studen
           {title}
         </Typography.Link>
       ),
+    },
+    {
+      title: t('assignment.topic'),
+      dataIndex: 'topic',
+      key: 'topic',
+      width: 150,
+      render: (v: string) => <span style={{ overflowWrap: 'anywhere' }}>{v || '—'}</span>,
     },
     {
       title: t('assignments.published'),
