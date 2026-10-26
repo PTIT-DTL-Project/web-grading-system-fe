@@ -1,11 +1,12 @@
 import { Modal, Form, Input, Select, InputNumber } from 'antd'
 import { useTranslation } from 'react-i18next'
-import type { GradingStrategy, CreateAssignmentRequest } from '../../shared/types/assignment'
+import type { GradingStrategy, AssignmentPurpose, CreateAssignmentRequest } from '../../shared/types/assignment'
 
 interface CreateAssignmentModalProps {
   open: boolean
-  classId: string
+  classId?: string
   ownerId: string
+  purpose?: AssignmentPurpose
   onCreated: () => void
   onCancel: () => void
   creating: boolean
@@ -16,6 +17,7 @@ export function CreateAssignmentModal({
   open,
   classId,
   ownerId,
+  purpose = 'GRADED',
   onCreated,
   onCancel,
   creating,
@@ -31,10 +33,12 @@ export function CreateAssignmentModal({
     const values = await form.validateFields()
     try {
       await createFn({
-        classId,
+        ...(purpose === 'GRADED' ? { classId } : {}),
         ownerId,
+        purpose,
         title: values.title,
         description: values.description || undefined,
+        topic: values.topic,
         gradingStrategy: values.gradingStrategy,
         dockerComposeTemplate: values.dockerComposeTemplate || undefined,
         dockerComposePort: values.dockerComposePort ?? 8080,
@@ -68,6 +72,9 @@ export function CreateAssignmentModal({
         </Form.Item>
         <Form.Item name="description" label={t('assignment.form.description')}>
           <Input.TextArea />
+        </Form.Item>
+        <Form.Item name="topic" label={t('assignment.form.topic')} rules={[{ required: true }]}>
+          <Input />
         </Form.Item>
         <Form.Item name="gradingStrategy" label={t('assignment.form.strategy')} rules={[{ required: true }]}>
           <Select

@@ -1,4 +1,5 @@
 export type GradingStrategy = 'STUDENT_DOCKER_COMPOSE' | 'LECTURER_DOCKER_COMPOSE'
+export type AssignmentPurpose = 'GRADED' | 'PRACTICE'
 export type StepType = 'HTTP_REQUEST' | 'DB_QUERY' | 'DB_SCHEMA_CHECK' | 'DB_MIGRATION' | 'EXTRACT' | 'DELAY'
 
 export interface TestPlan {
@@ -79,10 +80,13 @@ export interface StepUpdateBody {
 /** course-service AssignmentResponse — GET /api/v1/student/assignments[/{id}] */
 export interface AssignmentResponse {
   id: string
-  classId: string
+  classId: string | null
   ownerId: string
   title: string
   description: string | null
+  /** GRADED = thuộc lớp & vào điểm thành phần; PRACTICE = luyện tập, độc lập lớp, không tính điểm. */
+  purpose: AssignmentPurpose
+  topic: string
   gradingStrategy: GradingStrategy | string | null
   dockerComposeTemplate: string | null
   dockerComposePort: number | null
@@ -160,10 +164,12 @@ export interface SubmissionResponse {
 }
 
 export interface CreateAssignmentRequest {
-  classId: string
+  classId?: string
   ownerId: string
   title: string
   description?: string
+  purpose?: AssignmentPurpose
+  topic: string
   gradingStrategy: GradingStrategy
   dockerComposeTemplate?: string
   dockerComposePort?: number
@@ -176,6 +182,7 @@ export interface CreateAssignmentRequest {
 export interface UpdateAssignmentRequest {
   title?: string
   description?: string
+  topic: string
   gradingStrategy?: GradingStrategy
   dockerComposeTemplate?: string
   dockerComposePort?: number

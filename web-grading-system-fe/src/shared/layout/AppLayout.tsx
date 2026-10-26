@@ -1,4 +1,4 @@
-import { GlobalOutlined, HistoryOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, RobotOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons'
+import { CodeOutlined, GlobalOutlined, HistoryOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, RobotOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons'
 import { Button, Dropdown, Layout, Menu, Segmented, Space, Tag, Typography } from 'antd'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -36,12 +36,16 @@ export function AppLayout() {
   const menuKey = menuKeyFor(identity.role)
   const items =
     identity.role === 'LECTURER'
-      ? [{ key: '/classes', icon: <ReadOutlined />, label: t('nav.classes') }]
+      ? [
+        { key: '/classes', icon: <ReadOutlined />, label: t('nav.classes') },
+        { key: '/practice', icon: <CodeOutlined />, label: t('nav.practiceExercises') },
+      ]
       : identity.role === 'ADMIN'
         ? [{ key: '/admin/users', icon: <UserAddOutlined />, label: t('nav.adminUsers') }]
         : [
           { key: '/student/classes', icon: <TeamOutlined />, label: t('nav.studentClasses') },
           { key: '/student/assignments', icon: <ReadOutlined />, label: t('nav.studentAssignments') },
+          { key: '/student/practice', icon: <CodeOutlined />, label: t('nav.practice') },
           { key: '/student/submissions', icon: <HistoryOutlined />, label: t('nav.studentMySubmissions') },
         ]
   const selectedKey = items.find((item) => location.pathname.startsWith(item.key))?.key ?? ''

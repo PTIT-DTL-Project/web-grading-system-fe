@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router'
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import {
@@ -82,8 +82,11 @@ export function StudentAssignmentDetailPage() {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const toMessage = useApiErrorMessage()
+  // Bài tập luyện tập nằm ngoài lớp → quay về trang practice, ngược lại về trang assignments.
+  const backPath = location.pathname.startsWith('/student/practice') ? '/student/practice' : '/student/assignments'
   const { assignment, plans, loading, error, reload } = useStudentAssignment(id ?? '')
   const [submitOpen, setSubmitOpen] = useState(false)
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null)
@@ -118,7 +121,7 @@ export function StudentAssignmentDetailPage() {
         extra={
           <Space>
             <Button onClick={reload}>{t('common.retry')}</Button>
-            <Button onClick={() => navigate('/student/assignments')}>
+            <Button onClick={() => navigate(backPath)}>
               {t('assignments.back')}
             </Button>
           </Space>
@@ -143,7 +146,7 @@ export function StudentAssignmentDetailPage() {
           <Button
             type="text"
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/student/assignments')}
+            onClick={() => navigate(backPath)}
           >
             {t('assignments.back')}
           </Button>

@@ -7,7 +7,7 @@ import {
   deleteAssignment,
   publishAssignment,
 } from '../../shared/api/endpoints/assignments'
-import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest } from '../../shared/types/assignment'
+import type { AssignmentResponse, CreateAssignmentRequest, UpdateAssignmentRequest, AssignmentPurpose } from '../../shared/types/assignment'
 import type { Page } from '../../shared/types/pagination'
 
 interface UseAssignmentsReturn {
@@ -21,7 +21,17 @@ interface UseAssignmentsReturn {
   publish: (id: string) => Promise<AssignmentResponse>
 }
 
-export function useAssignments(classId: string, refreshToken = 0, page = 0, pageSize = 20): UseAssignmentsReturn {
+interface UseAssignmentsOptions {
+  classId?: string
+  purpose?: AssignmentPurpose
+  topic?: string
+  page?: number
+  pageSize?: number
+  refreshToken?: number
+}
+
+export function useAssignments(options: UseAssignmentsOptions = {}): UseAssignmentsReturn {
+  const { classId, purpose, topic, page = 0, pageSize = 20, refreshToken = 0 } = options
   const [data, setData] = useState<Page<AssignmentResponse> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown>(null)
@@ -33,7 +43,7 @@ export function useAssignments(classId: string, refreshToken = 0, page = 0, page
     const controller = new AbortController()
     setLoading(true)
     // Review: 2026-10-05, Pullfrog — page changes must re-query instead of only relabeling the pager.
-    listAssignments(classId, page, pageSize, undefined, undefined, { signal: controller.signal })
+    listAssignments({ classId, purpose, topic, page, size: pageSize }, { signal: controller.signal })
       .then((resp) => {
         if (controller.signal.aborted) return
         setData(resp)
@@ -48,7 +58,7 @@ export function useAssignments(classId: string, refreshToken = 0, page = 0, page
         setLoading(false)
       })
     return () => controller.abort()
-  }, [classId, refreshToken, page, pageSize, version])
+  }, [classId, purpose, topic, page, pageSize, refreshToken, version])
 
   const create = async (req: CreateAssignmentRequest) => {
     const resp = await createAssignment(req)

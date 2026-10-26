@@ -36,7 +36,9 @@
     "back": "Back",
     "studentAssignments": "Assignments",
     "studentMySubmissions": "My submissions",
-    "adminUsers": "User import"
+    "adminUsers": "User import",
+    "practiceExercises": "Practice exercises",
+    "practice": "Practice"
   },
   "classes": {
     "title": "Classes",
@@ -124,8 +126,11 @@
       "executionTimeout": "Execution Timeout (ms)",
       "maxMemory": "Max Memory (MB)",
       "maxCpu": "Max CPU",
-      "strategyChangeWarning": "Already-graded results keep the previous strategy. New submissions use the new one."
-    }
+      "strategyChangeWarning": "Already-graded results keep the previous strategy. New submissions use the new one.",
+      "topic": "Topic"
+    },
+    "topic": "Topic",
+    "topicPlaceholder": "Enter topic"
   },
   "plan": {
     "title": "Test cases",
@@ -484,5 +489,11 @@
     "fromCache": "Cached",
     "searchGoogle": "Search \"{{keyword}}\" on Google",
     "generatingReassuring": "Almost ready, finalizing your explanation..."
+  },
+  "practice": {
+    "title": "Practice exercises",
+    "create": "Create practice exercise",
+    "empty": "No practice exercises yet",
+    "emptyHint": "Create your first practice exercise for students"
   }
 }

@@ -38,6 +38,7 @@ export function EditAssignmentModal({
       await saveFn({
         title: values.title,
         description: values.description || undefined,
+        topic: values.topic,
         gradingStrategy: values.gradingStrategy,
         dockerComposeTemplate: values.dockerComposeTemplate || undefined,
         dockerComposePort: values.dockerComposePort ?? undefined,
@@ -73,6 +74,7 @@ export function EditAssignmentModal({
             ? {
                 title: record.title,
                 description: record.description ?? undefined,
+                topic: record.topic ?? undefined,
                 gradingStrategy: record.gradingStrategy ?? undefined,
                 dockerComposeTemplate: record.dockerComposeTemplate ?? undefined,
                 dockerComposePort: record.dockerComposePort ?? undefined,
@@ -89,6 +91,9 @@ export function EditAssignmentModal({
         </Form.Item>
         <Form.Item name="description" label={t('assignment.form.description')}>
           <Input.TextArea />
+        </Form.Item>
+        <Form.Item name="topic" label={t('assignment.form.topic')} rules={[{ required: true }]}>
+          <Input />
         </Form.Item>
         <Form.Item name="gradingStrategy" label={t('assignment.form.strategy')} rules={[{ required: true }]}>
           <Select
