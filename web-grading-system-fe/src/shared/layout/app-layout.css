@@ -1,0 +1,27 @@
+.app-main-layout {
+  flex: 1 1 0;
+  min-width: 280px;
+}
+
+.app-main-layout .ant-layout-content {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.app-main-layout--chat-open .ant-layout-content > div {
+  min-width: 760px;
+}
+
+.app-chat-panel {
+  width: clamp(380px, 38vw, 560px);
+  flex: none;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-left: 1px solid;
+  box-shadow: -2px 0 10px rgb(0 0 0 / 5%);
+}

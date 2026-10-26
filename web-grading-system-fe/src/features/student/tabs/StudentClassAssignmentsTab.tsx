@@ -36,7 +36,7 @@ export function StudentClassAssignmentsTab({ classId, archived = false }: Studen
       dataIndex: 'title',
       key: 'title',
       render: (title: string, record) => (
-        <Typography.Link onClick={() => navigate(`/student/assignments/${record.id}`)}>
+        <Typography.Link style={{ overflowWrap: 'anywhere' }} onClick={() => navigate(`/student/assignments/${record.id}`)}>
           {title}
         </Typography.Link>
       ),
@@ -64,7 +64,7 @@ export function StudentClassAssignmentsTab({ classId, archived = false }: Studen
       key: 'actions',
       width: 200,
       render: (_, record) => (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, whiteSpace: 'nowrap' }}>
           <Button
             size="small"
             icon={<EyeOutlined />}
@@ -93,6 +93,7 @@ export function StudentClassAssignmentsTab({ classId, archived = false }: Studen
       filters={filters}
       initialFilters={{}}
       columns={columns}
+      tableScrollX={680}
       rowKey="id"
       headerTitle={t('assignments.title')}
       emptyTitle={t('assignments.empty')}

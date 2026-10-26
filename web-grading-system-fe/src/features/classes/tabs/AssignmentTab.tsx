@@ -112,7 +112,7 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
       title: t('assignment.title'),
       dataIndex: 'title',
       key: 'title',
-      render: (v: string) => <strong>{v}</strong>,
+      render: (v: string) => <strong style={{ overflowWrap: 'anywhere' }}>{v}</strong>,
     },
     {
       title: t('assignment.topic'),
@@ -220,6 +220,7 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
           rowKey="id"
           columns={columns}
           dataSource={dataSource}
+          scroll={{ x: 960 }}
           loading={loading}
           pagination={data ? standardPagination({ meta: data.meta, currentPage: page, onPageChange: setPage }) : false}
           size="middle"
