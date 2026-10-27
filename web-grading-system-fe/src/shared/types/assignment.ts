@@ -170,7 +170,7 @@ export interface CreateAssignmentRequest {
   description?: string
   purpose?: AssignmentPurpose
   topic: string
-  gradingStrategy: GradingStrategy
+  gradingStrategy?: GradingStrategy
   dockerComposeTemplate?: string
   dockerComposePort?: number
   startupTimeoutMs?: number

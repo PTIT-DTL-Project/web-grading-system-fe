@@ -102,6 +102,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: 'practice/:assignmentId',
+            element: (
+              <RequireRole role="LECTURER">
+                <PracticePage />
+              </RequireRole>
+            ),
+          },
+          {
             path: 'student/assignments',
             element: (
               <RequireRole role="STUDENT">

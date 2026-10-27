@@ -1,6 +1,6 @@
-import { Modal, Form, Input, Select, InputNumber } from 'antd'
+import { Modal, Form, Input, InputNumber } from 'antd'
 import { useTranslation } from 'react-i18next'
-import type { GradingStrategy, AssignmentPurpose, CreateAssignmentRequest } from '../../shared/types/assignment'
+import type { AssignmentPurpose, CreateAssignmentRequest } from '../../shared/types/assignment'
 
 interface CreateAssignmentModalProps {
   open: boolean
@@ -26,9 +26,6 @@ export function CreateAssignmentModal({
   const { t } = useTranslation()
   const [form] = Form.useForm()
 
-  const strategy = Form.useWatch('gradingStrategy', form) as GradingStrategy | undefined
-
-  // Review: 2026-10-05, Pullfrog — only clear and close after backend success so validation failures preserve user input.
   const handleOk = async () => {
     const values = await form.validateFields()
     try {
@@ -39,8 +36,6 @@ export function CreateAssignmentModal({
         title: values.title,
         description: values.description || undefined,
         topic: values.topic,
-        gradingStrategy: values.gradingStrategy,
-        dockerComposeTemplate: values.dockerComposeTemplate || undefined,
         dockerComposePort: values.dockerComposePort ?? 8080,
         startupTimeoutMs: values.startupTimeoutMs || 60000,
         executionTimeoutMs: values.executionTimeoutMs || 300000,
@@ -76,19 +71,6 @@ export function CreateAssignmentModal({
         <Form.Item name="topic" label={t('assignment.form.topic')} rules={[{ required: true }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="gradingStrategy" label={t('assignment.form.strategy')} rules={[{ required: true }]}>
-          <Select
-            options={[
-              { value: 'STUDENT_DOCKER_COMPOSE', label: t('assignment.strategyStudent') },
-              { value: 'LECTURER_DOCKER_COMPOSE', label: t('assignment.strategyLecturer') },
-            ]}
-          />
-        </Form.Item>
-        {strategy === 'LECTURER_DOCKER_COMPOSE' && (
-          <Form.Item name="dockerComposeTemplate" label={t('assignment.form.dockerComposeTemplate')} rules={[{ required: true }]} preserve={false}>
-            <Input.TextArea rows={4} />
-          </Form.Item>
-        )}
         <Form.Item name="dockerComposePort" label={t('assignment.form.dockerComposePort')} initialValue={8080}>
           <InputNumber min={1} max={65535} />
         </Form.Item>

@@ -1,8 +1,7 @@
-import { Alert, Modal, Form, Input, Select, InputNumber } from 'antd'
+import { Modal, Form, Input, InputNumber } from 'antd'
 import { useTranslation } from 'react-i18next'
 import type {
   AssignmentResponse,
-  GradingStrategy,
   UpdateAssignmentRequest,
 } from '../../shared/types/assignment'
 
@@ -15,9 +14,9 @@ interface EditAssignmentModalProps {
   saveFn: (req: UpdateAssignmentRequest) => Promise<unknown>
 }
 
-// Review: 2026-10-10 — mirrors CreateAssignmentModal minus classId (the
-// backend rejects class changes with 400). Strategy is editable; a warning
-// (not a block) notes that already-graded results keep the old strategy.
+// Review: 2026-10-27 — grading strategy is fixed to STUDENT_DOCKER_COMPOSE on
+// the server, so it is not exposed here. Mirrors CreateAssignmentModal minus
+// classId (the backend rejects class changes with 400).
 export function EditAssignmentModal({
   open,
   record,
@@ -29,9 +28,6 @@ export function EditAssignmentModal({
   const { t } = useTranslation()
   const [form] = Form.useForm()
 
-  const strategy = Form.useWatch('gradingStrategy', form) as GradingStrategy | undefined
-  const strategyChanged = record && strategy && strategy !== record.gradingStrategy
-
   const handleOk = async () => {
     const values = await form.validateFields()
     try {
@@ -39,8 +35,6 @@ export function EditAssignmentModal({
         title: values.title,
         description: values.description || undefined,
         topic: values.topic,
-        gradingStrategy: values.gradingStrategy,
-        dockerComposeTemplate: values.dockerComposeTemplate || undefined,
         dockerComposePort: values.dockerComposePort ?? undefined,
         startupTimeoutMs: values.startupTimeoutMs ?? undefined,
         executionTimeoutMs: values.executionTimeoutMs ?? undefined,
@@ -75,8 +69,6 @@ export function EditAssignmentModal({
                 title: record.title,
                 description: record.description ?? undefined,
                 topic: record.topic ?? undefined,
-                gradingStrategy: record.gradingStrategy ?? undefined,
-                dockerComposeTemplate: record.dockerComposeTemplate ?? undefined,
                 dockerComposePort: record.dockerComposePort ?? undefined,
                 startupTimeoutMs: record.startupTimeoutMs ?? undefined,
                 executionTimeoutMs: record.executionTimeoutMs ?? undefined,
@@ -95,27 +87,6 @@ export function EditAssignmentModal({
         <Form.Item name="topic" label={t('assignment.form.topic')} rules={[{ required: true }]}>
           <Input />
         </Form.Item>
-        <Form.Item name="gradingStrategy" label={t('assignment.form.strategy')} rules={[{ required: true }]}>
-          <Select
-            options={[
-              { value: 'STUDENT_DOCKER_COMPOSE', label: t('assignment.strategyStudent') },
-              { value: 'LECTURER_DOCKER_COMPOSE', label: t('assignment.strategyLecturer') },
-            ]}
-          />
-        </Form.Item>
-        {strategyChanged && (
-          <Alert
-            type="warning"
-            showIcon
-            message={t('assignment.form.strategyChangeWarning')}
-            style={{ marginBottom: 16 }}
-          />
-        )}
-        {strategy === 'LECTURER_DOCKER_COMPOSE' && (
-          <Form.Item name="dockerComposeTemplate" label={t('assignment.form.dockerComposeTemplate')} rules={[{ required: true }]} preserve={false}>
-            <Input.TextArea rows={4} />
-          </Form.Item>
-        )}
         <Form.Item name="dockerComposePort" label={t('assignment.form.dockerComposePort')}>
           <InputNumber min={1} max={65535} />
         </Form.Item>
