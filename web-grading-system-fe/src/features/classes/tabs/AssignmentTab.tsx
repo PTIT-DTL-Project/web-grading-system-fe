@@ -43,8 +43,6 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
   const handleCreate = async (values: {
     title: string
     description?: string
-    gradingStrategy: 'STUDENT_DOCKER_COMPOSE' | 'LECTURER_DOCKER_COMPOSE'
-    dockerComposeTemplate?: string
     dockerComposePort?: number
     startupTimeoutMs?: number
     executionTimeoutMs?: number
@@ -120,13 +118,6 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
       key: 'topic',
       width: 140,
       render: (v: string) => <Tag color="blue">{v || '—'}</Tag>,
-    },
-    {
-      title: t('assignment.strategy'),
-      dataIndex: 'gradingStrategy',
-      key: 'gradingStrategy',
-      render: (v: string) =>
-        v === 'STUDENT_DOCKER_COMPOSE' ? t('assignment.strategyStudent') : t('assignment.strategyLecturer'),
     },
     {
       title: t('assignment.status'),
