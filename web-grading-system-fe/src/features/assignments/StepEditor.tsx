@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Form,
   Input,
@@ -18,7 +18,9 @@ import { useTranslation } from 'react-i18next'
 import type { StepType } from '../../shared/types/assignment'
 import type { StepDraft } from './stepConfig'
 import { ConnectionFields } from './ConnectionFields'
-import { RESTRICTED_HEADERS, buildConnection } from './stepConfig'
+import { RESTRICTED_HEADERS, buildConnection, DYNAMIC_VARIABLES } from './stepConfig'
+import { getConfigSchema } from '../../shared/api/endpoints/schema'
+import { SchemaPreview } from './SchemaPreview'
 interface StepEditorProps {
   step?: {
     id?: string
@@ -30,6 +32,7 @@ interface StepEditorProps {
     timeoutMs?: number | null
     required?: boolean
   }
+  assignmentId?: string
   onSave: (body: StepDraft) => Promise<unknown>
   onCancel: () => void
   saving: boolean
@@ -49,7 +52,21 @@ const STEP_TYPES: StepType[] = [
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
 
-const ASSERTION_KINDS = ['status', 'body_structure', 'body_equals', 'json_path', 'contains', 'field_equals']
+const ASSERTION_KINDS = [
+  'status',
+  'body_structure',
+  'body_equals',
+  'json_path',
+  'contains',
+  'field_equals',
+  'array_length',
+  'contains_item',
+  'json_path_equals',
+  'greater_than',
+  'less_than',
+  'matches_regex',
+  'any_of',
+]
 
 const INVALID_JSON = '__invalid_json__'
 
@@ -118,6 +135,45 @@ function AssertionFields({ index }: { index: number }) {
           <Input.TextArea rows={3} placeholder={t('step.configPlaceholder')} />
         </Form.Item>
       )}
+      {(kind === 'array_length' || kind === 'contains_item' || kind === 'json_path_equals') && (
+        <>
+          <Form.Item name={[index, 'path']} label={t('step.assertionPath')} rules={[{ required: true }]}>
+            <Input placeholder="$.items" />
+          </Form.Item>
+          <Form.Item name={[index, 'equals']} label={t('step.assertionEquals')} rules={[{ required: true }]}>
+            <Input placeholder="4" />
+          </Form.Item>
+        </>
+      )}
+      {(kind === 'greater_than' || kind === 'less_than') && (
+        <>
+          <Form.Item name={[index, 'path']} label={t('step.assertionPath')} rules={[{ required: true }]}>
+            <Input placeholder="$.price" />
+          </Form.Item>
+          <Form.Item name={[index, 'value']} label={t('step.assertionValue')} rules={[{ required: true }]}>
+            <Input placeholder="100" />
+          </Form.Item>
+        </>
+      )}
+      {kind === 'matches_regex' && (
+        <>
+          <Form.Item name={[index, 'path']} label={t('step.assertionPath')} rules={[{ required: true }]}>
+            <Input placeholder="$.code" />
+          </Form.Item>
+          <Form.Item name={[index, 'pattern']} label={t('step.assertionPattern')} rules={[{ required: true }]}>
+            <Input placeholder="^ABC-\d+$" />
+          </Form.Item>
+        </>
+      )}
+      {kind === 'any_of' && (
+        <Form.Item
+          name={[index, 'assertions']}
+          label={t('step.assertionAnyOf')}
+          rules={[{ required: true }]}
+        >
+          <Input.TextArea rows={3} placeholder='[{"kind":"status","equals":200},{"kind":"json_path","path":"$.id"}]' />
+        </Form.Item>
+      )}
     </>
   )
 }
@@ -159,6 +215,7 @@ function CheckFields({ index }: { index: number }) {
 
 export function StepEditor({
   step,
+  assignmentId,
   onSave,
   onCancel,
   saving,
@@ -172,6 +229,7 @@ export function StepEditor({
   const [bodyMode, setBodyMode] = useState<'none' | 'raw'>('none')
   const [copiedVar, setCopiedVar] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('params')
+  const [schema, setSchema] = useState<Record<string, unknown> | null>(null)
   const guided =
     !advanced &&
     (stepType === 'HTTP_REQUEST' ||
@@ -179,6 +237,14 @@ export function StepEditor({
       stepType === 'DB_SCHEMA_CHECK' ||
       stepType === 'DB_MIGRATION')
   const allValues = Form.useWatch([], form) as Record<string, any> | undefined
+
+  // Fetch JSON Schema from backend when assignmentId is available
+  useEffect(() => {
+    if (!assignmentId) return
+    getConfigSchema(assignmentId)
+      .then((s) => setSchema(s as Record<string, unknown>))
+      .catch(() => setSchema(null))
+  }, [assignmentId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Review: 2026-10-06, Pullfrog — hidden tabs validate too, so a failure must
   // jump to its tab instead of dying silently. Both failure sources route here.
@@ -220,6 +286,21 @@ export function StepEditor({
         return { kind: assertion.kind, text: assertion.text }
       case 'field_equals':
         return { kind: assertion.kind, path: assertion.path, equals: assertion.equals }
+      case 'array_length':
+      case 'contains_item':
+      case 'json_path_equals':
+        return {
+          kind: assertion.kind,
+          path: assertion.path,
+          equals: assertion.equals,
+        }
+      case 'greater_than':
+      case 'less_than':
+        return { kind: assertion.kind, path: assertion.path, value: assertion.value }
+      case 'matches_regex':
+        return { kind: assertion.kind, path: assertion.path, pattern: assertion.pattern }
+      case 'any_of':
+        return { kind: assertion.kind, assertions: assertion.assertions ?? [] }
       default:
         return { kind: assertion.kind, json: parse(assertion.json, ['assertions', index, 'json']) }
     }
@@ -346,6 +427,8 @@ export function StepEditor({
             name: entry?.name,
             from: entry?.from ?? 'response_body',
             expression: entry?.expression,
+            as: entry?.as ?? 'scalar',
+            fallback: entry?.fallback,
           }))
         : [],
     })
@@ -514,7 +597,10 @@ export function StepEditor({
     if (bodyMode === 'raw' && bodyText && hasLowerContentType) {
       warnings.push({ key: 'content-type-case', severity: 'warning', text: t('step.contentTypeCaseWarn') })
     }
-    const unknownVars = collectUsedVars(allValues).filter((name) => !availableVariables.includes(name))
+    const unknownVars = collectUsedVars(allValues).filter(
+      (name) =>
+        !availableVariables.includes(name) && !DYNAMIC_VARIABLES.includes(name),
+    )
     if (unknownVars.length) {
       warnings.push({
         key: 'unknown-vars',
@@ -860,6 +946,18 @@ export function StepEditor({
                               <Form.Item {...restField} name={[name, 'expression']} rules={[{ required: true }]}>
                                 <Input placeholder={t('step.extractExpression')} />
                               </Form.Item>
+                              <Form.Item {...restField} name={[name, 'as']} initialValue="scalar">
+                                <Select
+                                  style={{ width: 100 }}
+                                  options={[
+                                    { value: 'scalar', label: t('step.extractAsScalar') },
+                                    { value: 'json', label: t('step.extractAsJson') },
+                                  ]}
+                                />
+                              </Form.Item>
+                              <Form.Item {...restField} name={[name, 'fallback']}>
+                                <Input placeholder={t('step.extractFallback')} />
+                              </Form.Item>
                               <MinusCircleOutlined onClick={() => remove(name)} />
                             </Space>
                           ))}
@@ -1008,6 +1106,13 @@ export function StepEditor({
           <pre style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, overflow: 'auto' }}>
             {previewText()}
           </pre>
+        </>
+      )}
+
+      {schema && (
+        <>
+          <Typography.Text strong style={{ marginTop: 16 }}>{t('schemaTitle') || 'JSON Schema'}</Typography.Text>
+          <SchemaPreview schema={schema} open={true} onClose={() => setSchema(null)} />
         </>
       )}
 
