@@ -36,7 +36,7 @@ function unwrapEnvelope(body: unknown): { enveloped: boolean; value: unknown } {
 
 export const http: AxiosInstance = axios.create({
   baseURL: '',
-  timeout: 30_000,
+  timeout: 180_000,
 })
 
 let isRefreshing = false

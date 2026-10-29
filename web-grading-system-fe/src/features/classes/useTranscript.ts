@@ -28,17 +28,13 @@ export function useTranscript(classId: string, page: number, pageSize: number): 
     const controller = new AbortController()
     setLoading(true)
 
-    getTranscript(classId, { signal: controller.signal })
+    getTranscript(classId, page, pageSize, { signal: controller.signal })
       .then((data) => {
         if (controller.signal.aborted) return
-        // Transcript is not paginated by server; we apply client-side pagination.
-        const start = page * pageSize
-        const end = start + pageSize
-        const paginated = data.slice(start, end)
-        const total = data.length
-        const pages = Math.ceil(total / pageSize)
-        setRows(paginated)
-        setMeta({ page, pageSize, pages, total })
+        // API returns { meta: { page, pageSize, pages, total }, result: [...] }
+        const dataArray = Array.isArray(data?.result) ? data.result : []
+        setRows(dataArray)
+        setMeta(data.meta ?? { page, pageSize, pages: 0, total: 0 })
         setError(null)
       })
       .catch((err: unknown) => {

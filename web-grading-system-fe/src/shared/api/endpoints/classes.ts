@@ -104,6 +104,15 @@ export function setStudentScores(
   )
 }
 
-export function getTranscript(classId: string, options?: { signal?: AbortSignal }): Promise<TranscriptEntryResponse[]> {
-  return getData<TranscriptEntryResponse[]>(`/api/v1/classes/${classId}/transcript`, undefined, options)
+export function getTranscript(
+  classId: string,
+  page: number,
+  size: number,
+  options?: { signal?: AbortSignal },
+): Promise<Page<TranscriptEntryResponse>> {
+  return getData<Page<TranscriptEntryResponse>>(
+    `/api/v1/classes/${classId}/transcript`,
+    { page, size },
+    options,
+  )
 }
