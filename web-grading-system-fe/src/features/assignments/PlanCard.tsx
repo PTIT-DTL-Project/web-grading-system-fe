@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { TestPlan, TestStep } from '../../shared/types/assignment'
 import { StepEditor } from './StepEditor'
 import type { StepDraft } from './stepConfig'
-import { SYSTEM_VARIABLES } from './stepConfig'
+import { SYSTEM_VARIABLES, DYNAMIC_VARIABLES } from './stepConfig'
 import { useTestSteps } from './useTestSteps'
 import { useApiErrorMessage } from '../../shared/api/errors'
 import { colors } from '../../shared/theme/tokens'
@@ -58,7 +58,7 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete, onRen
   }, [steps])
 
   const editorVariables = useMemo(() => {
-    const names = new Set<string>(SYSTEM_VARIABLES)
+    const names = new Set<string>([...SYSTEM_VARIABLES, ...DYNAMIC_VARIABLES])
     stepExtractVars.forEach((entry) => {
       if (!editingStep || entry.order < editingStep.stepOrder) names.add(entry.name)
     })
