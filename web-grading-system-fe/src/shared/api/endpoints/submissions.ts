@@ -37,11 +37,12 @@ export function listMySubmissions(
   page: number,
   size: number,
   search?: string,
+  assignmentId?: string,
   options?: { signal?: AbortSignal },
 ): Promise<Page<SubmissionResponse>> {
   return getData<Page<SubmissionResponse>>(
     '/api/v1/submissions',
-    { page, size, ...(search ? { search } : {}) },
+    { page, size, ...(search ? { search } : {}), ...(assignmentId ? { assignmentId } : {}) },
     options,
   )
 }

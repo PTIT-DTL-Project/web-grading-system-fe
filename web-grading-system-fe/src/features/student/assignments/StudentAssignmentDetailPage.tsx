@@ -160,7 +160,7 @@ export function StudentAssignmentDetailPage() {
         <Space>
           <Button
             icon={<HistoryOutlined />}
-            onClick={() => navigate('/student/submissions')}
+            onClick={() => navigate(`/student/submissions?assignmentId=${assignment.id}`)}
           >
             {t('assignments.viewSubmissions')}
           </Button>

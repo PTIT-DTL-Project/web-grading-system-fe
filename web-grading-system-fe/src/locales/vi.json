@@ -447,6 +447,8 @@
     "title": "Lịch sử nộp bài",
     "search": "Tìm theo tên file…",
     "assignment": "Bài tập",
+    "assignmentPlaceholder": "Chọn bài tập…",
+    "assignmentAll": "Tất cả bài tập",
     "scope": "Phạm vi",
     "empty": "Chưa có bài nộp nào",
     "emptyHint": "Nộp bài để xem lịch sử tại đây",
