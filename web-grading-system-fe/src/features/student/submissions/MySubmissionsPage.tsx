@@ -1,6 +1,6 @@
 import { Badge, Button, Tag } from 'antd'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useNavigate } from 'react-router'
 import type { TableColumnsType } from 'antd'
 import { EyeOutlined } from '@ant-design/icons'
 import { ListPage } from '../../../shared/ui/ListPage'
@@ -11,7 +11,7 @@ import { AssignmentTitle } from './AssignmentTitle'
 import { SubmissionScopeCell } from './SubmissionScopeCell'
 import { formatDateTime } from '../../../shared/format/formatDateTime'
 import type { SubmissionResponse, SubmissionStatus } from '../../../shared/types/submission'
-import type { AssignmentResponse } from '../../../shared/types/assignment'
+import type { AssignmentResponse, AssignmentPurpose } from '../../../shared/types/assignment'
 import { colors } from '../../../shared/theme/tokens'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -25,19 +25,37 @@ function statusColor(status: SubmissionStatus): string {
   return map[status] ?? colors.neutral
 }
 
+/** Fetch every page of assignments for one purpose (follows meta.pages). */
+async function fetchAllAssignments(purpose: AssignmentPurpose): Promise<AssignmentResponse[]> {
+  const all: AssignmentResponse[] = []
+  let page = 0
+  let totalPages = 1
+  while (page < totalPages) {
+    const res = await listStudentAssignments(page, 100, undefined, undefined, purpose, undefined)
+    all.push(...res.result)
+    totalPages = res.meta.pages
+    page += 1
+  }
+  return all
+}
+
 export function MySubmissionsPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
 
   const [assignmentOptions, setAssignmentOptions] = useState<{ label: string; value: string }[]>([])
 
-  // Load enrolled assignments for the assignment dropdown filter.
+  // Load enrolled assignments (GRADED + PRACTICE) for the assignment dropdown filter.
+  // Follows meta.pages so the list is complete even with more than 100 assignments.
   useEffect(() => {
-    listStudentAssignments(0, 100, undefined, undefined, undefined, undefined)
-      .then((page) => {
+    Promise.all([
+      fetchAllAssignments('GRADED' as AssignmentPurpose),
+      fetchAllAssignments('PRACTICE' as AssignmentPurpose),
+    ])
+      .then(([graded, practice]) => {
+        const all = [...graded, ...practice]
         setAssignmentOptions(
-          page.result.map((a: AssignmentResponse) => ({
+          all.map((a: AssignmentResponse) => ({
             label: a.title,
             value: a.id,
           })),
@@ -66,11 +84,9 @@ export function MySubmissionsPage() {
     },
   ]
 
+  // Empty initialFilters: useList hydrates assignmentId from the URL on mount,
+  // and resetFilters clears to {} so "Clear filters" works even from deep links.
   const initialFilters: { search?: string; assignmentId?: string } = {}
-  const urlAssignmentId = searchParams.get('assignmentId')
-  if (urlAssignmentId) {
-    initialFilters.assignmentId = urlAssignmentId
-  }
 
   const columns: TableColumnsType<SubmissionResponse> = [
     {
