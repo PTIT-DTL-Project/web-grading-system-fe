@@ -389,7 +389,7 @@
     "noDescription": "No description",
     "testPlans": "Questions",
     "noPlans": "No questions yet",
-    "planWeight": "Weight: {{weight}}%",
+    "planWeight": "Weight: {{weight}}",
     "planSteps": "{{count}} steps",
     "detailLoadFailed": "Could not load assignment detail",
     "notFound": "Assignment not found",

@@ -389,7 +389,7 @@
     "noDescription": "Không có mô tả",
     "testPlans": "Các câu",
     "noPlans": "Chưa có câu nào",
-    "planWeight": "Trọng số: {{weight}}%",
+    "planWeight": "Trọng số: {{weight}}",
     "planSteps": "{{count}} bước",
     "detailLoadFailed": "Không tải được chi tiết bài tập",
     "notFound": "Không tìm thấy bài tập",
