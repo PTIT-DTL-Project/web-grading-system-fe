@@ -447,6 +447,8 @@
     "title": "Submission history",
     "search": "Search by file name…",
     "assignment": "Assignment",
+    "assignmentPlaceholder": "Choose an assignment…",
+    "assignmentAll": "All assignments",
     "scope": "Scope",
     "empty": "No submissions yet",
     "emptyHint": "Submit an assignment to see history here",
