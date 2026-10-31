@@ -15,6 +15,10 @@ import type { AssignmentResponse, AssignmentPurpose } from '../../../shared/type
 import { colors } from '../../../shared/theme/tokens'
 import { useCallback, useEffect, useState } from 'react'
 
+// Hoisted stable identity so useList's parent-sync effect (useList.ts:131-140)
+// does not reset filters on every render — see AssignmentSubmissionsPage.tsx:30.
+const EMPTY_FILTERS: { search?: string; assignmentId?: string } = {}
+
 function statusColor(status: SubmissionStatus): string {
   const map: Record<SubmissionStatus, string> = {
     DONE: colors.success,
@@ -86,7 +90,7 @@ export function MySubmissionsPage() {
 
   // Empty initialFilters: useList hydrates assignmentId from the URL on mount,
   // and resetFilters clears to {} so "Clear filters" works even from deep links.
-  const initialFilters: { search?: string; assignmentId?: string } = {}
+  const initialFilters = EMPTY_FILTERS
 
   const columns: TableColumnsType<SubmissionResponse> = [
     {
