@@ -36,4 +36,13 @@ describe('run timeline', () => {
     expect(state.items[1]).toMatchObject({ status: 'COMPLETED', result: 'B' })
     expect(state.terminal).toBe(true)
   })
+  it('closes unfinished cards when a run is cancelled', () => {
+    const state = [
+      event(1, 'reasoning.started', 'r', {}),
+      event(2, 'tool.started', 't', { name: 'lookup', arguments: '{}' }),
+      event(3, 'run.cancelled', null, { status: 'CANCELLED' }),
+    ].reduce(reduceRunTimeline, emptyRunTimeline())
+    expect(state.items[0]).toMatchObject({ status: 'COMPLETED' })
+    expect(state.items[1]).toMatchObject({ status: 'FAILED' })
+  })
 })

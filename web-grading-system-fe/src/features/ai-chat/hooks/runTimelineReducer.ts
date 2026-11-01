@@ -45,6 +45,9 @@ export function reduceRunTimeline(state: RunTimelineState, event: RunTimelineEve
     next.answer = asText(event.data.text)
   } else if (['run.completed', 'run.failed', 'run.cancelled'].includes(event.type)) {
     next.terminal = true
+    next.items = next.items.map(item => item.status !== 'RUNNING' ? item
+      : item.kind === 'reasoning' ? { ...item, status: 'COMPLETED' }
+        : { ...item, status: 'FAILED', result: item.result || 'Lượt chạy đã kết thúc trước khi tool hoàn tất.' })
   }
   return next
 }
