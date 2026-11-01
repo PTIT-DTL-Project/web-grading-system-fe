@@ -28,6 +28,7 @@ import { AssignmentTitle } from '../submissions/AssignmentTitle'
 import { ResultScopeBadge } from '../../../shared/ui/ResultScopeBadge'
 import { useQuery } from '@tanstack/react-query'
 import { getAssignmentPlans } from '../../../shared/api/endpoints/studentAssignments'
+import { getMyAssignmentResults } from '../../../shared/api/endpoints/results'
 import { useApiErrorMessage } from '../../../shared/api/errors'
 import { colors } from '../../../shared/theme/tokens'
 import type { ResultResponse, StepResultResponse } from '../../../shared/types/result'
@@ -232,6 +233,16 @@ export function SubmissionResultPage() {
   })
   const planName = (planId: string | null) => plans?.find((p) => p.id === planId)?.name ?? null
 
+  // Điểm cả bài (weighted, câu chưa nộp = 0) — khác với điểm của riêng bài nộp này.
+  // Nộp 1 câu thì trang này từng chỉ hiện điểm của câu đó, dễ tưởng là điểm cả bài.
+  const { data: assignmentResults, isLoading: assignmentResultsLoading } = useQuery({
+    queryKey: ['student-assignment-results', assignmentId],
+    queryFn: () => getMyAssignmentResults(assignmentId ?? ''),
+    enabled: !!assignmentId,
+    staleTime: 60 * 1000,
+  })
+  const assignmentScore = assignmentResultsLoading ? null : (assignmentResults?.exerciseScore ?? null)
+
   if (loading && !isReady) {
     return (
       <div
@@ -373,7 +384,7 @@ export function SubmissionResultPage() {
         <Col xs={24} md={8}>
           <Card style={{ borderColor: colors.border, textAlign: 'center' }}>
             <Statistic
-              title={t('result.totalScore', {
+              title={t('result.submissionScore', {
                 score: totalScore.toFixed(2),
                 max: totalMax.toFixed(2),
               })}
@@ -387,6 +398,28 @@ export function SubmissionResultPage() {
                 fontWeight: 700,
               }}
             />
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card style={{ borderColor: colors.border, textAlign: 'center' }}>
+            <Statistic
+              title={t('result.assignmentScore')}
+              value={assignmentScore !== null ? assignmentScore.toFixed(2) : '—'}
+              suffix={assignmentScore !== null ? '/ 10.00' : undefined}
+              valueStyle={{
+                color:
+                  assignmentScore === null
+                    ? colors.neutral
+                    : assignmentScore >= 5
+                      ? colors.success
+                      : colors.error,
+                fontSize: 32,
+                fontWeight: 700,
+              }}
+            />
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              {t('assignments.scoreWeightedHint')}
+            </Typography.Text>
           </Card>
         </Col>
       </Row>

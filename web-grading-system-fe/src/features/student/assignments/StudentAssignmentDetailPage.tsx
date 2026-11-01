@@ -13,7 +13,9 @@ import {
   Row,
   Space,
   Spin,
+  Statistic,
   Tag,
+  Tooltip,
   Typography,
 } from 'antd'
 import {
@@ -87,9 +89,81 @@ export function StudentAssignmentDetailPage() {
   const toMessage = useApiErrorMessage()
   // Bài tập luyện tập nằm ngoài lớp → quay về trang practice, ngược lại về trang assignments.
   const backPath = location.pathname.startsWith('/student/practice') ? '/student/practice' : '/student/assignments'
-  const { assignment, plans, loading, error, reload } = useStudentAssignment(id ?? '')
+  const { assignment, plans, myResults, loading, error, reload } = useStudentAssignment(id ?? '')
   const [submitOpen, setSubmitOpen] = useState(false)
-  const [expandedStepId, setExpandedStepId] = useState<string | null>(null)
+  const [expandedStepIds, setExpandedStepIds] = useState<Set<string>>(new Set())
+  const [expandAll, setExpandAll] = useState(false)
+
+  const allStepIds = plans.flatMap((p) => p.steps.map((s) => s.id))
+
+  const toggleExpandAll = () => {
+    setExpandAll((prev) => {
+      const next = !prev
+      if (next) {
+        setExpandedStepIds(new Set(allStepIds))
+      } else {
+        setExpandedStepIds(new Set())
+      }
+      return next
+    })
+  }
+
+  const isStepExpanded = (stepId: string) => expandedStepIds.has(stepId)
+
+  // Điểm cả bài (thang 10) do backend tính weighted: bài chưa nộp = 0,
+  // attempted-but-infra-failed = null (hiện '—'). Không tự cộng lại ở FE.
+  const exerciseScore = myResults?.exerciseScore ?? null
+  const resultRows = Array.isArray(myResults?.results) ? myResults.results : []
+
+  // Điểm 1 plan: ưu tiên row PLAN của chính plan đó; nếu sinh viên nộp nguyên
+  // bài (FULL row) thì derive từ steps theo đúng công thức backend
+  // (bỏ skipped, 10 × passedWeight / ranWeight).
+  const planScore = (planId: string): { score: number; max: number } | null => {
+    const planRow = resultRows.find((r) => r.planId === planId)
+    if (planRow && planRow.score !== null && planRow.score !== undefined && planRow.maxScore !== null && planRow.maxScore !== undefined) {
+      return { score: planRow.score, max: planRow.maxScore }
+    }
+    const fullRows = resultRows.filter((r) => !r.planId)
+    if (fullRows.length !== 1) return null
+    const fullRow = fullRows[0]
+    if (!Array.isArray(fullRow.steps)) return null
+    const steps = fullRow.steps.filter((s) => s.planId === planId && !s.skipped)
+    if (steps.length === 0) return null
+    const ranWeight = steps.reduce((sum, s) => {
+      const w = typeof s.weight === 'number' ? s.weight : 1
+      return sum + w
+    }, 0)
+    if (ranWeight === 0) return null
+    const passedWeight = steps
+      .filter((s) => s.passed)
+      .reduce((sum, s) => {
+        const w = typeof s.weight === 'number' ? s.weight : 1
+        return sum + w
+      }, 0)
+    return { score: (10 * passedWeight) / ranWeight, max: 10 }
+  }
+
+  // Câu đã được nộp hay chưa: có row PLAN cho chính câu đó, hoặc có step của câu đó
+  // trong row FULL (nộp nguyên bài). Câu chưa nộp vẫn ăn 0 điểm trong điểm cả bài
+  // (backend weighted: chưa nộp = 0 × weight, vẫn cộng weight vào mẫu số), nên UI
+  // phải hiện 0.00 chứ không phải "—" — "—" chỉ dành cho trường hợp không chấm được.
+  const planSubmitted = (planId: string): boolean => {
+    if (resultRows.some((r) => r.planId === planId)) return true
+    const fullRows = resultRows.filter((r) => !r.planId)
+    if (fullRows.length !== 1) return false
+    const fullRow = fullRows[0]
+    if (!Array.isArray(fullRow.steps)) return false
+    return Boolean(fullRow.steps.some((s) => s.planId === planId))
+  }
+
+  // Điểm 1 step: tìm trong mọi row (row PLAN lẫn FULL đều mang stepId).
+  const findStepResult = (stepId: string) => {
+    for (const row of resultRows) {
+      const match = row.steps.find((s) => s.stepId === stepId)
+      if (match) return match
+    }
+    return null
+  }
 
   useEffect(() => {
     if (searchParams.get('submit') === '1') {
@@ -175,6 +249,36 @@ export function StudentAssignmentDetailPage() {
         </Space>
       </div>
 
+      {myResults && (
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={8}>
+            <Card style={{ borderColor: colors.border, textAlign: 'center' }}>
+              <Statistic
+                title={t('result.totalScore', {
+                  score: exerciseScore !== null ? exerciseScore.toFixed(2) : '—',
+                  max: '10.00',
+                })}
+                value={exerciseScore !== null ? exerciseScore.toFixed(2) : '—'}
+                suffix={exerciseScore !== null ? '/ 10.00' : undefined}
+                valueStyle={{
+                  color:
+                    exerciseScore === null
+                      ? colors.neutral
+                      : exerciseScore >= 5
+                        ? colors.success
+                        : colors.error,
+                  fontSize: 32,
+                  fontWeight: 700,
+                }}
+              />
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                {t('assignments.scoreWeightedHint')}
+              </Typography.Text>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={16}>
           <Card
@@ -243,6 +347,15 @@ export function StudentAssignmentDetailPage() {
           <Space>
             <CheckCircleOutlined style={{ color: colors.primary }} />
             {t('assignments.testPlans')}
+            {plans.length > 0 && (
+              <Button
+                type="link"
+                size="small"
+                onClick={toggleExpandAll}
+              >
+                {expandAll ? t('common.collapseAll') : t('common.expandAll')}
+              </Button>
+            )}
           </Space>
         }
         style={{ borderColor: colors.border }}
@@ -260,6 +373,28 @@ export function StudentAssignmentDetailPage() {
                     {t('assignments.planWeight', { weight: plan.weight })}
                   </Tag>
                   <Tag>{t('assignments.planSteps', { count: plan.steps.length })}</Tag>
+                  {(() => {
+                    const ps = planScore(plan.id)
+                    if (ps) {
+                      return (
+                        <Tag color={ps.score >= ps.max * 0.5 ? 'green' : 'red'}>
+                          {ps.score.toFixed(2)} / {ps.max.toFixed(2)}
+                        </Tag>
+                      )
+                    }
+                    // Chưa nộp ≠ không chấm được: câu chưa nộp vẫn được tính 0 điểm
+                    // trong điểm cả bài, nên hiện đúng con số thay vì dấu "—".
+                    if (!planSubmitted(plan.id)) {
+                      return (
+                        <Tooltip title={t('assignments.planNotSubmittedHint')}>
+                          <Tag color="default">
+                            0.00 / 10.00 · {t('assignments.planNotSubmitted')}
+                          </Tag>
+                        </Tooltip>
+                      )
+                    }
+                    return <Tag color="default">—</Tag>
+                  })()}
                 </div>
               ),
               children: (
@@ -271,7 +406,7 @@ export function StudentAssignmentDetailPage() {
                     const text = step.description?.trim()
                       ? step.description
                       : stepAutoText(t, step)
-                    const expanded = expandedStepId === step.id
+                    const expanded = isStepExpanded(step.id)
                     return (
                       <div key={step.id}>
                         <Typography.Text strong>{step.name}</Typography.Text>
@@ -280,10 +415,31 @@ export function StudentAssignmentDetailPage() {
                             {text}
                           </Typography.Text>
                         ) : null}
+                        {(() => {
+                          const stepResult = findStepResult(step.id)
+                          if (!stepResult) return <Tag color="default">—</Tag>
+                          if (stepResult.skipped) return <Tag>{t('result.skipped')}</Tag>
+                          return (
+                            <Tag color={stepResult.passed ? 'green' : 'red'}>
+                              {(stepResult.score ?? 0).toFixed(2)} / {stepResult.weight ?? 0}
+                            </Tag>
+                          )
+                        })()}
                         <Button
                           type="link"
                           size="small"
-                          onClick={() => setExpandedStepId(expanded ? null : step.id)}
+                          onClick={() => {
+                            setExpandedStepIds((prev) => {
+                              const next = new Set(prev)
+                              if (next.has(step.id)) {
+                                next.delete(step.id)
+                              } else {
+                                next.add(step.id)
+                              }
+                              return next
+                            })
+                            setExpandAll(false)
+                          }}
                         >
                           {expanded ? t('common.collapse') : t('common.expand')}
                         </Button>
