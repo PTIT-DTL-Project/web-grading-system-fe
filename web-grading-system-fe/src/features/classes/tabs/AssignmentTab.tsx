@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Table, Button, Space, Popconfirm, message, Tag, Input } from 'antd'
+import { ReloadOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAssignments } from '../../assignments/useAssignments'
 import { CreateAssignmentModal } from '../../assignments/CreateAssignmentModal'
@@ -179,6 +180,9 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
         <Button type="primary" onClick={() => setModalOpen(true)} disabled={archived}>
           {t('assignment.create')}
+        </Button>
+        <Button onClick={refetch} disabled={loading || archived} icon={<ReloadOutlined />} title={t('common.refresh')}>
+          {t('common.refresh')}
         </Button>
         <Input
           placeholder={t('assignment.topicPlaceholder')}

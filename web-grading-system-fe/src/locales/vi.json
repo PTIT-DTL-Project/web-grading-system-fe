@@ -24,7 +24,9 @@
     "deleted": "Đã xóa",
     "edit": "Chỉnh sửa",
     "collapse": "Thu gọn",
-    "expand": "Mở rộng"
+    "expand": "Mở rộng",
+    "expandAll": "Mở rộng tất cả",
+    "collapseAll": "Thu gọn tất cả"
   },
   "nav": {
     "classes": "Lớp học",
@@ -391,6 +393,9 @@
     "noPlans": "Chưa có câu nào",
     "planWeight": "Trọng số: {{weight}}",
     "planSteps": "{{count}} bước",
+    "planNotSubmitted": "chưa nộp",
+    "planNotSubmittedHint": "Câu chưa nộp vẫn được tính 0 điểm trong điểm cả bài.",
+    "scoreWeightedHint": "Điểm cả bài tính theo trọng số từng câu; câu chưa nộp = 0 điểm.",
     "detailLoadFailed": "Không tải được chi tiết bài tập",
     "notFound": "Không tìm thấy bài tập",
     "back": "Quay lại",
@@ -490,6 +495,8 @@
     "durationMs": "Thời gian (ms)",
     "backToSubmissions": "Quay lại lịch sử",
     "totalScore": "Tổng điểm: {{score}}/{{max}}",
+    "submissionScore": "Điểm bài nộp này: {{score}}/{{max}}",
+    "assignmentScore": "Điểm cả bài",
     "scopeFull": "Toàn bài",
     "scopePlan": "Câu: {{name}}",
     "statusPASS": "PASS",

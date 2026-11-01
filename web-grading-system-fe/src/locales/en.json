@@ -24,7 +24,9 @@
     "deleted": "Deleted",
     "edit": "Edit",
     "collapse": "Collapse",
-    "expand": "Expand"
+    "expand": "Expand",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all"
   },
   "nav": {
     "classes": "Classes",
@@ -391,6 +393,9 @@
     "noPlans": "No questions yet",
     "planWeight": "Weight: {{weight}}",
     "planSteps": "{{count}} steps",
+    "planNotSubmitted": "not submitted",
+    "planNotSubmittedHint": "An unsubmitted question still counts as 0 in the assignment score.",
+    "scoreWeightedHint": "The assignment score is weighted per question; unsubmitted questions count as 0.",
     "detailLoadFailed": "Could not load assignment detail",
     "notFound": "Assignment not found",
     "back": "Back",
@@ -490,6 +495,8 @@
     "durationMs": "Duration (ms)",
     "backToSubmissions": "Back to history",
     "totalScore": "Total: {{score}}/{{max}}",
+    "submissionScore": "This submission: {{score}}/{{max}}",
+    "assignmentScore": "Assignment score",
     "scopeFull": "Full assignment",
     "scopePlan": "Question: {{name}}",
     "statusPASS": "PASS",

@@ -149,6 +149,16 @@ export interface StudentResultResponse {
   results: AssignmentResultResponse[]
 }
 
+/** result-service GET /api/v1/results/student/assignment/{assignmentId} —
+ * the calling student's own results on one assignment (identity from X-User-Id).
+ * exerciseScore = weighted score on the 0-10 scale (unsubmitted plans count 0);
+ * results = best attempt per plan with step rows. */
+export interface MyAssignmentResultsResponse {
+  studentUserId: string
+  exerciseScore: number | null
+  results: AssignmentResultResponse[]
+}
+
 export interface SubmissionResponse {
   id: string
   assignmentId: string
