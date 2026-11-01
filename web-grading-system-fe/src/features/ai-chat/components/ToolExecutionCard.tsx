@@ -1,6 +1,6 @@
 import React from 'react'
 import { Collapse, Tag, Typography } from 'antd'
-import { ToolOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons'
+import { ToolOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { colors } from '../../../shared/theme/tokens'
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
   toolArguments?: string | null
   toolResult?: string | null
   status?: string
+  durationMs?: number | null
+  onExpand?: () => void
 }
 
 export const ToolExecutionCard: React.FC<Props> = ({
@@ -15,13 +17,17 @@ export const ToolExecutionCard: React.FC<Props> = ({
   toolArguments,
   toolResult,
   status = 'COMPLETED',
+  durationMs,
+  onExpand,
 }) => {
   const isPending = status === 'RUNNING' || status === 'QUEUED'
+  const isFailed = status === 'FAILED'
 
   return (
     <div style={{ marginBottom: 10, marginLeft: 42 }}>
       <Collapse
         size="small"
+        onChange={keys => { if (keys.length) onExpand?.() }}
         style={{
           background: colors.layoutBg,
           border: `1px solid ${colors.border}`,
@@ -37,16 +43,17 @@ export const ToolExecutionCard: React.FC<Props> = ({
                   {toolName}
                 </Typography.Text>
                 <Tag
-                  color={isPending ? 'processing' : 'success'}
-                  icon={isPending ? <SyncOutlined spin /> : <CheckCircleOutlined />}
+                  color={isPending ? 'processing' : isFailed ? 'error' : 'success'}
+                  icon={isPending ? <SyncOutlined spin /> : isFailed ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
                   style={{ marginLeft: 'auto', marginRight: 0 }}
                 >
-                  {isPending ? 'Đang thực thi' : 'Đã thực thi'}
+                  {isPending ? 'Đang thực thi' : isFailed ? 'Thất bại' : 'Đã thực thi'}
                 </Tag>
               </div>
             ),
             children: (
               <div style={{ fontSize: 12 }}>
+                {durationMs != null && <Typography.Text type="secondary">{durationMs} ms</Typography.Text>}
                 {toolArguments && (
                   <div style={{ marginBottom: 6 }}>
                     <Typography.Text type="secondary" style={{ fontSize: 11 }}>

@@ -6,6 +6,7 @@ import type {
   SendMessageRequest,
   SendMessageResponse,
   RunResponse,
+  RunTimelineEvent,
 } from '../../types/aiAgent'
 
 export function createConversation(title?: string): Promise<ConversationResponse> {
@@ -52,7 +53,8 @@ export function cancelRun(runId: string): Promise<void> {
 
 export function subscribeRunEvents(
   runId: string,
-  onMessage: (event: MessageEvent) => void,
+  afterSequence: number,
+  onMessage: (event: RunTimelineEvent) => void,
   onError?: (err: Event) => void,
 ): () => void {
   const controller = new AbortController()
@@ -63,7 +65,7 @@ export function subscribeRunEvents(
       // out of the URL and lets us read the named SSE events from the response body.
       const session = await refreshSession()
       if (controller.signal.aborted) return
-      const response = await fetch(`/api/v1/ai/runs/${runId}/events`, {
+      const response = await fetch(`/api/v1/ai/runs/${runId}/events?afterSequence=${afterSequence}`, {
         headers: {
           Authorization: `Bearer ${session.accessToken}`,
           Accept: 'text/event-stream',
@@ -75,13 +77,19 @@ export function subscribeRunEvents(
       const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
       let buffer = ''
       let eventType = 'message'
+      let eventId = ''
       let data: string[] = []
 
       const dispatch = () => {
-        if (data.length && (eventType === 'assistant.delta' || eventType === 'assistant.replace')) {
-          onMessage(new MessageEvent(eventType, { data: data.join('\n') }))
+        if (data.length && eventId) {
+          try {
+            const event = JSON.parse(data.join('\n')) as RunTimelineEvent
+            if (event.version === 1 && event.runId === runId && event.sequence === Number(eventId)
+                && event.type === eventType) onMessage(event)
+          } catch { /* reconnect from last applied sequence */ }
         }
         eventType = 'message'
+        eventId = ''
         data = []
       }
       const fieldValue = (line: string, colon: number) => {
@@ -99,14 +107,13 @@ export function subscribeRunEvents(
           buffer = buffer.slice(newline + 1)
           if (!line) dispatch()
           else if (line.startsWith('event:')) eventType = fieldValue(line, 5)
-          // Spring's SseEmitter writes "data:" directly before each delta. A
-          // leading space belongs to the model output and must be preserved.
-          else if (line.startsWith('data:')) data.push(line.slice(5))
+          else if (line.startsWith('id:')) eventId = fieldValue(line, 2)
+          else if (line.startsWith('data:')) data.push(fieldValue(line, 4))
         }
       }
       if (buffer) {
         const line = buffer.replace(/\r$/, '')
-        if (line.startsWith('data:')) data.push(line.slice(5))
+        if (line.startsWith('data:')) data.push(fieldValue(line, 4))
       }
       dispatch()
       if (!controller.signal.aborted) onError?.(new Event('close'))

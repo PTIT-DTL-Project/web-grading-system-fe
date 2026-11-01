@@ -53,3 +53,14 @@ export interface RunResponse {
   startedAt?: string | null
   finishedAt?: string | null
 }
+
+export interface RunTimelineEvent {
+  version: 1
+  runId: string
+  sequence: number
+  type: string
+  modelTurn: number | null
+  itemId: string | null
+  timestamp: string
+  data: Record<string, unknown>
+}
