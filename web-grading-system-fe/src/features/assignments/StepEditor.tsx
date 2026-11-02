@@ -21,6 +21,7 @@ import { ConnectionFields } from './ConnectionFields'
 import { RESTRICTED_HEADERS, buildConnection, DYNAMIC_VARIABLES } from './stepConfig'
 import { getConfigSchema } from '../../shared/api/endpoints/schema'
 import { SchemaPreview } from './SchemaPreview'
+import { useStepValidation } from './hooks/useStepValidation'
 interface StepEditorProps {
   step?: {
     id?: string
@@ -238,13 +239,116 @@ export function StepEditor({
       stepType === 'DB_MIGRATION')
   const allValues = Form.useWatch([], form) as Record<string, any> | undefined
 
-  // Fetch JSON Schema from backend when assignmentId is available
+  // Realtime validation
+  const [previewConfig, setPreviewConfig] = useState<unknown>(null)
+  useEffect(() => {
+    if (!guided || !stepType || !allValues) {
+      setPreviewConfig(null)
+      return
+    }
+    try {
+      if (stepType === 'HTTP_REQUEST') {
+        const config: Record<string, unknown> = {}
+        config.method = allValues.method
+        config.path = allValues.path
+        if (allValues.expected_status !== undefined && allValues.expected_status !== null) config.expected_status = allValues.expected_status
+        const headers = toPairs(allValues.headers)
+        if (headers) config.headers = headers
+        const queryParams = toPairs(allValues.queryParams)
+        if (queryParams) config.query_params = queryParams
+        if (allValues.bodyMode === 'raw' && allValues.body) {
+          try {
+            config.body = JSON.parse(allValues.body)
+          } catch {
+            // skip
+          }
+        }
+        if (Array.isArray(allValues.assertions) && allValues.assertions.length) {
+          const assertions = allValues.assertions
+            .map((a: any, idx: number) => {
+              try {
+                return buildAssertion(a, idx)
+              } catch {
+                return null
+              }
+            })
+            .filter(Boolean)
+          if (assertions.length) config.assertions = assertions
+        }
+        if (Array.isArray(allValues.extract) && allValues.extract.length) {
+          const extract = allValues.extract
+            .map((e: any) => {
+              if (!e?.name || !e?.from || !e?.expression) return null
+              const item: Record<string, unknown> = { name: e.name, from: e.from, expression: e.expression }
+              if (e.as) item.as = e.as
+              if (e.fallback) item.fallback = e.fallback
+              return item
+            })
+            .filter(Boolean)
+          if (extract.length) config.extract = extract
+        }
+        if (Array.isArray(allValues.data) && allValues.data.length) {
+          const data = allValues.data
+            .map((d: any) => {
+              if (!d?.enabled) return null
+              if (d.rawJson) {
+                try {
+                  return JSON.parse(d.rawJson)
+                } catch {
+                  return null
+                }
+              }
+              return d.row
+            })
+            .filter(Boolean)
+          if (data.length) config.data = data
+        }
+        if (Array.isArray(allValues.autoInject) && allValues.autoInject.length) {
+          const ai = toPairs(allValues.autoInject)
+          if (ai) config.auto_inject_headers = ai
+        }
+        setPreviewConfig(config)
+      } else if (stepType.startsWith('DB_')) {
+        const config: Record<string, unknown> = {}
+        if (stepType === 'DB_QUERY') {
+          if (allValues.dbQuery) config.query = allValues.dbQuery
+          if (allValues.expectedRowCount !== undefined && allValues.expectedRowCount !== null) {
+            config.expected = { row_count: allValues.expectedRowCount }
+          }
+        } else if (stepType === 'DB_SCHEMA_CHECK') {
+          // simplified preview
+          if (Array.isArray(allValues.checks)) {
+            const checks = allValues.checks
+              .filter((c: any) => c?.kind)
+              .map((c: any) => ({ kind: c.kind, table_name: c.table_name, column_name: c.column_name, data_type: c.data_type, index_name: c.index_name, column: c.column }))
+            if (checks.length) config.checks = checks
+          }
+        } else if (stepType === 'DB_MIGRATION') {
+          if (Array.isArray(allValues.statements)) {
+            const stmts = allValues.statements.map((s: any) => s?.sql).filter(Boolean)
+            if (stmts.length) config.statements = stmts
+          }
+        }
+        const conn = buildConnection(allValues)
+        if (conn) config.connection = conn
+        setPreviewConfig(config)
+      } else {
+        setPreviewConfig(null)
+      }
+    } catch {
+      setPreviewConfig(null)
+    }
+  }, [allValues, stepType, guided])
+
+  const validation = useStepValidation(guided ? stepType : undefined, previewConfig)
+
+  // Fetch JSON Schema from backend when assignmentId/stepType change
   useEffect(() => {
     if (!assignmentId) return
-    getConfigSchema(assignmentId)
+    getConfigSchema(assignmentId, stepType || undefined)
       .then((s) => setSchema(s as Record<string, unknown>))
       .catch(() => setSchema(null))
-  }, [assignmentId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [assignmentId, stepType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Review: 2026-10-06, Pullfrog — hidden tabs validate too, so a failure must
   // jump to its tab instead of dying silently. Both failure sources route here.
@@ -743,6 +847,39 @@ export function StepEditor({
       layout="vertical"
       initialValues={step ? { ...step, configRaw: step.config, expectedRaw: step.expectedResult ?? undefined } : step}
     >
+      {validation && validation.errors && validation.errors.length > 0 && (
+        <Alert
+          type="warning"
+          showIcon
+          message={t('step.validationIssues') || 'Có vấn đề với cấu hình'}
+          description={
+            <ul style={{ margin: 0, paddingLeft: 16 }}>
+              {validation.errors.slice(0, 5).map((e, idx) => (
+                <li key={idx}>{e.path ? `${e.path}: ` : ''}{e.message}</li>
+              ))}
+            </ul>
+          }
+          style={{ marginBottom: 12 }}
+        />
+      )}
+      {(stepType === 'DB_QUERY' || stepType === 'DB_SCHEMA_CHECK' || stepType === 'DB_MIGRATION') && (
+        <Alert
+          type="info"
+          showIcon
+          message={t('step.dbConnectionRequired') || 'Kết nối DB là bắt buộc'}
+          description={t('step.dbConnectionRequiredDesc') || 'Cần điền database, username, password. Sandbox sẽ dùng credentials này để reset DB giữa các plan.'}
+          style={{ marginBottom: 12 }}
+        />
+      )}
+      {stepType === 'HTTP_REQUEST' && Array.isArray(allValues?.autoInject) && allValues.autoInject.length > 0 && (
+        <Alert
+          type="info"
+          showIcon
+          message={t('step.autoInjectInfo') || 'auto_inject_headers chỉ áp dụng cho các bước sau'}
+          description={t('step.autoInjectInfoDesc') || 'Header khai báo ở bước này không tự áp dụng cho chính nó. Bước kiểm tra âm tính (401/403) nên tự đặt headers.'}
+          style={{ marginBottom: 12 }}
+        />
+      )}
       <Form.Item name="name" label={t('step.name')} rules={[{ required: true }]}>
         <Input />
       </Form.Item>
