@@ -1,15 +1,17 @@
 import React, { useRef, useState } from 'react'
 import { Input, Button } from 'antd'
-import { SendOutlined } from '@ant-design/icons'
+import { SendOutlined, StopOutlined } from '@ant-design/icons'
 import { colors } from '../../../shared/theme/tokens'
 
 interface Props {
   onSend: (text: string) => Promise<void>
   disabled?: boolean
   loading?: boolean
+  onStop?: () => Promise<void>
+  stopping?: boolean
 }
 
-export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading }) => {
+export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading, onStop, stopping }) => {
   const [text, setText] = useState('')
   const sendingRef = useRef(false)
 
@@ -54,7 +56,15 @@ export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading }) => {
         autoSize={{ minRows: 1, maxRows: 4 }}
         style={{ borderRadius: 8, resize: 'none', minWidth: 0 }}
       />
-      <Button
+      {onStop ? <Button
+        danger
+        icon={<StopOutlined />}
+        aria-label="Dừng yêu cầu AI"
+        onClick={() => { void onStop() }}
+        loading={stopping}
+        disabled={stopping}
+        style={{ alignSelf: 'flex-end', height: 36 }}
+      >Dừng</Button> : <Button
         type="primary"
         icon={<SendOutlined />}
         onClick={() => { void handleSend() }}
@@ -66,7 +76,7 @@ export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading }) => {
           alignSelf: 'flex-end',
           height: 36,
         }}
-      />
+      />}
     </div>
   )
 }

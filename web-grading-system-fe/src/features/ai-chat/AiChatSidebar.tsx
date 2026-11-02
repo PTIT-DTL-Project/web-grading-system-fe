@@ -13,7 +13,7 @@ import { useConversations } from './hooks/useConversations'
 import { useMessages } from './hooks/useMessages'
 import { useSendMessage } from './hooks/useSendMessage'
 import { useRunEvents } from './hooks/useRunEvents'
-import { getRunStatus } from '../../shared/api/endpoints/ai'
+import { cancelRun, getRunStatus } from '../../shared/api/endpoints/ai'
 import { colors } from '../../shared/theme/tokens'
 
 interface Props {
@@ -25,6 +25,8 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
   const { conversations, isLoading: isConvsLoading, createConversation, renameConversation, refreshConversations } = useConversations()
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
   const [activeRunId, setActiveRunId] = useState<string | null>(null)
+  const [isStopping, setIsStopping] = useState(false)
+  const stopAfterSendRef = useRef(false)
   const [pendingMessage, setPendingMessage] = useState<{ text: string; clientMessageId: string; convId: string | null } | null>(null)
   const [pendingTitleId, setPendingTitleId] = useState<string | null>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -36,6 +38,12 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
   const pendingVisible = pendingMessage != null
     && (pendingMessage.convId == null || pendingMessage.convId === activeConvId)
     && !messages.some((m) => m.clientMessageId === pendingMessage.clientMessageId)
+
+  useEffect(() => {
+    if (pendingMessage && messages.some((m) => m.clientMessageId === pendingMessage.clientMessageId)) {
+      setPendingMessage(null)
+    }
+  }, [messages, pendingMessage])
 
   const historyRunIds = [...new Set(messages.map(m => m.runId).filter((id): id is string => Boolean(id)))]
   const { streamedDelta, timelines, loadedRunIds, activeRun, isStreaming } = useRunEvents(activeRunId, historyRunIds, () => {
@@ -109,9 +117,22 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
       if (!conversations.find((c) => c.id === targetConvId)?.title) setPendingTitleId(targetConvId)
       if (res?.runId) {
         setActiveRunId(res.runId)
+        if (stopAfterSendRef.current) {
+          stopAfterSendRef.current = false
+          try {
+            await cancelRun(res.runId)
+            message.info('Đã dừng yêu cầu AI.')
+          } catch {
+            message.error('Không thể dừng yêu cầu. Vui lòng thử lại.')
+          } finally {
+            setIsStopping(false)
+          }
+        }
       }
       void refreshConversations()
     } catch {
+      stopAfterSendRef.current = false
+      setIsStopping(false)
       setPendingMessage(null)
       message.error('Không thể gửi tin nhắn. Vui lòng thử lại.')
       throw new Error('Message send failed')
@@ -125,6 +146,25 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
       setSelectedConvId(created.id)
     } catch {
       // ignore
+    }
+  }
+
+  const handleStop = async () => {
+    if (isStopping) return
+    if (!activeRunId && (isSending || pendingMessage)) {
+      stopAfterSendRef.current = true
+      setIsStopping(true)
+      return
+    }
+    if (!activeRunId) return
+    setIsStopping(true)
+    try {
+      await cancelRun(activeRunId)
+      message.info('Đã dừng yêu cầu AI.')
+    } catch {
+      message.error('Không thể dừng yêu cầu. Vui lòng thử lại.')
+    } finally {
+      setIsStopping(false)
     }
   }
 
@@ -229,7 +269,8 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
         )}
       </div>
 
-      <ChatInput onSend={handleSend} disabled={isSending || Boolean(activeRunId) || isStreaming} loading={isSending} />
+      <ChatInput onSend={handleSend} onStop={activeRunId || isSending || pendingVisible ? handleStop : undefined} stopping={isStopping}
+        disabled={isSending || Boolean(activeRunId) || isStreaming} loading={isSending} />
     </aside>
   )
 }

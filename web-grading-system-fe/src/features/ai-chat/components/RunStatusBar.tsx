@@ -1,6 +1,6 @@
 import React from 'react'
 import { Tag } from 'antd'
-import { SyncOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined } from '@ant-design/icons'
+import { SyncOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, StopOutlined } from '@ant-design/icons'
 import type { RunStatus } from '../../../shared/types/aiAgent'
 
 interface Props {
@@ -40,6 +40,14 @@ export const RunStatusBar: React.FC<Props> = ({ status }) => {
         <div style={{ marginTop: 6 }}>
           <Tag icon={<CloseCircleOutlined />} color="error" style={{ fontSize: 11 }}>
             Xử lý thất bại
+          </Tag>
+        </div>
+      )
+    case 'CANCELLED':
+      return (
+        <div style={{ marginTop: 6 }}>
+          <Tag icon={<StopOutlined />} color="default" style={{ fontSize: 11 }}>
+            Đã dừng
           </Tag>
         </div>
       )
