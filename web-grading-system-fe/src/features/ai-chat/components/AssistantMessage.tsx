@@ -42,7 +42,14 @@ export const AssistantMessage: React.FC<Props> = ({ content, isStreaming }) => {
         }}
       >
         <div className="ai-assistant-markdown">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              a: ({ node, ...props }) => (
+                <a {...props} target="_blank" rel="noopener noreferrer" />
+              ),
+            }}
+          >
             {formatAssistantContent(content)}
           </ReactMarkdown>
           {isStreaming && (
