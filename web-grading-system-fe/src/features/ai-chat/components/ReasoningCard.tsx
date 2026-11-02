@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SyncOutlined, BulbOutlined, DownOutlined } from '@ant-design/icons'
 import { colors } from '../../../shared/theme/tokens'
+import './reasoning-card.css'
 
 interface Props {
   modelTurn: number | null
@@ -28,8 +29,12 @@ export function ReasoningCard({ modelTurn, text, status, available, onExpand }: 
       </button>
       {open && <div style={{ padding: '0 10px 10px' }}>
         {available ? <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 320,
-          overflowY: 'auto', margin: 0, fontFamily: 'inherit', fontSize: 12, lineHeight: 1.55 }}>{text}</pre>
-          : <span style={{ fontSize: 12, color: colors.neutral }}>Reasoning không được provider trả về</span>}
+          overflowY: 'auto', margin: 0, fontFamily: 'inherit', fontSize: 12, lineHeight: 1.55 }}>
+            {text}{status === 'RUNNING' && <span className="reasoning-cursor" aria-hidden="true" />}
+          </pre>
+          : <span style={{ fontSize: 12, color: colors.neutral }}>
+              {status === 'RUNNING' ? 'Đang chờ dữ liệu suy luận...' : 'Reasoning không được provider trả về'}
+            </span>}
       </div>}
     </section>
   )
