@@ -31,7 +31,7 @@ export function reduceRunTimeline(state: RunTimelineState, event: RunTimelineEve
     if (index >= 0) next.items[index] = updated
     else next.items.push(updated)
   } else if (event.type === 'reasoning.completed' && old?.kind === 'reasoning') {
-    next.items[index] = { ...old, status: 'COMPLETED', available: Boolean(event.data.available) }
+    next.items[index] = { ...old, status: 'COMPLETED', available: Boolean(event.data.available) || old.available || Boolean(old.text) }
   } else if (event.type === 'tool.started' && !old) {
     next.items.push({ kind: 'tool', id, modelTurn: event.modelTurn, name: asText(event.data.name),
       arguments: asText(event.data.arguments), result: '', status: 'RUNNING', durationMs: null })

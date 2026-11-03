@@ -28,7 +28,7 @@ export function ReasoningCard({ modelTurn, text, status, available, onExpand }: 
         <DownOutlined style={{ transform: open ? 'rotate(180deg)' : undefined }} />
       </button>
       {open && <div style={{ padding: '0 10px 10px' }}>
-        {available ? <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 320,
+        {available || Boolean(text) ? <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: 320,
           overflowY: 'auto', margin: 0, fontFamily: 'inherit', fontSize: 12, lineHeight: 1.55 }}>
             {text}{status === 'RUNNING' && <span className="reasoning-cursor" aria-hidden="true" />}
           </pre>

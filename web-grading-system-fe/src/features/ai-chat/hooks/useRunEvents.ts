@@ -14,7 +14,10 @@ export function useRunEvents(runId: string | null, historyRunIds: string[], onRu
   onCompleteRef.current = onRunComplete
   const timelineRef = useRef(timelines)
   timelineRef.current = timelines
-  const idsKey = [...new Set([...historyRunIds, ...(runId ? [runId] : [])])].sort().join('|')
+  const activeIdsRef = useRef(new Set<string>())
+  if (runId) activeIdsRef.current.add(runId)
+  historyRunIds.forEach(id => activeIdsRef.current.add(id))
+  const idsKey = [...activeIdsRef.current].sort().join('|')
 
   useEffect(() => {
     if (!runId) { setActiveRun(null); setIsStreaming(false); return }
