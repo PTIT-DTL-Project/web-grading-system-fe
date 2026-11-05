@@ -475,6 +475,7 @@
     "downloadZip": "Download entire zip",
     "largeFile": "File too large, showing first {{size}}KB",
     "loadError": "Could not load file content",
+    "selectFile": "Select a file from the tree to view its content",
     "back": "Back to submissions"
   },
   "result": {
