@@ -299,7 +299,7 @@ export function SubmissionZipViewer() {
         ) : fileContent ? (
           <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <Typography.Text type="secondary" style={{ fontSize: 12, marginBottom: 8 }}>
-              {fileContent.isBinary ? 'application/octet-stream' : fileContent.mime}
+              {fileContent.mime}
               {' | '}
               {fileContent.size} bytes
             </Typography.Text>
