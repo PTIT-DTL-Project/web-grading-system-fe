@@ -11,9 +11,6 @@ import { useTranslation } from 'react-i18next'
 
 const MAX_PREVIEW_BYTES = 2 * 1024 * 1024
 
-/** Height of the app shell chrome around the viewer: 72px header + 2×24px content padding + 2×24px card padding + 2px border. */
-const VIEWER_HEIGHT = 'calc(100vh - 170px)'
-
 function displayName(node: ZipTreeNode): string {
   // Older backend builds returned an empty name for explicit zip directory
   // entries ("src/"). Fall back to the last path segment so folders stay
@@ -200,7 +197,7 @@ export function SubmissionZipViewer() {
     <div
       style={{
         display: 'flex',
-        height: VIEWER_HEIGHT,
+        flex: 1,
         minHeight: 420,
         border: '1px solid #f0f0f0',
         borderRadius: 8,
