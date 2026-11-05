@@ -46,6 +46,8 @@ export interface AuthSession {
   refreshToken: string
   userId: string
   email: string
+  firstName: string
+  lastName: string
   role: Role
 }
 
@@ -97,6 +99,8 @@ function sessionFromTokens(tokens: {
     refreshToken: tokens.refresh_token,
     userId: (claims.sub as string) ?? '',
     email: (claims.email as string) ?? '',
+    firstName: (claims.firstName as string) ?? '',
+    lastName: (claims.lastName as string) ?? '',
     role,
   }
 }

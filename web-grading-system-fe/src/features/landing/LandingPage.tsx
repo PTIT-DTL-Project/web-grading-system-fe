@@ -49,7 +49,7 @@ export function LandingPage() {
 
         <Flex vertical align="center" justify="center" style={{ padding: '80px 24px 48px', textAlign: 'center' }}>
           <Typography.Title level={3} style={{ marginBottom: 8 }}>
-            {t('landing.welcome', { name: identity.email || identity.userId })}
+            {t('landing.welcome', { name: identity.lastName && identity.firstName ? `${identity.lastName} ${identity.firstName}` : identity.email || identity.userId })}
           </Typography.Title>
           <Typography.Title level={5} type="secondary" style={{ marginBottom: 32, fontWeight: 400 }}>
             {identity.role === 'LECTURER'

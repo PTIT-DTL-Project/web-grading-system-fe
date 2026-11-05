@@ -67,10 +67,14 @@ export function AppLayout() {
     if (key === 'logout') handleLogout()
   }
 
-  // `||` not `??`: sessionFromTokens defaults a missing email claim to '', and
-  // `??` only falls back on null/undefined — an empty email would render a blank
-  // header instead of the userId. Review: 2026-10-04, Pullfrog (empty displayName)
-  const displayName = session?.email || identity.userId
+  // `||` not `??`: sessionFromTokens defaults a missing claim to '', and
+  // `??` only falls back on null/undefined — an empty claim would render a blank
+  // header instead of the fallback. Review: 2026-10-04, Pullfrog (empty displayName)
+  const fullName = [session?.lastName, session?.firstName]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+  const displayName = fullName || session?.email || identity.userId
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -207,6 +211,25 @@ export function AppLayout() {
             <Dropdown
               menu={{
                 items: [
+                  {
+                    key: 'user-name',
+                    label: (
+                      <div style={{ padding: '8px 16px', fontWeight: 600 }}>
+                        {fullName}
+                      </div>
+                    ),
+                    disabled: true,
+                  },
+                  {
+                    key: 'user-email',
+                    label: (
+                      <Typography.Text type="secondary" style={{ fontSize: 12, padding: '0 16px' }}>
+                        {session?.email}
+                      </Typography.Text>
+                    ),
+                    disabled: true,
+                  },
+                  { type: 'divider' },
                   { key: 'change-password', icon: <KeyOutlined />, label: t('nav.changePassword') },
                   { type: 'divider' },
                   { key: 'logout', icon: <LogoutOutlined />, label: t('nav.logout') },

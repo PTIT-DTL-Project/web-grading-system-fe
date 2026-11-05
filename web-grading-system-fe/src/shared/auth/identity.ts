@@ -6,13 +6,21 @@ export interface Identity {
   role: Role
   userId: string
   email?: string
+  firstName?: string
+  lastName?: string
 }
 
 /** The only place the app reads the current identity from. */
 export function getIdentity(): Identity | null {
   const session = getSession()
   if (!session) return null
-  return { role: session.role, userId: session.userId, email: session.email }
+  return {
+    role: session.role,
+    userId: session.userId,
+    email: session.email,
+    firstName: session.firstName,
+    lastName: session.lastName,
+  }
 }
 
 export function clearIdentity(): void {
