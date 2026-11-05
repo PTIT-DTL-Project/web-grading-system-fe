@@ -1,6 +1,11 @@
 import { getData, http } from '../http'
 import type { PresignedUrlResponse, SubmissionResponse } from '../../types/submission'
 import type { Page } from '../../types/pagination'
+import type {
+  SubmissionZipTreeResponse,
+  SubmissionZipFileResponse,
+  SubmissionZipDownloadResponse,
+} from '../../types/submission'
 
 /**
  * POST /api/v1/submissions/presigned-url
@@ -44,5 +49,34 @@ export function listMySubmissions(
     '/api/v1/submissions',
     { page, size, ...(search ? { search } : {}), ...(assignmentId ? { assignmentId } : {}) },
     options,
+  )
+}
+
+/** GET /api/v1/submissions/{submissionId}/tree — cây thư mục zip */
+export async function getSubmissionTree(
+  submissionId: string,
+): Promise<SubmissionZipTreeResponse> {
+  return getData<SubmissionZipTreeResponse>(
+    `/api/v1/submissions/${submissionId}/tree`,
+  )
+}
+
+/** GET /api/v1/submissions/{submissionId}/file?path=... — nội dung một entry */
+export async function getSubmissionFile(
+  submissionId: string,
+  path: string,
+): Promise<SubmissionZipFileResponse> {
+  return getData<SubmissionZipFileResponse>(
+    `/api/v1/submissions/${submissionId}/file`,
+    { path },
+  )
+}
+
+/** GET /api/v1/submissions/{submissionId}/download — presigned URL tải toàn bộ zip */
+export async function getSubmissionDownloadUrl(
+  submissionId: string,
+): Promise<SubmissionZipDownloadResponse> {
+  return getData<SubmissionZipDownloadResponse>(
+    `/api/v1/submissions/${submissionId}/download`,
   )
 }

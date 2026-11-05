@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import { Tag, Typography, Button, Space } from 'antd'
+import { DownloadOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { ListPage } from '../../shared/ui/ListPage'
@@ -87,15 +88,20 @@ export function AssignmentSubmissionsPage() {
         key: 'actions',
         width: 150,
         render: (_: unknown, r: SubmissionResponse) => (
-          <Button
-            type="link"
-            size="small"
+          <Space>
+            <Button
+              type="link"
+              size="small"
               onClick={() =>
                 navigate(`${base}/results?student=${r.studentId}&submission=${r.id}`)
               }
-          >
-            {t('submission.viewResult')}
-          </Button>
+            >
+              {t('submission.viewResult')}
+            </Button>
+            <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => navigate(`${base}/submissions/${r.id}/viewer`)}>
+              {t('submission.viewZip')}
+            </Button>
+          </Space>
         ),
       },
     ],

@@ -1,8 +1,8 @@
-import { Badge, Button, Tag } from 'antd'
+import { Badge, Button, Space, Tag } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import type { TableColumnsType } from 'antd'
-import { EyeOutlined } from '@ant-design/icons'
+import { DownloadOutlined, EyeOutlined } from '@ant-design/icons'
 import { ListPage } from '../../../shared/ui/ListPage'
 import type { FilterConfig } from '../../../shared/ui/FilterBar'
 import { listMySubmissions } from '../../../shared/api/endpoints/submissions'
@@ -130,17 +130,22 @@ export function MySubmissionsPage() {
       key: 'actions',
       width: 150,
       render: (_, record) => (
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => navigate(`/student/submissions/${record.id}/results`)}
-            // Review: 2026-10-10 — backend terminal states are DONE (graded)
-            // and FAILED (run failed but still writes a result row); only
-            // non-terminal PENDING/GRADING stay locked.
-            disabled={record.status !== 'DONE' && record.status !== 'FAILED'}
-          >
-            {t('submission.viewResult')}
-          </Button>
+          <Space>
+            <Button
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => navigate(`/student/submissions/${record.id}/results`)}
+              // Review: 2026-10-10 — backend terminal states are DONE (graded)
+              // and FAILED (run failed but still writes a result row); only
+              // non-terminal PENDING/GRADING stay locked.
+              disabled={record.status !== 'DONE' && record.status !== 'FAILED'}
+            >
+              {t('submission.viewResult')}
+            </Button>
+            <Button size="small" icon={<DownloadOutlined />} onClick={() => navigate(`/student/submissions/${record.id}/viewer`)}>
+              {t('submission.viewZip')}
+            </Button>
+          </Space>
       ),
     },
   ]
