@@ -466,7 +466,16 @@
     "statusPENDING": "Pending",
     "statusGRADING": "Grading",
     "statusDONE": "Graded",
-    "statusFAILED": "Failed"
+    "statusFAILED": "Failed",
+    "viewZip": "View submission content",
+    "zipTree": "Directory tree",
+    "fileContent": "File content",
+    "binaryFile": "Binary file, cannot preview",
+    "downloadFile": "Download this file",
+    "downloadZip": "Download entire zip",
+    "largeFile": "File too large, showing first {{size}}KB",
+    "loadError": "Could not load file content",
+    "back": "Back to submissions"
   },
   "result": {
     "title": "Grading result",

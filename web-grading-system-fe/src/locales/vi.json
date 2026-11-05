@@ -466,7 +466,16 @@
     "statusPENDING": "Đang chờ",
     "statusGRADING": "Đang chấm",
     "statusDONE": "Đã chấm",
-    "statusFAILED": "Lỗi"
+    "statusFAILED": "Lỗi",
+    "viewZip": "Xem nội dung file nộp",
+    "zipTree": "Cây thư mục",
+    "fileContent": "Nội dung file",
+    "binaryFile": "File nhị phân, không thể xem trước",
+    "downloadFile": "Tải file này",
+    "downloadZip": "Tải toàn bộ zip",
+    "largeFile": "File quá lớn, chỉ hiển thị phần đầu {{size}}KB",
+    "loadError": "Không tải được nội dung file",
+    "back": "Quay lại danh sách nộp"
   },
   "result": {
     "title": "Kết quả chấm bài",

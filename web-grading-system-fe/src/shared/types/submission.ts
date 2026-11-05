@@ -31,3 +31,37 @@ export interface SubmissionResponse {
    * Absent entirely on backends pre-#38 (field added 2026-10-10). */
   planId?: string | null
 }
+
+/** submission-service SubmissionZipTreeResponse — GET /api/v1/submissions/{id}/tree */
+export interface ZipTreeNode {
+  name: string
+  type: 'folder' | 'file'
+  path: string
+  size?: number
+  mime?: string
+  children?: ZipTreeNode[]
+}
+
+export interface SubmissionZipTreeResponse {
+  submissionId: string
+  root: ZipTreeNode
+}
+
+/** submission-service SubmissionZipFileResponse — GET /api/v1/submissions/{id}/file */
+export interface SubmissionZipFileResponse {
+  submissionId: string
+  path: string
+  size: number
+  mime: string
+  isBinary: boolean
+  content: string | null
+  truncated: boolean | null
+  message: string | null
+}
+
+/** submission-service SubmissionZipDownloadResponse — GET /api/v1/submissions/{id}/download */
+export interface SubmissionZipDownloadResponse {
+  submissionId: string
+  downloadUrl: string
+  expiresInMinutes: number
+}
