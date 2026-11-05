@@ -11,9 +11,8 @@ import { useTranslation } from 'react-i18next'
 
 const MAX_PREVIEW_BYTES = 2 * 1024 * 1024
 
-// Pullfrog review (PR #37): replaced magic calc(100vh - 170px) viewer height
-// with flex-based sizing so the viewer fills available shell height instead of
-// breaking when header/padding/card layout changes. Review: 2026-11-05, Pullfrog PR #37.
+/** Height of the app shell chrome around the viewer: 72px header + 2×24px content padding + 2×24px card padding + 2px border. */
+const VIEWER_HEIGHT = 'calc(100vh - 170px)'
 
 function displayName(node: ZipTreeNode): string {
   // Older backend builds returned an empty name for explicit zip directory
@@ -201,8 +200,7 @@ export function SubmissionZipViewer() {
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
-        flex: 1,
+        height: VIEWER_HEIGHT,
         minHeight: 420,
         border: '1px solid #f0f0f0',
         borderRadius: 8,
