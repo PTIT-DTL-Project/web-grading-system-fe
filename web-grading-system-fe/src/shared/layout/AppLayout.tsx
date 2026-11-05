@@ -226,13 +226,24 @@ export function AppLayout() {
           <ChangePasswordModal open={changePwdOpen} onClose={() => setChangePwdOpen(false)} />
         </Header>
 
-        <Content style={{ padding: 24 }}>
+        <Content
+          style={{
+            padding: 24,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <div
             style={{
               background: colors.surface,
               border: `1px solid ${colors.border}`,
               borderRadius: 8,
               padding: 24,
+              // Flex column so route content (e.g. the zip viewer) fills the
+              // available height instead of relying on a magic calc() value.
+              display: 'flex',
+              flexDirection: 'column',
+              flex: 1,
               minHeight: 360,
             }}
           >
