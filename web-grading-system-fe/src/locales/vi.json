@@ -475,6 +475,7 @@
     "downloadZip": "Tải toàn bộ zip",
     "largeFile": "File quá lớn, chỉ hiển thị phần đầu {{size}}KB",
     "loadError": "Không tải được nội dung file",
+    "selectFile": "Chọn một file ở cây thư mục để xem nội dung",
     "back": "Quay lại danh sách nộp"
   },
   "result": {

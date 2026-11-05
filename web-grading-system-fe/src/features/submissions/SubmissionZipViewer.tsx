@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Button, Layout, Spin, Tree, Typography } from 'antd'
-import { DownloadOutlined, FileOutlined, FolderOpenOutlined } from '@ant-design/icons'
+import { Alert, Button, Spin, Tree, Typography } from 'antd'
+import type { DataNode } from 'antd/es/tree'
+import { DownloadOutlined, FileOutlined, FolderOpenOutlined, FolderOutlined } from '@ant-design/icons'
 import { Editor } from '@monaco-editor/react'
 import { editor } from 'monaco-editor'
 import { getSubmissionDownloadUrl, getSubmissionTree, getSubmissionFile } from '../../shared/api/endpoints/submissions'
@@ -9,6 +10,55 @@ import { useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 const MAX_PREVIEW_BYTES = 2 * 1024 * 1024
+
+/** Height of the app shell chrome around the viewer: 72px header + 2×24px content padding + 2×24px card padding + 2px border. */
+const VIEWER_HEIGHT = 'calc(100vh - 170px)'
+
+function displayName(node: ZipTreeNode): string {
+  // Older backend builds returned an empty name for explicit zip directory
+  // entries ("src/"). Fall back to the last path segment so folders stay
+  // labelled until the fixed backend is deployed.
+  if (node.name) return node.name
+  const path = node.path.replace(/\/+$/, '')
+  return path.slice(path.lastIndexOf('/') + 1) || path
+}
+
+function toTreeData(node: ZipTreeNode, expanded: Set<string>): DataNode {
+  // Folder icons reflect the expanded state; file icons mark leaves.
+  return {
+    key: node.path,
+    title: displayName(node),
+    icon:
+      node.type === 'file'
+        ? <FileOutlined />
+        : expanded.has(node.path)
+          ? <FolderOpenOutlined />
+          : <FolderOutlined />,
+    children: node.children?.map((child) => toTreeData(child, expanded)),
+  }
+}
+
+/**
+ * Zip root is often a single project folder (e.g. book-app-login-v1/).
+ * Unwrap one level so files like Dockerfile, mvnw appear at the top.
+ */
+function viewerRootNodes(root: ZipTreeNode): ZipTreeNode[] {
+  const children = root.children ?? []
+  if (children.length === 1 && children[0].type === 'folder') {
+    return children[0].children ?? []
+  }
+  return children
+}
+
+function findNode(nodes: ZipTreeNode[] | undefined, path: string): ZipTreeNode | undefined {
+  if (!nodes) return undefined
+  for (const node of nodes) {
+    if (node.path === path) return node
+    const found = findNode(node.children, path)
+    if (found) return found
+  }
+  return undefined
+}
 
 export function SubmissionZipViewer() {
   const { submissionId } = useParams<{ submissionId: string }>()
@@ -30,13 +80,18 @@ export function SubmissionZipViewer() {
     try {
       const data = await getSubmissionTree(submissionId)
       setTree(data)
+      setExpandedKeys(
+        viewerRootNodes(data.root)
+          .filter((node) => node.type === 'folder')
+          .map((node) => node.path),
+      )
     } catch (err) {
-      setTreeError('Failed to load submission tree')
+      setTreeError(err instanceof Error ? err.message : t('submission.loadError', 'Could not load file content'))
       console.error('Failed to load submission tree', err)
     } finally {
       setLoading(false)
     }
-  }, [submissionId])
+  }, [submissionId, t])
 
   useEffect(() => {
     loadTree()
@@ -89,144 +144,184 @@ export function SubmissionZipViewer() {
       'text/x-sql': 'sql',
       'text/x-shellscript': 'shell',
       'text/x-batch': 'batch',
+      'text/x-dockerfile': 'dockerfile',
     }
     return map[mime || ''] || 'plaintext'
   }
 
-  if (loading) {
-    return <Spin size="large" />
+  const handleSelect = (path: string) => {
+    if (!submissionId) return
+    const node = findNode(tree?.root.children, path)
+    if (!node || node.type !== 'file') return
+    setSelectedKey(path)
+    setFileContent(null)
+    setFileError(null)
+    setFileLoading(true)
+    getSubmissionFile(submissionId, path)
+      .then((data) => {
+        setFileContent(data)
+      })
+      .catch((err) => {
+        setFileError(err instanceof Error ? err.message : t('submission.loadError', 'Could not load file content'))
+        console.error('Failed to load file content', err)
+      })
+      .finally(() => {
+        setFileLoading(false)
+      })
   }
 
-  if (treeError) {
+  if (loading) {
     return (
-      <Layout style={{ height: '100vh' }}>
-        <Layout.Header style={{ padding: '0 24px', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
-          <Button
-            icon={<DownloadOutlined />}
-            onClick={() => window.history.back()}
-          >
-            {t('submission.back', 'Back to submissions')}
-          </Button>
-        </Layout.Header>
-        <Layout.Content style={{ padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Alert message={t('submission.loadError', 'Could not load file content')} description={treeError} type="error" showIcon />
-        </Layout.Content>
-      </Layout>
+      <div style={{ padding: 48, textAlign: 'center' }}>
+        <Spin size="large" />
+      </div>
     )
   }
 
-  if (!tree) {
-    return null
+  if (!tree || !tree.root) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Alert
+          message={t('submission.loadError', 'Could not load file content')}
+          description={treeError}
+          type="error"
+          showIcon
+        />
+        <Button onClick={() => window.history.back()}>{t('submission.back', 'Back to submissions')}</Button>
+      </div>
+    )
   }
 
-  const rootNode = tree.root
-  if (!rootNode) {
-    return null
-  }
+  const treeNodes = viewerRootNodes(tree.root)
+  const expanded = new Set(expandedKeys.map(String))
+  const treeData = treeNodes.map((node) => toTreeData(node, expanded))
 
   return (
-    <Layout style={{ height: '100vh' }}>
-      <Layout.Header style={{ padding: '0 24px', background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Button icon={<DownloadOutlined />} onClick={handleDownloadZip}>
-            {t('submission.downloadZip', 'Download entire zip')}
-          </Button>
-          <Button onClick={() => window.history.back()}>
-            {t('submission.back', 'Back to submissions')}
-          </Button>
-        </div>
-      </Layout.Header>
-      <Layout>
-        <Layout.Sider width={280} style={{ overflow: 'auto', borderRight: '1px solid #f0f0f0' }}>
-          <Typography.Title level={5} style={{ margin: 16, marginBottom: 8 }}>
-            {t('submission.zipTree', 'Directory tree')}
-          </Typography.Title>
-          {treeError ? (
-            <Alert message={treeError} type="error" showIcon style={{ margin: 16 }} />
-          ) : null}
+    <div
+      style={{
+        display: 'flex',
+        height: VIEWER_HEIGHT,
+        minHeight: 420,
+        border: '1px solid #f0f0f0',
+        borderRadius: 8,
+        overflow: 'hidden',
+        background: '#fff',
+      }}
+    >
+      <aside
+        style={{
+          width: 280,
+          flex: '0 0 280px',
+          overflow: 'auto',
+          borderRight: '1px solid #f0f0f0',
+          background: '#fafafa',
+          padding: 12,
+        }}
+      >
+        <Typography.Title level={5} style={{ margin: '4px 4px 12px' }}>
+          {t('submission.zipTree', 'Directory tree')}
+        </Typography.Title>
+        {treeError ? (
+          <Alert message={treeError} type="error" showIcon />
+        ) : (
           <Tree
-            blockNode
-            expandedKeys={expandedKeys}
-            onExpand={(expandedKeys: React.Key[]) => {
-              setExpandedKeys(expandedKeys)
-            }}
-            onSelect={(_selectedKeys, info) => {
-              const node = info.node as unknown as ZipTreeNode
-              if (!submissionId || node.type !== 'file') return
-              setSelectedKey(node.path)
-              setFileError(null)
-              setFileLoading(true)
-              getSubmissionFile(submissionId, node.path)
-                .then((data) => {
-                  setFileContent(data)
-                })
-                .catch((err) => {
-                  setFileError('Failed to load file content')
-                  console.error('Failed to load file content', err)
-                })
-                .finally(() => {
-                  setFileLoading(false)
-                })
-            }}
-            selectedKeys={selectedKey ? [selectedKey] : []}
             showIcon
-          >
-            {rootNode.children?.map((node: ZipTreeNode) => (
-              <Tree.TreeNode
-                key={node.path}
-                title={node.name}
-                icon={node.type === 'file' ? <FileOutlined /> : <FolderOpenOutlined />}
-              />
-            ))}
-          </Tree>
-        </Layout.Sider>
-        <Layout.Content style={{ padding: 24, overflow: 'auto' }}>
-          {fileError ? (
-            <Alert message={t('submission.loadError', 'Could not load file content')} description={fileError} type="error" showIcon />
-          ) : fileLoading ? (
-            <Spin size="large" />
-          ) : fileContent ? (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div>
-                  <Typography.Title level={5} style={{ margin: 0 }}>
-                    {t('submission.fileContent', 'File content')}
-                  </Typography.Title>
-                  <Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
-                    {fileContent.path}
-                  </Typography.Text>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Button
-                    icon={<DownloadOutlined />}
-                    onClick={handleDownloadFile}
-                    disabled={fileContent.isBinary || !fileContent.content}
-                  >
-                    {t('submission.downloadFile', 'Download this file')}
-                  </Button>
-                </div>
-              </div>
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                {fileContent.isBinary ? 'application/octet-stream' : fileContent.mime}
-                {' | '}
-                {fileContent.size} bytes
+            blockNode
+            showLine={{ showLeafIcon: false }}
+            expandedKeys={expandedKeys}
+            onExpand={(keys) => setExpandedKeys(keys)}
+            treeData={treeData}
+            selectedKeys={selectedKey ? [selectedKey] : []}
+            onSelect={(keys) => {
+              if (keys.length > 0) handleSelect(String(keys[0]))
+            }}
+          />
+        )}
+      </aside>
+
+      <section
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 16,
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 16,
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <Typography.Title level={5} style={{ margin: 0 }}>
+              {t('submission.fileContent', 'File content')}
+            </Typography.Title>
+            {fileContent ? (
+              <Typography.Text type="secondary" style={{ fontSize: 12 }} ellipsis>
+                {fileContent.path}
               </Typography.Text>
-              {fileContent.truncated && (
-                <Alert
-                  message={t('submission.largeFile', 'File too large, showing first {{size}}KB', { size: Math.floor(MAX_PREVIEW_BYTES / 1024) })}
-                  type="warning"
-                  showIcon
-                  style={{ marginTop: 16 }}
-                />
-              )}
-              {fileContent.isBinary ? (
-                <Alert
-                  message={t('submission.binaryFile', 'File nhị phân, không thể xem trước')}
-                  description={fileContent.message}
-                  type="info"
-                  showIcon
-                />
-              ) : (
+            ) : null}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <Button icon={<DownloadOutlined />} onClick={handleDownloadZip}>
+              {t('submission.downloadZip', 'Download entire zip')}
+            </Button>
+            {fileContent ? (
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={handleDownloadFile}
+                disabled={fileContent.isBinary || !fileContent.content}
+              >
+                {t('submission.downloadFile', 'Download this file')}
+              </Button>
+            ) : null}
+            <Button onClick={() => window.history.back()}>{t('submission.back', 'Back to submissions')}</Button>
+          </div>
+        </div>
+
+        {fileError ? (
+          <Alert
+            message={t('submission.loadError', 'Could not load file content')}
+            description={fileError}
+            type="error"
+            showIcon
+          />
+        ) : fileLoading ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Spin size="large" />
+          </div>
+        ) : fileContent ? (
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <Typography.Text type="secondary" style={{ fontSize: 12, marginBottom: 8 }}>
+              {fileContent.isBinary ? 'application/octet-stream' : fileContent.mime}
+              {' | '}
+              {fileContent.size} bytes
+            </Typography.Text>
+            {fileContent.truncated ? (
+              <Alert
+                message={t('submission.largeFile', 'File too large, showing first {{size}}KB', {
+                  size: Math.floor(MAX_PREVIEW_BYTES / 1024),
+                })}
+                type="warning"
+                showIcon
+                style={{ marginBottom: 8 }}
+              />
+            ) : null}
+            {fileContent.isBinary ? (
+              <Alert
+                message={t('submission.binaryFile', 'File nhị phân, không thể xem trước')}
+                description={fileContent.message}
+                type="info"
+                showIcon
+              />
+            ) : (
+              <div style={{ flex: 1, minHeight: 0, border: '1px solid #f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
                 <Editor
                   height="100%"
                   language={mimeToLanguage(fileContent.mime)}
@@ -238,19 +333,25 @@ export function SubmissionZipViewer() {
                     wordWrap: 'on',
                     fontSize: 14,
                     lineNumbers: 'on',
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
                   }}
                   onMount={(editorInstance) => {
                     editorRef.current = editorInstance
                   }}
                 />
-              )}
-            </div>
-          ) : (
-            <Alert message={t('submission.loadError', 'Could not load file content')} type="error" showIcon />
-          )}
-        </Layout.Content>
-      </Layout>
-    </Layout>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography.Text type="secondary">
+              {t('submission.selectFile', 'Select a file from the tree to view its content')}
+            </Typography.Text>
+          </div>
+        )}
+      </section>
+    </div>
   )
 }
 
