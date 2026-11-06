@@ -21,7 +21,6 @@ import { AiExplanationCard } from '../../shared/ui/AiExplanationCard'
 import { ResultScopeBadge } from '../../shared/ui/ResultScopeBadge'
 import { useQuery } from '@tanstack/react-query'
 import { getAssignment, listPlans } from '../../shared/api/endpoints/assignments'
-import { getMyAssignmentResults } from '../../shared/api/endpoints/results'
 import { useApiErrorMessage } from '../../shared/api/errors'
 import { colors } from '../../shared/theme/tokens'
 import type { ResultResponse, StepResultResponse } from '../../shared/types/result'
@@ -249,15 +248,6 @@ export function SubmissionDetailCard({
   })
   const resolvedTitle = titleProp ?? assignment?.title ?? '—'
 
-  // exerciseScore from backend already applies the skipped-into-denominator rule
-  const { data: assignmentResults } = useQuery({
-    queryKey: ['student-assignment-results', resolvedAssignmentId],
-    queryFn: () => getMyAssignmentResults(resolvedAssignmentId ?? ''),
-    enabled: !!resolvedAssignmentId,
-    staleTime: 60 * 1000,
-  })
-  const assignmentScore = assignmentResults?.exerciseScore ?? null
-
   if (loading && !isReady) {
     return (
       <div
@@ -324,9 +314,8 @@ export function SubmissionDetailCard({
     )
   }
 
-  // exerciseScore from backend already applies the skipped-into-denominator rule
-  const totalScore = assignmentScore ?? 0
-  const totalMax = 10
+  const totalScore = results.reduce((sum, r) => sum + r.score, 0)
+  const totalMax = results.reduce((sum, r) => sum + r.maxScore, 0)
 
   const stepColumns: TableColumnsType<StepResultResponse> = [
     { title: t('result.stepName'), dataIndex: 'stepName', key: 'stepName' },

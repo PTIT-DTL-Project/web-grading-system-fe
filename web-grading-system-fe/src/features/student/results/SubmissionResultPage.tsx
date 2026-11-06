@@ -305,10 +305,8 @@ export function SubmissionResultPage() {
     )
   }
 
-  // exerciseScore from backend already applies the skipped-into-denominator rule
-  // (unchanged plans count weight but earn 0). Use it instead of summing rows.
-  const totalScore = assignmentScore ?? 0
-  const totalMax = 10
+  const totalScore = results.reduce((sum, r) => sum + r.score, 0)
+  const totalMax = results.reduce((sum, r) => sum + r.maxScore, 0)
 
   const stepColumns: TableColumnsType<StepResultResponse> = [
     { title: t('result.stepName'), dataIndex: 'stepName', key: 'stepName' },
