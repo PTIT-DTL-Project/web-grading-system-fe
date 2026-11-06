@@ -530,7 +530,13 @@
     "emptyMessages": "No messages yet. Ask a question or request help!",
     "noTimelineHistory": "Detailed reasoning history is unavailable for this older run.",
     "tool": "Tool",
-    "processing": "AI is processing your request..."
+    "processing": "AI is processing your request...",
+    "stopRequest": "Stop AI request",
+    "stop": "Stop",
+    "cancelled": "Cancelled",
+    "executing": "Executing",
+    "failed": "Failed",
+    "completed": "Completed"
   },
   "practice": {
     "title": "Practice exercises",

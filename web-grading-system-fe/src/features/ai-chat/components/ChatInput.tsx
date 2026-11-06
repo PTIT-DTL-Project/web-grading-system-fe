@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input, Button } from 'antd'
 import { SendOutlined, StopOutlined } from '@ant-design/icons'
 import { colors } from '../../../shared/theme/tokens'
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading, onStop, stopping }) => {
+  const { t } = useTranslation()
   const [text, setText] = useState('')
   const sendingRef = useRef(false)
 
@@ -59,12 +61,12 @@ export const ChatInput: React.FC<Props> = ({ onSend, disabled, loading, onStop, 
       {onStop ? <Button
         danger
         icon={<StopOutlined />}
-        aria-label="Dừng yêu cầu AI"
+        aria-label={t('aiChat.stopRequest')}
         onClick={() => { void onStop() }}
         loading={stopping}
         disabled={stopping}
         style={{ alignSelf: 'flex-end', height: 36 }}
-      >Dừng</Button> : <Button
+      >{t('aiChat.stop')}</Button> : <Button
         type="primary"
         icon={<SendOutlined />}
         onClick={() => { void handleSend() }}

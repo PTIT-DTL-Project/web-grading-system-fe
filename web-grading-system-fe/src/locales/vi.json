@@ -530,7 +530,13 @@
     "emptyMessages": "Chưa có tin nhắn nào. Hãy đặt câu hỏi hoặc yêu cầu hỗ trợ!",
     "noTimelineHistory": "Không có lịch sử suy luận chi tiết cho lượt chạy cũ.",
     "tool": "Tool",
-    "processing": "AI đang xử lý yêu cầu..."
+    "processing": "AI đang xử lý yêu cầu...",
+    "stopRequest": "Dừng yêu cầu AI",
+    "stop": "Dừng",
+    "cancelled": "Đã dừng",
+    "executing": "Đang thực thi",
+    "failed": "Thất bại",
+    "completed": "Đã thực thi"
   },
   "practice": {
     "title": "Bài tập luyện tập",

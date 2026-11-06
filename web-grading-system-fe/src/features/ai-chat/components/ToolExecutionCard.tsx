@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Collapse, Tag, Typography } from 'antd'
 import { ToolOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import { colors } from '../../../shared/theme/tokens'
@@ -20,6 +21,7 @@ export const ToolExecutionCard: React.FC<Props> = ({
   durationMs,
   onExpand,
 }) => {
+  const { t } = useTranslation()
   const isPending = status === 'RUNNING' || status === 'QUEUED'
   const isFailed = status === 'FAILED'
 
@@ -47,7 +49,7 @@ export const ToolExecutionCard: React.FC<Props> = ({
                   icon={isPending ? <SyncOutlined spin /> : isFailed ? <CloseCircleOutlined /> : <CheckCircleOutlined />}
                   style={{ marginLeft: 'auto', marginRight: 0 }}
                 >
-                  {isPending ? 'Đang thực thi' : isFailed ? 'Thất bại' : 'Đã thực thi'}
+                  {isPending ? t('aiChat.executing') : isFailed ? t('aiChat.failed') : t('aiChat.completed')}
                 </Tag>
               </div>
             ),
