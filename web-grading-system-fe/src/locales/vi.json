@@ -530,6 +530,24 @@
     "searchGoogle": "Tìm kiếm \"{{keyword}}\" trên Google",
     "generatingReassuring": "Sắp xong rồi, đang hoàn thiện giải thích cho bạn..."
   },
+  "aiChat": {
+    "title": "Trợ lý AI WGS",
+    "close": "Đóng trợ lý AI",
+    "stopSuccess": "Đã dừng yêu cầu AI.",
+    "stopFailed": "Không thể dừng yêu cầu. Vui lòng thử lại.",
+    "sendFailed": "Không thể gửi tin nhắn. Vui lòng thử lại.",
+    "loadingMessages": "Đang tải tin nhắn...",
+    "emptyMessages": "Chưa có tin nhắn nào. Hãy đặt câu hỏi hoặc yêu cầu hỗ trợ!",
+    "noTimelineHistory": "Không có lịch sử suy luận chi tiết cho lượt chạy cũ.",
+    "tool": "Tool",
+    "processing": "AI đang xử lý yêu cầu...",
+    "stopRequest": "Dừng yêu cầu AI",
+    "stop": "Dừng",
+    "cancelled": "Đã dừng",
+    "executing": "Đang thực thi",
+    "failed": "Thất bại",
+    "completed": "Đã thực thi"
+  },
   "practice": {
     "title": "Bài tập luyện tập",
     "create": "Tạo bài tập luyện tập",

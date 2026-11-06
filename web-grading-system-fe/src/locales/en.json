@@ -530,6 +530,24 @@
     "searchGoogle": "Search \"{{keyword}}\" on Google",
     "generatingReassuring": "Almost ready, finalizing your explanation..."
   },
+  "aiChat": {
+    "title": "WGS AI assistant",
+    "close": "Close AI assistant",
+    "stopSuccess": "AI request stopped.",
+    "stopFailed": "Could not stop the request. Please try again.",
+    "sendFailed": "Could not send the message. Please try again.",
+    "loadingMessages": "Loading messages...",
+    "emptyMessages": "No messages yet. Ask a question or request help!",
+    "noTimelineHistory": "Detailed reasoning history is unavailable for this older run.",
+    "tool": "Tool",
+    "processing": "AI is processing your request...",
+    "stopRequest": "Stop AI request",
+    "stop": "Stop",
+    "cancelled": "Cancelled",
+    "executing": "Executing",
+    "failed": "Failed",
+    "completed": "Completed"
+  },
   "practice": {
     "title": "Practice exercises",
     "create": "Create practice exercise",

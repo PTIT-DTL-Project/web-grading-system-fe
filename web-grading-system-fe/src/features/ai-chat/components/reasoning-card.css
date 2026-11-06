@@ -1,0 +1,17 @@
+.reasoning-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: currentColor;
+  vertical-align: -0.15em;
+  animation: reasoning-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes reasoning-cursor-blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reasoning-cursor { animation: none; }
+}
