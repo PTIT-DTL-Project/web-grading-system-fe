@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { Button, Empty, Spin, message } from 'antd'
 import { CloseOutlined, RobotOutlined } from '@ant-design/icons'
+import { useTranslation } from 'react-i18next'
 import { ConversationSelector } from './components/ConversationSelector'
 import { RunStatusBar } from './components/RunStatusBar'
 import { UserMessage } from './components/UserMessage'
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
+  const { t } = useTranslation()
   const { conversations, isLoading: isConvsLoading, createConversation, renameConversation, refreshConversations } = useConversations()
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
   const [activeRunId, setActiveRunId] = useState<string | null>(null)
@@ -121,9 +123,9 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
           stopAfterSendRef.current = false
           try {
             await cancelRun(res.runId)
-            message.info('Đã dừng yêu cầu AI.')
+            message.info(t('aiChat.stopSuccess'))
           } catch {
-            message.error('Không thể dừng yêu cầu. Vui lòng thử lại.')
+            message.error(t('aiChat.stopFailed'))
           } finally {
             setIsStopping(false)
           }
@@ -134,7 +136,7 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
       stopAfterSendRef.current = false
       setIsStopping(false)
       setPendingMessage(null)
-      message.error('Không thể gửi tin nhắn. Vui lòng thử lại.')
+      message.error(t('aiChat.sendFailed'))
       throw new Error('Message send failed')
     }
   }
@@ -160,9 +162,9 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
     setIsStopping(true)
     try {
       await cancelRun(activeRunId)
-      message.info('Đã dừng yêu cầu AI.')
+      message.info(t('aiChat.stopSuccess'))
     } catch {
-      message.error('Không thể dừng yêu cầu. Vui lòng thử lại.')
+      message.error(t('aiChat.stopFailed'))
     } finally {
       setIsStopping(false)
     }
@@ -173,15 +175,15 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
   return (
     <aside
       className="app-chat-panel"
-      aria-label="Trợ lý AI WGS"
+      aria-label={t('aiChat.title')}
       style={{ borderColor: colors.border, background: colors.surface }}
     >
       <div style={{ height: 72, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', borderBottom: `1px solid ${colors.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
           <RobotOutlined style={{ color: colors.primary, fontSize: 18 }} />
-          <span>Trợ lý AI WGS</span>
+          <span>{t('aiChat.title')}</span>
         </div>
-        <Button type="text" icon={<CloseOutlined />} onClick={onClose} aria-label="Đóng trợ lý AI" />
+        <Button type="text" icon={<CloseOutlined />} onClick={onClose} aria-label={t('aiChat.close')} />
       </div>
       <div
         style={{
@@ -214,12 +216,12 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
       >
         {(isMsgsLoading || isConvsLoading) && !pendingVisible ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <Spin tip="Đang tải tin nhắn..." />
+            <Spin tip={t('aiChat.loadingMessages')} />
           </div>
         ) : messages.length === 0 && !streamedDelta && !pendingVisible && !isSending && !isStreaming ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80%' }}>
             <Empty
-              description="Chưa có tin nhắn nào. Hãy đặt câu hỏi hoặc yêu cầu hỗ trợ!"
+              description={t('aiChat.emptyMessages')}
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           </div>
@@ -232,7 +234,7 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
                   {m.runId && renderTimeline(m.runId)}
                   {m.runId && loadedRunIds[m.runId] && !timelines[m.runId]?.hasTimeline &&
                     <div style={{ margin: '0 0 10px 42px', color: colors.neutral, fontSize: 12 }}>
-                      Không có lịch sử suy luận chi tiết cho lượt chạy cũ.
+                      {t('aiChat.noTimelineHistory')}
                     </div>}
                 </React.Fragment>
               }
@@ -241,7 +243,7 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
                 return (
                   <ToolExecutionCard
                     key={m.id}
-                    toolName={m.toolName ?? 'Tool'}
+                    toolName={m.toolName ?? t('aiChat.tool')}
                     toolArguments={m.toolArguments}
                     toolResult={m.toolResult}
                   />
@@ -262,7 +264,7 @@ export const AiChatSidebar: React.FC<Props> = ({ open, onClose }) => {
             )}
 
             {!streamedDelta && (pendingVisible || isSending || activeRunId || isStreaming) && (
-              <StreamingIndicator statusText="AI đang xử lý yêu cầu..." />
+              <StreamingIndicator statusText={t('aiChat.processing')} />
             )}
 
           </>

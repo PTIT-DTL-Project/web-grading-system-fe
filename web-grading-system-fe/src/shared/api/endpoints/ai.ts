@@ -86,7 +86,7 @@ export function subscribeRunEvents(
             const event = JSON.parse(data.join('\n')) as RunTimelineEvent
             if (event.version === 1 && event.runId === runId && event.sequence === Number(eventId)
                 && event.type === eventType) onMessage(event)
-          } catch { /* reconnect from last applied sequence */ }
+          } catch { /* Ignore malformed events; reconnect is handled on stream close/error. */ }
         }
         eventType = 'message'
         eventId = ''
