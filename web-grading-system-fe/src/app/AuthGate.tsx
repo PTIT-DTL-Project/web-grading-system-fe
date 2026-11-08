@@ -9,8 +9,10 @@ import { router } from './router'
 type InitState = 'initializing' | 'ready' | 'failed'
 
 // keycloak-js puts no timeout on the silent check-sso iframe round-trip, so a
-// missing/blocked silent-check-sso.html would otherwise spin forever. This is
-// deliberately longer than keycloak-js's own 10s third-party-cookie probe.
+// missing/blocked silent-check-sso.html would otherwise spin forever. The
+// adapter's third-party-cookie probe gives up after THIRD_PARTY_CHECK_TIMEOUT_MS
+// (15s, see shared/auth/keycloak.ts) and then retries without silent SSO, so
+// this watchdog must outlast that probe plus the fast fallback init.
 const INIT_TIMEOUT_MS = 20_000
 
 /**

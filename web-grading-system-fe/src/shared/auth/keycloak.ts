@@ -27,6 +27,14 @@ import Keycloak, { type KeycloakInitOptions } from 'keycloak-js'
 const AUTHORITY = import.meta.env.VITE_KEYCLOAK_AUTHORITY ?? ''
 const CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID ?? 'web-grading-fe'
 
+/**
+ * How long keycloak-js waits for the third-party-cookie probe iframe to reply.
+ * The adapter default (10s) is too tight on slow networks and corporate
+ * proxies; a blocked iframe never replies, so `runInit` also falls back to a
+ * non-silent init after this timeout instead of failing the whole bootstrap.
+ */
+const THIRD_PARTY_CHECK_TIMEOUT_MS = 15_000
+
 export type Role = 'LECTURER' | 'STUDENT' | 'ADMIN'
 
 /**
@@ -173,6 +181,7 @@ async function runInit(): Promise<void> {
     onLoad: 'check-sso',
     pkceMethod: 'S256',
     checkLoginIframe: false,
+    messageReceiveTimeout: THIRD_PARTY_CHECK_TIMEOUT_MS,
   }
   // Review: 2026-10-05, Pullfrog — keep the adapter default fallback so blocked third-party cookies use a full-page prompt=none instead of a hanging silent iframe.
   // Skip the silent-check setup on callback loads — see hasAuthCallback().
@@ -180,30 +189,42 @@ async function runInit(): Promise<void> {
     options.silentCheckSsoRedirectUri = `${window.location.origin}/silent-check-sso.html`
   }
 
-  const kc = new Keycloak(keycloakConfig())
+  let kc = new Keycloak(keycloakConfig())
   let authenticated = false
   try {
     authenticated = await kc.init(options)
   } catch (e) {
-    // Review: 2026-10-05, Pullfrog — the same transport/config failure recurs from /login, so redirecting hides the cause in a reload loop.
-    keycloak = kc
-    throw e
+    // A blocked third-party-cookie probe iframe never posts 'supported' /
+    // 'unsupported' back, so keycloak-js times out instead of degrading.
+    // Retry without silent SSO: check-sso then uses a full-page prompt=none
+    // redirect, which still works when third-party cookies are unavailable.
+    // Review: 2026-11-05 (Keycloak init timeout under blocked 3P cookies).
+    if (!isThirdPartyCheckTimeout(e)) {
+      // Review: 2026-10-05, Pullfrog — the same transport/config failure recurs from /login, so redirecting hides the cause in a reload loop.
+      keycloak = kc
+      throw e
+    }
+    const fallbackOptions = { ...options }
+    delete fallbackOptions.silentCheckSsoRedirectUri
+    kc = new Keycloak(keycloakConfig())
+    authenticated = await kc.init(fallbackOptions)
   }
 
+  keycloak = kc
   if (!authenticated) {
     // Silent check-sso could not restore the session (iframe
     // blocked / SSO cookie inaccessible).  Do NOT redirect —
     // let the router mount so the landing page is shown for
     // unauthenticated users.  LoginPage handles the redirect
     // via kc.login() when the user clicks the login button.
-    // keycloak is still set so redirectToKeycloakLogin() works.
-    // Review: 2026-10-04, public landing page fix.
-    keycloak = kc
     return
   }
+  session = buildSession(kc)
+}
 
-  keycloak = kc
-  if (authenticated) session = buildSession(kc)
+/** True when keycloak-js gave up waiting for the third-party-cookie iframe. */
+function isThirdPartyCheckTimeout(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('3rd party check iframe')
 }
 
 /**
