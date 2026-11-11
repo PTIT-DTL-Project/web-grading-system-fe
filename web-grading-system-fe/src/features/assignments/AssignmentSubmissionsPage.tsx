@@ -55,6 +55,7 @@ export function AssignmentSubmissionsPage() {
       {
         title: t('assignment.student'),
         key: 'student',
+        width: 180,
         // Review: 2026-10-18 — code/name enriched by course-service; departed students
         // keep nulls (id slice shown), same rule as the results view.
         render: (_: unknown, r: SubmissionResponse) =>
@@ -67,13 +68,15 @@ export function AssignmentSubmissionsPage() {
             <Typography.Text type="secondary">{r.studentId.slice(0, 8)}</Typography.Text>
           ),
       },
-      { title: t('assignment.file'), dataIndex: 'zipFileName', key: 'zipFileName' },
-      { title: t('assignment.status'), dataIndex: 'status', key: 'status',
+      { title: t('assignment.file'), dataIndex: 'zipFileName', key: 'zipFileName', width: 260,
+        render: (value: string) => <Typography.Text ellipsis={{ tooltip: value }}>{value}</Typography.Text> },
+      { title: t('assignment.status'), dataIndex: 'status', key: 'status', width: 140,
         render: (v: string) => <Tag color={statusColor(v)}>{v}</Tag> },
       {
         title: t('assignment.latest'),
         dataIndex: 'latest',
         key: 'latest',
+        width: 130,
         render: (v: boolean | null) =>
           v ? <Tag color="blue">{t('assignment.latest')}</Tag> : '—',
       },
@@ -81,6 +84,7 @@ export function AssignmentSubmissionsPage() {
         title: t('assignment.createdAt'),
         dataIndex: 'createdAt',
         key: 'createdAt',
+        width: 180,
         render: (v: string | null) => (v ? formatDateTime(v, i18n.language) : '—'),
       },
       {
@@ -129,11 +133,13 @@ export function AssignmentSubmissionsPage() {
        filters={filterConfig}
        initialFilters={EMPTY_FILTERS}
        columns={columns}
+       tableLayout="fixed"
+       tableScrollX={1120}
        pageSize={20}
        rowKey="id"
        headerTitle={t('assignment.submissions')}
        headerActions={
-         <Space>
+         <Space wrap>
            <Button onClick={() => navigate(-1)}>← {t('common.back')}</Button>
            <Button type="primary" onClick={() => setRefreshKey((k) => k + 1)}>
              {t('common.refresh')}

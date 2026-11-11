@@ -444,9 +444,46 @@ export function SubmissionDetailCard({
               style={{ marginBottom: 16 }}
             />
           )}
-          <Typography.Title level={5}>{t('result.steps')}</Typography.Title>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Typography.Title level={5} style={{ margin: 0 }}>{t('result.steps')}</Typography.Title>
+            <Button
+              size="small"
+              onClick={() => {
+                const expandable = result.steps.filter((s) =>
+                  !!(s.actualValue || s.expectedValue || s.errorMessage ||
+                     s.assertionDetails || s.extractedVars || s.requestUrl ||
+                     s.requestBody || s.responseStatus != null),
+                )
+                const allExpanded = expandable.length > 0 && expandable.every((s) => expandedKeys.includes(s.id))
+                if (allExpanded) {
+                  const keySet = new Set(result.steps.map((s) => s.id))
+                  setExpandedKeys((prev) => prev.filter((k) => !keySet.has(String(k))))
+                } else {
+                  setExpandedKeys((prev) => {
+                    const set = new Set(prev.map(String))
+                    expandable.forEach((s) => set.add(s.id))
+                    return Array.from(set)
+                  })
+                }
+              }}
+            >
+              {result.steps.filter((s) =>
+                !!(s.actualValue || s.expectedValue || s.errorMessage ||
+                   s.assertionDetails || s.extractedVars || s.requestUrl ||
+                   s.requestBody || s.responseStatus != null),
+              ).every((s) => expandedKeys.includes(s.id)) && result.steps.some((s) =>
+                !!(s.actualValue || s.expectedValue || s.errorMessage ||
+                   s.assertionDetails || s.extractedVars || s.requestUrl ||
+                   s.requestBody || s.responseStatus != null),
+              )
+                ? t('common.collapseAll')
+                : t('common.expandAll')}
+            </Button>
+          </div>
           <Table<StepResultResponse>
             rowKey="id"
+            tableLayout="fixed"
+            scroll={{ x: 'max-content' }}
             columns={stepColumns}
             dataSource={result.steps}
             pagination={false}
@@ -458,7 +495,7 @@ export function SubmissionDetailCard({
                    step.assertionDetails || step.extractedVars || step.requestUrl ||
                    step.requestBody || step.responseStatus != null),
               expandedRowKeys: expandedKeys,
-              onExpandedRowsChange: (keys) => setExpandedKeys(keys.slice(-1)),
+              onExpandedRowsChange: (keys) => setExpandedKeys([...keys]),
             }}
           />
         </Card>

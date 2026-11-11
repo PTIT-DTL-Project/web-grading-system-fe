@@ -11,6 +11,7 @@ import {
   Statistic,
   Table,
   Tag,
+  Tooltip,
   Typography,
   Space,
   Alert,
@@ -221,8 +222,9 @@ export function SubmissionResultPage() {
   const navigate = useNavigate()
   const toMessage = useApiErrorMessage()
   const { results, loading, error, isReady, timedOut, retry } = useSubmissionResult(submissionId ?? '')
-  // Review: 2026-10-10, Pullfrog — single-expand accordion so the "one expanded
-  // row at a time" layout claim holds on long step tables.
+  // Review: 2026-11-11, Pullfrog — multi-expand so users can keep several
+  // steps open while scrolling through long step tables (was single-expand
+  // accordion before; users had to re-open each step after closing another).
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([])
   const assignmentId = results[0]?.assignmentId
   const { data: plans } = useQuery({
@@ -309,7 +311,16 @@ export function SubmissionResultPage() {
   const totalMax = results.reduce((sum, r) => sum + r.maxScore, 0)
 
   const stepColumns: TableColumnsType<StepResultResponse> = [
-    { title: t('result.stepName'), dataIndex: 'stepName', key: 'stepName' },
+    {
+      title: t('result.stepName'),
+      dataIndex: 'stepName',
+      key: 'stepName',
+      render: (v: string) => (
+        <Tooltip title={v}>
+          <span>{v}</span>
+        </Tooltip>
+      ),
+    },
     { title: t('result.stepType'), dataIndex: 'stepType', key: 'stepType', width: 120 },
     {
       title: t('result.passed'),
@@ -365,6 +376,7 @@ export function SubmissionResultPage() {
           type="text"
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate('/student/submissions')}
+          aria-label={t('result.backToSubmissions')}
         >
           {t('result.backToSubmissions')}
         </Button>
@@ -455,9 +467,46 @@ export function SubmissionResultPage() {
               style={{ marginBottom: 16 }}
             />
           )}
-          <Typography.Title level={5}>{t('result.steps')}</Typography.Title>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Typography.Title level={5} style={{ margin: 0 }}>{t('result.steps')}</Typography.Title>
+            <Button
+              size="small"
+              onClick={() => {
+                const expandable = result.steps.filter((s) =>
+                  !!(s.actualValue || s.expectedValue || s.errorMessage ||
+                     s.assertionDetails || s.extractedVars || s.requestUrl ||
+                     s.requestBody || s.responseStatus != null),
+                )
+                const allExpanded = expandable.length > 0 && expandable.every((s) => expandedKeys.includes(s.id))
+                if (allExpanded) {
+                  const keySet = new Set(result.steps.map((s) => s.id))
+                  setExpandedKeys((prev) => prev.filter((k) => !keySet.has(String(k))))
+                } else {
+                  setExpandedKeys((prev) => {
+                    const set = new Set(prev.map(String))
+                    expandable.forEach((s) => set.add(s.id))
+                    return Array.from(set)
+                  })
+                }
+              }}
+            >
+              {result.steps.filter((s) =>
+                !!(s.actualValue || s.expectedValue || s.errorMessage ||
+                   s.assertionDetails || s.extractedVars || s.requestUrl ||
+                   s.requestBody || s.responseStatus != null),
+              ).every((s) => expandedKeys.includes(s.id)) && result.steps.some((s) =>
+                !!(s.actualValue || s.expectedValue || s.errorMessage ||
+                   s.assertionDetails || s.extractedVars || s.requestUrl ||
+                   s.requestBody || s.responseStatus != null),
+              )
+                ? t('common.collapseAll')
+                : t('common.expandAll')}
+            </Button>
+          </div>
           <Table<StepResultResponse>
             rowKey="id"
+            tableLayout="fixed"
+            scroll={{ x: 'max-content' }}
             columns={stepColumns}
             dataSource={result.steps}
             pagination={false}
@@ -472,7 +521,9 @@ export function SubmissionResultPage() {
                    step.assertionDetails || step.extractedVars || step.requestUrl ||
                    step.requestBody || step.responseStatus != null),
               expandedRowKeys: expandedKeys,
-              onExpandedRowsChange: (keys) => setExpandedKeys(keys.slice(-1)),
+              // Multi-expand: keep all keys so users can open several steps
+              // at once while comparing evidence across them.
+              onExpandedRowsChange: (keys) => setExpandedKeys([...keys]),
             }}
           />
         </Card>

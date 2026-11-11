@@ -24,7 +24,10 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete, onRen
   const { message } = App.useApp()
   const toMessage = useApiErrorMessage()
   const [expanded, setExpanded] = useState(false)
-  const [expandedStepId, setExpandedStepId] = useState<string | null>(null)
+  // Review: 2026-11-11, Pullfrog — multi-expand so lecturers can keep several
+  // steps open while reviewing a plan (was single-expand before; opening a
+  // second step closed the first one).
+  const [expandedStepIds, setExpandedStepIds] = useState<Set<string>>(new Set())
   const [stepEditorOpen, setStepEditorOpen] = useState(false)
   const [editingStep, setEditingStep] = useState<TestStep | null>(null)
   const [savingStep, setSavingStep] = useState(false)
@@ -147,13 +150,13 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete, onRen
 
   return (
     <div style={{ border: `1px solid ${colors.border}`, borderRadius: 8, padding: 16, marginBottom: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Space>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <Space wrap style={{ minWidth: 0 }}>
           <Typography.Text strong>{plan.name}</Typography.Text>
           <Tag>#{plan.sequenceOrder}</Tag>
           <Tag>{t('step.weight')}: {plan.weight}</Tag>
         </Space>
-        <Space size={8}>
+        <Space size={8} wrap>
           <Button type="link" size="small" disabled={archived} onClick={openCreate}>
             {t('step.create')}
           </Button>
@@ -211,35 +214,67 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete, onRen
           {!hasStepsError && !stepsLoading && steps.length === 0 && (
             <Typography.Text type="secondary">{t('step.empty')}</Typography.Text>
           )}
-          {steps.map((step) => (
-            <div key={step.id} style={{ padding: '8px 0', borderBottom: `1px solid ${colors.border}` }}>
-              <Space>
-                <Tag>{step.stepType}</Tag>
-                <Typography.Text>{step.name}</Typography.Text>
-                <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t('step.weight')}: {step.weight}</Typography.Text>
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={() => setExpandedStepId((current) => (current === step.id ? null : step.id))}
-                >
-                  {expandedStepId === step.id ? t('common.collapse') : t('common.expand')}
-                </Button>
-                <Button type="link" size="small" disabled={archived} onClick={() => openEdit(step)}>
-                  {t('common.edit')}
-                </Button>
-                <Popconfirm title={t('common.delete')} onConfirm={() => handleDeleteStep(step.id)}>
-                  <Button type="link" danger size="small" disabled={archived}>
-                    {t('common.delete')}
-                  </Button>
-                </Popconfirm>
-              </Space>
-              {expandedStepId === step.id && (
-                <div style={{ marginTop: 8 }}>
-                  <StepDetailView model={normalizeLecturerStep(step)} variant="full" />
-                </div>
-              )}
+          {!hasStepsError && !stepsLoading && steps.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+              <Button
+                type="link"
+                size="small"
+                onClick={() => {
+                  if (steps.length > 0 && steps.every((s) => expandedStepIds.has(s.id))) {
+                    setExpandedStepIds(new Set())
+                  } else {
+                    setExpandedStepIds(new Set(steps.map((s) => s.id)))
+                  }
+                }}
+              >
+                {steps.length > 0 && steps.every((s) => expandedStepIds.has(s.id))
+                  ? t('common.collapseAll')
+                  : t('common.expandAll')}
+              </Button>
             </div>
-          ))}
+          )}
+          {steps.map((step) => {
+            const isStepExpanded = expandedStepIds.has(step.id)
+            return (
+              <div key={step.id} style={{ padding: '8px 0', borderBottom: `1px solid ${colors.border}` }}>
+                <Space wrap>
+                  <Tag>{step.stepType}</Tag>
+                  <Typography.Text>{step.name}</Typography.Text>
+                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t('step.weight')}: {step.weight}</Typography.Text>
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() => {
+                      setExpandedStepIds((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(step.id)) {
+                          next.delete(step.id)
+                        } else {
+                          next.add(step.id)
+                        }
+                        return next
+                      })
+                    }}
+                  >
+                    {isStepExpanded ? t('common.collapse') : t('common.expand')}
+                  </Button>
+                  <Button type="link" size="small" disabled={archived} onClick={() => openEdit(step)}>
+                    {t('common.edit')}
+                  </Button>
+                  <Popconfirm title={t('common.delete')} onConfirm={() => handleDeleteStep(step.id)}>
+                    <Button type="link" danger size="small" disabled={archived}>
+                      {t('common.delete')}
+                    </Button>
+                  </Popconfirm>
+                </Space>
+                {isStepExpanded && (
+                  <div style={{ marginTop: 8 }}>
+                    <StepDetailView model={normalizeLecturerStep(step)} variant="full" />
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 

@@ -1,7 +1,8 @@
 "use client"
 
 import { Table, Tag, Spin, Empty, Typography, Button, Space, Alert } from 'antd'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
+import type { Key } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useList } from '../../shared/hooks/useList'
@@ -26,6 +27,89 @@ interface ResultsFilters {
 }
 
 const EMPTY_FILTERS: ResultsFilters = { studentCode: '' }
+
+// Review: 2026-11-11, Pullfrog — StepTable was previously defined inline inside
+// AssignmentResultsPage's render body. A component defined inline gets a new
+// identity on every parent render, so React unmounts/remounts it and resets
+// its `expandedKeys` state. Hoisting to module level preserves the expanded
+// rows across parent re-renders (filter changes, pagination, reload, etc.).
+function StepTable({ steps }: { steps: AssignmentResultStepResponse[] | null | undefined }) {
+  const { t } = useTranslation()
+  const [expandedKeys, setExpandedKeys] = useState<Key[]>([])
+  const rows = steps ?? []
+  const isExpandable = (step: AssignmentResultStepResponse) =>
+    !!(step.actualValue || step.expectedValue || step.errorMessage ||
+       step.assertionDetails || step.extractedVars || step.requestUrl ||
+       step.requestBody || step.responseStatus != null)
+  const expandableKeys = rows.filter(isExpandable).map((s) => s.id)
+  const allExpanded = expandableKeys.length > 0 && expandableKeys.every((k) => expandedKeys.includes(k))
+  return (
+    <div>
+      {expandableKeys.length > 0 ? (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <Button
+            size="small"
+            onClick={() => {
+              if (allExpanded) {
+                const keySet = new Set(rows.map((s) => s.id))
+                setExpandedKeys((prev) => prev.filter((k) => !keySet.has(String(k))))
+              } else {
+                setExpandedKeys((prev) => {
+                  const set = new Set(prev.map(String))
+                  expandableKeys.forEach((k) => set.add(k))
+                  return Array.from(set)
+                })
+              }
+            }}
+          >
+            {allExpanded ? t('common.collapseAll') : t('common.expandAll')}
+          </Button>
+        </div>
+      ) : null}
+      <Table
+        dataSource={rows}
+        columns={[
+          { title: t('result.stepName'), dataIndex: 'stepName', key: 'stepName' },
+          { title: t('result.stepType'), dataIndex: 'stepType', key: 'stepType', width: 120 },
+          {
+            title: t('result.passed'),
+            dataIndex: 'passed',
+            key: 'passed',
+            width: 90,
+            // Review: 2026-10-05, Pullfrog — null means no verdict yet, not a failure.
+            render: (passed: boolean | null, s: AssignmentResultStepResponse) =>
+              s.skipped ? (
+                <Tag>{t('result.skipped')}</Tag>
+              ) : passed === null ? (
+                <Tag>{t('assignment.pending')}</Tag>
+              ) : passed ? (
+                <Tag color="green">{t('assignment.passed')}</Tag>
+              ) : (
+                <Tag color="red">{t('assignment.failed')}</Tag>
+              ),
+            },
+           { title: t('result.score'), key: 'score', width: 100, render: (_: unknown, s: AssignmentResultStepResponse) => (s.score != null ? `${s.score}/${s.weight ?? '—'}` : '—') },
+          {
+            title: t('result.durationMs'),
+            dataIndex: 'durationMs',
+            key: 'durationMs',
+            width: 120,
+            render: (v: number | null) => (v != null ? `${v} ms` : '—'),
+          },
+        ]}
+        rowKey="id"
+        pagination={false}
+        size="small"
+        expandable={{
+          expandedRowKeys: expandedKeys,
+          onExpandedRowsChange: (keys) => setExpandedKeys([...keys]),
+          expandedRowRender: (step: AssignmentResultStepResponse) => <LecturerStepEvidence step={step} />,
+          rowExpandable: isExpandable,
+        }}
+      />
+    </div>
+  )
+}
 
 export function AssignmentResultsPage() {
   const { classId, assignmentId } = useParams<{ classId?: string; assignmentId: string }>()
@@ -102,55 +186,11 @@ export function AssignmentResultsPage() {
   const toMessage = useApiErrorMessage()
   const errMsg = error ? toMessage(error) : null
 
-  const stepTable = (steps: AssignmentResultStepResponse[] | null | undefined) => (
-    <Table
-      dataSource={steps ?? []}
-      columns={[
-        { title: t('result.stepName'), dataIndex: 'stepName', key: 'stepName' },
-        { title: t('result.stepType'), dataIndex: 'stepType', key: 'stepType', width: 120 },
-        {
-          title: t('result.passed'),
-          dataIndex: 'passed',
-          key: 'passed',
-          width: 90,
-          // Review: 2026-10-05, Pullfrog — null means no verdict yet, not a failure.
-          render: (passed: boolean | null, s: AssignmentResultStepResponse) =>
-            s.skipped ? (
-              <Tag>{t('result.skipped')}</Tag>
-            ) : passed === null ? (
-              <Tag>{t('assignment.pending')}</Tag>
-            ) : passed ? (
-              <Tag color="green">{t('assignment.passed')}</Tag>
-            ) : (
-              <Tag color="red">{t('assignment.failed')}</Tag>
-            ),
-          },
-           { title: t('result.score'), key: 'score', width: 100, render: (_: unknown, s: AssignmentResultStepResponse) => (s.score != null ? `${s.score}/${s.weight ?? '—'}` : '—') },
-          {
-            title: t('result.durationMs'),
-            dataIndex: 'durationMs',
-            key: 'durationMs',
-            width: 120,
-            render: (v: number | null) => (v != null ? `${v} ms` : '—'),
-          },
-      ]}
-      rowKey="id"
-      pagination={false}
-      size="small"
-      expandable={{
-        expandedRowRender: (step: AssignmentResultStepResponse) => <LecturerStepEvidence step={step} />,
-        rowExpandable: (step) =>
-          !!(step.actualValue || step.expectedValue || step.errorMessage ||
-             step.assertionDetails || step.extractedVars || step.requestUrl ||
-             step.requestBody || step.responseStatus != null),
-      }}
-    />
-  )
-
   const columns = [
     {
       title: t('assignment.student'),
       key: 'student',
+      width: 240,
       render: (_: unknown, r: StudentResultResponse) => (
         <div>
           <div>{r.studentCode ?? r.studentUserId.slice(0, 8)}</div>
@@ -162,6 +202,7 @@ export function AssignmentResultsPage() {
       title: t('assignment.score'),
       dataIndex: 'exerciseScore',
       key: 'exerciseScore',
+      width: 140,
       render: (v: number | null) => (v !== null ? v : '—'),
     },
   ]
@@ -203,7 +244,7 @@ export function AssignmentResultsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
         <Space>
           <Button onClick={() => navigate(-1)}>← {t('common.back')}</Button>
           <Button onClick={() => reload()} loading={loading}>
@@ -248,6 +289,8 @@ export function AssignmentResultsPage() {
       <Table<StudentResultResponse>
         dataSource={visibleRows}
         columns={columns}
+        tableLayout="fixed"
+        scroll={{ x: 'max-content' }}
         rowKey="studentUserId"
         loading={loading}
         onChange={() => {}}
@@ -311,10 +354,12 @@ export function AssignmentResultsPage() {
                     },
                   ]}
                   rowKey="id"
+                  tableLayout="fixed"
+                  scroll={{ x: 'max-content' }}
                   pagination={false}
                   size="small"
                   expandable={{
-                    expandedRowRender: (result: AssignmentResultResponse) => stepTable(result.steps),
+                    expandedRowRender: (result: AssignmentResultResponse) => <StepTable steps={result.steps} />,
                   }}
                 />
               </>

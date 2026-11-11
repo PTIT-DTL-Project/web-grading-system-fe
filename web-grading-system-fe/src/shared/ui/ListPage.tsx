@@ -14,6 +14,7 @@ export interface ListPageProps<T, F extends ListFilters> {
   initialFilters: F
   columns: TableColumnsType<T>
   tableScrollX?: number | string
+  tableLayout?: 'auto' | 'fixed'
   pageSize?: number
   rowKey: keyof T | ((row: T) => string)
   headerTitle?: string
@@ -35,6 +36,7 @@ export function ListPage<T, F extends ListFilters>({
   initialFilters,
   columns,
   tableScrollX,
+  tableLayout,
   pageSize = 20,
   rowKey,
   headerTitle,
@@ -117,6 +119,8 @@ export function ListPage<T, F extends ListFilters>({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
             marginBottom: 16,
           }}
         >
@@ -173,6 +177,12 @@ export function ListPage<T, F extends ListFilters>({
           <Table<T>
             rowKey={typeof rowKey === 'function' ? rowKey : (rowKey as string)}
             columns={columns}
+            tableLayout={tableLayout}
+            // Review: 2026-11-11, Pullfrog — only set scroll when the consumer
+            // opts in via tableScrollX. Defaulting to 'max-content' silently
+            // changed behavior for ClassesPage/StudentClassesPage (which use
+            // tableLayout="fixed" without an explicit scroll width) and produced
+            // unexpected horizontal scrollbars.
             scroll={tableScrollX ? { x: tableScrollX } : undefined}
             dataSource={sortedRows}
             loading={loading}

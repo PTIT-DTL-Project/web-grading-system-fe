@@ -1,5 +1,5 @@
 import { CodeOutlined, GlobalOutlined, HistoryOutlined, KeyOutlined, LeftOutlined, LogoutOutlined, ReadOutlined, RightOutlined, RobotOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons'
-import { Button, Dropdown, Layout, Menu, Segmented, Space, Tag, Typography } from 'antd'
+import { Button, Drawer, Dropdown, Grid, Layout, Menu, Segmented, Space, Tag, Typography } from 'antd'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router'
@@ -27,7 +27,9 @@ export function AppLayout() {
   const session = getSession()
 
   // Hooks must run before the early `!identity` return below (rules of hooks).
+  const screens = Grid.useBreakpoint()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [changePwdOpen, setChangePwdOpen] = useState(false)
   const [aiChatOpen, setAiChatOpen] = useState(false)
 
@@ -80,6 +82,9 @@ export function AppLayout() {
     <Layout style={{ minHeight: '100vh' }}>
         <Sider
           width={224}
+          breakpoint="lg"
+          collapsedWidth={0}
+          trigger={null}
           style={{ background: colors.surface }}
           collapsed={sidebarCollapsed}
           onCollapse={(collapsed: boolean) => setSidebarCollapsed(collapsed)}
@@ -115,48 +120,6 @@ export function AppLayout() {
             onClick={({ key }) => navigate(key)}
             style={{ borderInlineEnd: 'none', marginTop: 8 }}
           />
-
-          {/* Bottom-right chevron button — sticky so it never scrolls out of reach (UX review 2026-09-29, Pullfrog PR #?) */}
-          <div
-            style={{
-              marginTop: 'auto',
-              position: 'sticky',
-              bottom: 16,
-              zIndex: 10,
-              display: 'flex',
-              justifyContent: 'flex-end',
-              padding: '8px 8px',
-              background: colors.surface,
-            }}
-          >
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              title={sidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-              aria-label={sidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-              style={{
-                width: 36,
-                height: 36,
-                background: colors.surface,
-                border: `1px solid ${colors.border}`,
-                borderRadius: '50%',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: colors.primary,
-                transition: 'all 0.2s ease',
-                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-              }}
-              onMouseOver={(e) => (e.currentTarget.style.background = colors.primaryLight)}
-              onMouseOut={(e) => (e.currentTarget.style.background = colors.surface)}
-            >
-              {sidebarCollapsed ? (
-                <RightOutlined style={{ fontSize: 20 }} />
-              ) : (
-                <LeftOutlined style={{ fontSize: 20 }} />
-              )}
-            </button>
-          </div>
         </div>
       </Sider>
 
@@ -165,14 +128,39 @@ export function AppLayout() {
           style={{
             background: colors.surface,
             borderBottom: `1px solid ${colors.border}`,
-            paddingInline: 24,
+            paddingInline: screens.md ? 24 : 12,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 16,
-            height: 72,
+            justifyContent: screens.lg ? 'flex-end' : 'space-between',
+            gap: screens.md ? 16 : 8,
+            flexWrap: 'wrap',
+            minHeight: 72,
+            height: 'auto',
           }}
         >
+          {!screens.lg && (
+            <Button
+              aria-label={t('nav.openMenu')}
+              icon={<ReadOutlined />}
+              onClick={() => setMobileNavOpen(true)}
+            />
+          )}
+          {screens.lg && (
+            <Button
+              type="text"
+              aria-label={sidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+              title={sidebarCollapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+              icon={sidebarCollapsed ? <RightOutlined /> : <LeftOutlined />}
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              style={{
+                width: 36,
+                height: 36,
+                border: `1px solid ${colors.border}`,
+                borderRadius: '50%',
+                color: colors.primary,
+              }}
+            />
+          )}
           <Button
             type="primary"
             ghost
@@ -180,7 +168,7 @@ export function AppLayout() {
             onClick={() => setAiChatOpen(true)}
             style={{ borderRadius: 6 }}
           >
-            {t('ai.assistant', 'Trợ lý AI')}
+            {screens.md ? t('ai.assistant', 'Trợ lý AI') : null}
           </Button>
 
           <Segmented
@@ -251,7 +239,7 @@ export function AppLayout() {
 
         <Content
           style={{
-            padding: 24,
+            padding: screens.md ? 24 : 12,
             display: 'flex',
             flexDirection: 'column',
           }}
@@ -261,7 +249,8 @@ export function AppLayout() {
               background: colors.surface,
               border: `1px solid ${colors.border}`,
               borderRadius: 8,
-              padding: 24,
+              padding: screens.md ? 24 : 12,
+              minWidth: 0,
               // Flex column so route content (e.g. the zip viewer) fills the
               // available height instead of relying on a magic calc() value.
               display: 'flex',
@@ -274,6 +263,25 @@ export function AppLayout() {
           </div>
         </Content>
       </Layout>
+      <Drawer
+        title={t('app.name')}
+        placement="left"
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        width={280}
+        styles={{ body: { padding: 0 } }}
+      >
+        <Menu
+          mode="inline"
+          selectedKeys={selectedKey ? [selectedKey] : []}
+          items={items}
+          onClick={({ key }) => {
+            setMobileNavOpen(false)
+            navigate(key)
+          }}
+          style={{ borderInlineEnd: 'none' }}
+        />
+      </Drawer>
       <AiChatSidebar open={aiChatOpen} onClose={() => setAiChatOpen(false)} />
     </Layout>
   )

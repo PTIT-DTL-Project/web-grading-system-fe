@@ -1,6 +1,6 @@
 "use client"
 
-import { Button, Drawer, InputNumber, Space, Tooltip, Typography, message } from 'antd'
+import { Button, Drawer, Grid, InputNumber, Space, Spin, Tooltip, Typography, message } from 'antd'
 import { QuestionCircleOutlined } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 import { getStudentScores, setStudentScores } from '../../../shared/api/endpoints/classes'
@@ -21,8 +21,10 @@ interface StudentScoreDrawerProps {
 
 export function StudentScoreDrawer({ classId, studentCode, studentName, visible, onClose, onSave, entries = [] }: StudentScoreDrawerProps) {
   const { t } = useTranslation()
+  const screens = Grid.useBreakpoint()
   const toMessage = useApiErrorMessage()
   const [loading, setLoading] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
   const [error, setError] = useState<unknown>(null)
   const [scoreMap, setScoreMap] = useState<Record<ScoreComponentType, number | null>>(() => {
     const m: Record<ScoreComponentType, number | null> = {} as any
@@ -36,6 +38,7 @@ export function StudentScoreDrawer({ classId, studentCode, studentName, visible,
     if (!visible) return
     const controller = new AbortController()
     setLoading(true)
+    setError(null)
     getStudentScores(classId, studentCode, { signal: controller.signal })
       .then(data => {
         const m: Record<ScoreComponentType, number | null> = {} as any
@@ -46,13 +49,13 @@ export function StudentScoreDrawer({ classId, studentCode, studentName, visible,
         setError(null)
       })
       .catch(err => {
-        setError(err)
+        if (!controller.signal.aborted) setError(err)
       })
       .finally(() => {
-        setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       })
     return () => controller.abort()
-  }, [visible, classId, studentCode])
+  }, [visible, classId, studentCode, retryKey])
 
   const handleSave = async () => {
     const controller = new AbortController()
@@ -83,16 +86,18 @@ export function StudentScoreDrawer({ classId, studentCode, studentName, visible,
       placement="right"
       onClose={onClose}
       open={visible}
-      width={480}
+      width={screens.md ? 480 : '100%'}
       destroyOnHidden
     >
       {loading && !hasData && (
-        <div style={{ padding: 24, textAlign: 'center' }}>{t('common.loading')}</div>
+        <div style={{ padding: 24, textAlign: 'center' }}>
+          <Spin tip={t('common.loading')} />
+        </div>
       )}
       {hasError && !hasData && (
         <div style={{ padding: 24 }}>
           <Typography.Text type="danger">{toMessage(error)}</Typography.Text>
-          <Button onClick={() => window.location.reload()} style={{ marginTop: 12 }} block>
+          <Button onClick={() => setRetryKey((key) => key + 1)} style={{ marginTop: 12 }} block>
             {t('common.retry')}
           </Button>
         </div>
@@ -136,7 +141,7 @@ export function StudentScoreDrawer({ classId, studentCode, studentName, visible,
         </Space>
       )}
       {!loading && !error && !hasData && entries.length > 0 && (
-        <div style={{ padding: 24, textAlign: 'center', color: colors.textOnPrimary }}>
+        <div style={{ padding: 24, textAlign: 'center', color: colors.neutral }}>
           <Typography.Text>{t('scores.unavailable')}</Typography.Text>
         </div>
       )}

@@ -1,13 +1,14 @@
-import { Badge, Button, Space, Tag } from 'antd'
+import { Badge, Button, Skeleton, Space, Tag, Tooltip, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import type { TableColumnsType } from 'antd'
 import { DownloadOutlined, EyeOutlined } from '@ant-design/icons'
+import { useQuery } from '@tanstack/react-query'
 import { ListPage } from '../../../shared/ui/ListPage'
 import type { FilterConfig } from '../../../shared/ui/FilterBar'
 import { listMySubmissions } from '../../../shared/api/endpoints/submissions'
-import { listStudentAssignments } from '../../../shared/api/endpoints/studentAssignments'
-import { AssignmentTitle } from './AssignmentTitle'
+import { getStudentAssignment, listStudentAssignments } from '../../../shared/api/endpoints/studentAssignments'
+import { getAssignmentPlans } from '../../../shared/api/endpoints/studentAssignments'
 import { SubmissionScopeCell } from './SubmissionScopeCell'
 import { formatDateTime } from '../../../shared/format/formatDateTime'
 import type { SubmissionResponse, SubmissionStatus } from '../../../shared/types/submission'
@@ -41,6 +42,59 @@ async function fetchAllAssignments(purpose: AssignmentPurpose): Promise<Assignme
     page += 1
   }
   return all
+}
+
+// UI review: 2026-11-11 — wrap AssignmentTitle with a Tooltip so the full
+// title is visible on hover when the column truncates it with ellipsis.
+// Shares the same React Query key as AssignmentTitle so the network call is
+// deduped (one fetch per assignment, cached 10 minutes).
+function AssignmentTitleWithTooltip({ assignmentId }: { assignmentId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['student-assignment', assignmentId],
+    queryFn: () => getStudentAssignment(assignmentId),
+    enabled: !!assignmentId,
+    staleTime: 10 * 60 * 1000,
+  })
+  if (isLoading) return <Skeleton.Input size="small" active />
+  const title = data?.title ?? '—'
+  return (
+    <Tooltip title={title} placement="topLeft">
+      <span style={{ display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {title}
+      </span>
+    </Tooltip>
+  )
+}
+
+// UI review: 2026-11-11 — wrap SubmissionScopeCell with a Tooltip so the full
+// scope text (e.g. "Câu: Tạo liên kết Giảng viên...") is visible on hover
+// when the column truncates it.
+function SubmissionScopeCellWithTooltip({
+  assignmentId,
+  planId,
+}: {
+  assignmentId: string
+  planId: string | null | undefined
+}) {
+  const { t } = useTranslation()
+  const { data: plans } = useQuery({
+    queryKey: ['student-assignment-plans', assignmentId],
+    queryFn: () => getAssignmentPlans(assignmentId),
+    enabled: !!assignmentId,
+    staleTime: 10 * 60 * 1000,
+  })
+  const isFull = planId === null || planId === undefined
+  const planName = !isFull && planId ? (plans?.find((p) => p.id === planId)?.name ?? null) : null
+  const tooltipText = isFull
+    ? t('result.scopeFull')
+    : t('result.scopePlan', { name: planName ?? '—' })
+  return (
+    <Tooltip title={tooltipText} placement="topLeft">
+      <span style={{ display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <SubmissionScopeCell assignmentId={assignmentId} planId={planId} />
+      </span>
+    </Tooltip>
+  )
 }
 
 export function MySubmissionsPage() {
@@ -97,23 +151,32 @@ export function MySubmissionsPage() {
       title: t('submission.assignment'),
       dataIndex: 'assignmentId',
       key: 'assignmentId',
-      render: (id: string) => <AssignmentTitle assignmentId={id} />,
+      width: 260,
+      render: (id: string) => (
+        <AssignmentTitleWithTooltip assignmentId={id} />
+      ),
     },
-    { title: t('submission.fileName'), dataIndex: 'zipFileName', key: 'zipFileName' },
+    {
+      title: t('submission.fileName'), dataIndex: 'zipFileName', key: 'zipFileName', width: 240,
+      render: (value: string) => <Tooltip title={value}><Typography.Text ellipsis>{value}</Typography.Text></Tooltip>,
+    },
     {
       title: t('submission.scope'),
       key: 'scope',
-      width: 170,
+      width: 220,
       render: (_, record) => (
-        <SubmissionScopeCell assignmentId={record.assignmentId} planId={record.planId} />
+        <SubmissionScopeCellWithTooltip assignmentId={record.assignmentId} planId={record.planId} />
       ),
     },
     {
       title: t('submission.status'),
       dataIndex: 'status',
       key: 'status',
+      width: 240,
       render: (status: SubmissionStatus, record) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        // UI review: 2026-11-11, user-reported overlap — wrap so the "Mới nhất"
+        // badge drops to a new line instead of overflowing into the next column.
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <Tag color={statusColor(status)}>{t(`submission.status${status}`)}</Tag>
           {record.latest && <Badge color={colors.success} text={t('submission.latest')} />}
         </div>
@@ -123,12 +186,13 @@ export function MySubmissionsPage() {
       title: t('submission.submittedAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
+      width: 170,
       render: (v: string | null) => (v ? formatDateTime(v, i18n.language) : '—'),
     },
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 150,
+      width: 260,
       render: (_, record) => (
           <Space>
             <Button
@@ -156,6 +220,11 @@ export function MySubmissionsPage() {
       filters={filters}
       initialFilters={initialFilters}
       columns={columns}
+      tableLayout="fixed"
+      // UI review: 2026-11-11, user-reported overlap — sum of column widths
+      // (260+240+220+240+170+260 = 1390) so the table scrolls horizontally
+      // instead of squeezing cells and overlapping content.
+      tableScrollX={1390}
       rowKey="id"
       headerTitle={t('submission.title')}
       emptyTitle={t('submission.empty')}

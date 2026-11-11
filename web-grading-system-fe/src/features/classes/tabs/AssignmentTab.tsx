@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Table, Button, Space, Popconfirm, message, Tag, Input } from 'antd'
+import { Table, Button, Space, Popconfirm, message, Tag, Input, Tooltip, Typography } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAssignments } from '../../assignments/useAssignments'
@@ -40,6 +40,10 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<AssignmentResponse | null>(null)
   const [saving, setSaving] = useState(false)
+  // Review: 2026-11-11, Pullfrog — track per-row async state so the action
+  // buttons disable while a delete/publish is in flight (prevents duplicate
+  // requests when users double-click).
+  const [pendingId, setPendingId] = useState<string | null>(null)
 
   const handleCreate = async (values: {
     title: string
@@ -66,12 +70,15 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
   }
 
   const handleDelete = async (id: string) => {
+    setPendingId(id)
     try {
       await remove(id)
       message.success(t('assignment.deleted'))
       onSaved?.()
     } catch (err: unknown) {
       message.error(toMessage(err))
+    } finally {
+      setPendingId(null)
     }
   }
 
@@ -92,12 +99,15 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
   }
 
   const handlePublish = async (id: string) => {
+    setPendingId(id)
     try {
       await publish(id)
       message.success(t('assignment.published'))
       onSaved?.()
     } catch (err: unknown) {
       message.error(toMessage(err))
+    } finally {
+      setPendingId(null)
     }
   }
 
@@ -111,19 +121,34 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
       title: t('assignment.title'),
       dataIndex: 'title',
       key: 'title',
-      render: (v: string) => <strong style={{ overflowWrap: 'anywhere' }}>{v}</strong>,
+      width: 260,
+      render: (v: string) => (
+        <Tooltip title={v}>
+          <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0, overflowWrap: 'anywhere' }}>
+            <strong>{v}</strong>
+          </Typography.Paragraph>
+        </Tooltip>
+      ),
     },
     {
       title: t('assignment.topic'),
       dataIndex: 'topic',
       key: 'topic',
-      width: 140,
-      render: (v: string) => <Tag color="blue">{v || '—'}</Tag>,
+      width: 420,
+      // UI review: 2026-11-11, user-reported lecturer table layout — bound long topics so action columns remain visible and aligned.
+      render: (v: string) => (
+        <Tooltip title={v || '—'}>
+          <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0, overflowWrap: 'anywhere' }}>
+            {v || '—'}
+          </Typography.Paragraph>
+        </Tooltip>
+      ),
     },
     {
       title: t('assignment.status'),
       dataIndex: 'published',
       key: 'published',
+      width: 140,
       render: (v: boolean) => (
         v ? (
           <Tag color="green">{t('assignment.statusPublished')}</Tag>
@@ -136,6 +161,7 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
       title: t('assignment.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
+      width: 150,
       // Pinned to the system timezone like formatDateTime (2026-10-10).
       render: (v: string) =>
         v
@@ -145,8 +171,9 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
     {
       title: t('common.actions'),
       key: 'actions',
+      width: 440,
       render: (_: unknown, record: AssignmentResponse) => (
-        <Space size={8}>
+        <Space size={8} wrap={false}>
           {record.published && (
             <>
               <Button type="link" size="small" onClick={() => navigate(`/classes/${classId}/assignments/${record.id}/results`)}>
@@ -158,12 +185,18 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
             </>
           )}
           {!record.published && (
-            <Button type="link" size="small" disabled={archived} onClick={() => handlePublish(record.id)}>
+            <Button type="link" size="small" disabled={archived} loading={pendingId === record.id} onClick={() => handlePublish(record.id)}>
               {t('assignment.publish')}
             </Button>
           )}
-          <Popconfirm title={t('common.delete')} onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" danger size="small" disabled={archived}>
+          <Popconfirm
+            title={t('common.confirmDelete')}
+            okText={t('common.delete')}
+            cancelText={t('common.cancel')}
+            okButtonProps={{ danger: true }}
+            onConfirm={() => handleDelete(record.id)}
+          >
+            <Button type="link" danger size="small" disabled={archived} loading={pendingId === record.id}>
               {t('common.delete')}
             </Button>
           </Popconfirm>
@@ -181,7 +214,7 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
         <Button type="primary" onClick={() => setModalOpen(true)} disabled={archived}>
           {t('assignment.create')}
         </Button>
-        <Button onClick={refetch} disabled={loading || archived} icon={<ReloadOutlined />} title={t('common.refresh')}>
+        <Button onClick={refetch} disabled={loading || archived} icon={<ReloadOutlined />} title={t('common.refresh')} aria-label={t('common.refresh')}>
           {t('common.refresh')}
         </Button>
         <Input
@@ -215,7 +248,9 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
           rowKey="id"
           columns={columns}
           dataSource={dataSource}
-          scroll={{ x: 960 }}
+          // UI review: 2026-11-11, user-reported lecturer table layout — use fixed columns and horizontal scrolling instead of crushing the title column.
+          tableLayout="fixed"
+          scroll={{ x: 1420 }}
           loading={loading}
           pagination={data ? standardPagination({ meta: data.meta, currentPage: page, onPageChange: setPage }) : false}
           size="middle"
