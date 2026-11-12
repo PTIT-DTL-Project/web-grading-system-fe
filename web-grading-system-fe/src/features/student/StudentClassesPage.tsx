@@ -1,4 +1,4 @@
-import { Button, Tag } from 'antd'
+import { Button, Tag, Tooltip } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -47,7 +47,8 @@ export function StudentClassesPage() {
       title: t('classes.name'),
       dataIndex: 'name',
       key: 'name',
-      ellipsis: true,
+      width: 280,
+      render: (name: string) => <Tooltip title={name}>{name}</Tooltip>,
       sorter: true,
       sortOrder: sortField === 'name' ? sortOrder : null,
     },
@@ -134,6 +135,8 @@ export function StudentClassesPage() {
       filters={filterConfig}
       initialFilters={{ rules: [] }}
       columns={columns}
+      tableLayout="fixed"
+      tableScrollX={840}
       pageSize={PAGE_SIZE}
       rowKey="id"
       headerTitle={t('classes.title')}

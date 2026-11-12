@@ -1,4 +1,4 @@
-import { Button, Typography } from 'antd'
+import { Button, Tooltip, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { EyeOutlined, UploadOutlined } from '@ant-design/icons'
@@ -30,23 +30,32 @@ export function StudentPracticePage() {
       title: t('assignments.title'),
       dataIndex: 'title',
       key: 'title',
+      width: 300,
       render: (title: string, record) => (
-        <Typography.Link style={{ overflowWrap: 'anywhere' }} onClick={() => navigate(`/student/practice/${record.id}`)}>
-          {title}
-        </Typography.Link>
+        <Tooltip title={title}>
+          <Typography.Link style={{ overflowWrap: 'anywhere' }} onClick={() => navigate(`/student/practice/${record.id}`)}>
+            {title}
+          </Typography.Link>
+        </Tooltip>
       ),
     },
     {
       title: t('assignment.topic'),
       dataIndex: 'topic',
       key: 'topic',
-      width: 150,
-      render: (v: string) => <span style={{ overflowWrap: 'anywhere' }}>{v || '—'}</span>,
+      width: 480,
+      render: (v: string) => (
+        <Tooltip title={v || '—'}>
+          <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0, overflowWrap: 'anywhere' }}>
+            {v || '—'}
+          </Typography.Paragraph>
+        </Tooltip>
+      ),
     },
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 200,
+      width: 240,
       render: (_, record) => (
         <div style={{ display: 'flex', gap: 8, whiteSpace: 'nowrap' }}>
           <Button size="small" icon={<EyeOutlined />} onClick={() => navigate(`/student/practice/${record.id}`)}>
@@ -72,7 +81,8 @@ export function StudentPracticePage() {
       filters={filters}
       initialFilters={{}}
       columns={columns}
-      tableScrollX={680}
+      tableLayout="fixed"
+      tableScrollX={1180}
       rowKey="id"
       headerTitle={t('practice.title')}
       emptyTitle={t('practice.empty')}

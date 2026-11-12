@@ -1,4 +1,4 @@
-import { Button, Card, Result, Space, Spin, Typography, message, Tag } from 'antd'
+import { Button, Card, Popconfirm, Result, Space, Spin, Typography, message, Tag, Tooltip } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import type { TableColumnsType } from 'antd'
@@ -34,6 +34,10 @@ export function PracticePage() {
   const [detailError, setDetailError] = useState<unknown>(null)
   const [detailKey, setDetailKey] = useState(0)
   const [saving, setSaving] = useState(false)
+  // Review: 2026-11-11, Pullfrog — track per-row async state so the action
+  // buttons disable while a delete/publish is in flight (prevents duplicate
+  // requests when users double-click).
+  const [pendingId, setPendingId] = useState<string | null>(null)
 
   const refetch = () => setRefreshKey((k) => k + 1)
   const reloadDetail = () => setDetailKey((k) => k + 1)
@@ -89,18 +93,27 @@ export function PracticePage() {
       title: t('assignments.title'),
       dataIndex: 'title',
       key: 'title',
+      width: 260,
       render: (title: string, record) => (
-        <Typography.Link style={{ overflowWrap: 'anywhere' }} onClick={() => navigate(`/practice/${record.id}`)}>
-          {title}
-        </Typography.Link>
+        <Tooltip title={title}>
+          <Typography.Link style={{ overflowWrap: 'anywhere' }} onClick={() => navigate(`/practice/${record.id}`)}>
+            {title}
+          </Typography.Link>
+        </Tooltip>
       ),
     },
     {
       title: t('assignment.topic'),
       dataIndex: 'topic',
       key: 'topic',
-      width: 150,
-      render: (v: string) => <Tag color="blue">{v || '—'}</Tag>,
+      width: 420,
+      render: (v: string) => (
+        <Tooltip title={v || '—'}>
+          <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0, overflowWrap: 'anywhere' }}>
+            {v || '—'}
+          </Typography.Paragraph>
+        </Tooltip>
+      ),
     },
     {
       title: t('assignment.status'),
@@ -116,7 +129,7 @@ export function PracticePage() {
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 260,
+      width: 520,
       render: (_, record) => (
         <div style={{ display: 'flex', gap: 8, whiteSpace: 'nowrap' }}>
           <Button size="small" onClick={() => navigate(`/practice/${record.id}`)}>
@@ -130,12 +143,20 @@ export function PracticePage() {
               <Button type="link" size="small" onClick={() => navigate(`/practice/${record.id}/submissions`)}>
                 {t('assignment.submissions')}
               </Button>
-              <Button type="link" size="small" danger onClick={() => handleDelete(record.id)}>
-                {t('common.delete')}
-              </Button>
+              <Popconfirm
+                title={t('common.confirmDelete')}
+                okText={t('common.delete')}
+                cancelText={t('common.cancel')}
+                okButtonProps={{ danger: true }}
+                onConfirm={() => handleDelete(record.id)}
+              >
+                <Button type="link" size="small" danger loading={pendingId === record.id}>
+                  {t('common.delete')}
+                </Button>
+              </Popconfirm>
             </>
           ) : (
-            <Button type="link" size="small" onClick={() => handlePublish(record.id)}>
+            <Button type="link" size="small" loading={pendingId === record.id} onClick={() => handlePublish(record.id)}>
               {t('assignment.publish')}
             </Button>
           )}
@@ -172,6 +193,7 @@ export function PracticePage() {
   }
 
   const handleDelete = async (id: string): Promise<boolean> => {
+    setPendingId(id)
     try {
       await deleteAssignment(id)
       message.success(t('assignment.deleted'))
@@ -180,6 +202,8 @@ export function PracticePage() {
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : String(err))
       return false
+    } finally {
+      setPendingId(null)
     }
   }
 
@@ -201,6 +225,7 @@ export function PracticePage() {
   }
 
   const handlePublish = async (id: string) => {
+    setPendingId(id)
     try {
       await publishAssignment(id)
       message.success(t('assignment.published'))
@@ -208,6 +233,8 @@ export function PracticePage() {
       if (assignmentId) reloadDetail()
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : String(err))
+    } finally {
+      setPendingId(null)
     }
   }
 
@@ -245,9 +272,17 @@ export function PracticePage() {
               <>
                 <Button type="primary" onClick={() => setEditing(assignment)}>{t('common.edit')}</Button>
                 {assignment.published ? (
-                  <Button type="link" danger onClick={() => handleDeleteInDetail(assignmentId)}>{t('common.delete')}</Button>
+                  <Popconfirm
+                    title={t('common.confirmDelete')}
+                    okText={t('common.delete')}
+                    cancelText={t('common.cancel')}
+                    okButtonProps={{ danger: true }}
+                    onConfirm={() => handleDeleteInDetail(assignmentId)}
+                  >
+                    <Button type="link" danger loading={pendingId === assignmentId}>{t('common.delete')}</Button>
+                  </Popconfirm>
                 ) : (
-                  <Button type="link" onClick={() => handlePublish(assignmentId)}>{t('assignment.publish')}</Button>
+                  <Button type="link" loading={pendingId === assignmentId} onClick={() => handlePublish(assignmentId)}>{t('assignment.publish')}</Button>
                 )}
               </>
             )}
@@ -280,7 +315,10 @@ export function PracticePage() {
           <>
             <Card title={t('assignments.details')} style={{ marginBottom: 16 }}>
               <Typography.Paragraph>{t('assignment.topic')}: {assignment.topic}</Typography.Paragraph>
-              <Typography.Paragraph>{t('assignment.purpose')}: {assignment.purpose}</Typography.Paragraph>
+              {/* Review: 2026-11-11, Pullfrog — purpose is intentionally omitted
+                  here. This page is hard-scoped to PRACTICE (the fetcher filters
+                  by purpose: 'PRACTICE' and the route is /practice), so rendering
+                  "purpose: PRACTICE" would be redundant noise. */}
               <Typography.Paragraph>
                 {t('assignment.status')}: {assignment.published ? t('assignments.published') : t('assignments.unpublished')}
               </Typography.Paragraph>
@@ -312,7 +350,9 @@ export function PracticePage() {
         filters={filters}
         initialFilters={{ search: undefined, topic: undefined }}
         columns={columns}
-        tableScrollX={960}
+        // UI review: 2026-11-11, user-reported lecturer table layout — reserve the action controls and allow horizontal scrolling on smaller screens.
+        tableLayout="fixed"
+        tableScrollX={1500}
         rowKey="id"
         headerTitle={undefined}
         emptyTitle={t('practice.empty')}

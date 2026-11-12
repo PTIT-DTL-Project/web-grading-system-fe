@@ -1,6 +1,6 @@
 "use client"
 
-import { Alert, Button, Form, InputNumber, Modal, Select, Space, Tooltip, Typography, message } from 'antd'
+import { Alert, Button, Form, InputNumber, Modal, Popconfirm, Select, Space, Tooltip, Typography, message } from 'antd'
 import { QuestionCircleOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
@@ -137,7 +137,7 @@ export function ScoreComponentsTab({ classId, archived = false, refreshToken, on
       {!loading && !hasError && draftRows.length > 0 && (
         <Space direction="vertical" style={{ width: '100%' }} size={16}>
           {draftRows.map((row) => (
-            <Space key={row.type} align="center" style={{ width: '100%', justifyContent: 'space-between', padding: 16, background: colors.surface, borderRadius: 8, border: `1px solid ${colors.border}` }}>
+            <Space key={row.type} align="center" wrap style={{ width: '100%', justifyContent: 'space-between', padding: 16, background: colors.surface, borderRadius: 8, border: `1px solid ${colors.border}` }}>
               <Typography.Text style={{ minWidth: 160 }}>
                 {t(`components.typeLabel.${row.type}`)}
                 {row.type === 'EXERCISE' && (
@@ -156,16 +156,24 @@ export function ScoreComponentsTab({ classId, archived = false, refreshToken, on
                 style={{ width: 120 }}
               />
               <Typography.Text type="secondary">{t('components.weightPercent', { weight: (row.weight * 100).toFixed(0) })}</Typography.Text>
-              <Button type="text" danger onClick={() => handleDelete(row.type)} disabled={archived}>
-                {t('common.delete')}
-              </Button>
+              <Popconfirm
+                title={t('common.confirmDelete')}
+                okText={t('common.delete')}
+                cancelText={t('common.cancel')}
+                okButtonProps={{ danger: true }}
+                onConfirm={() => handleDelete(row.type)}
+              >
+                <Button type="text" danger disabled={archived}>
+                  {t('common.delete')}
+                </Button>
+              </Popconfirm>
             </Space>
           ))}
           <div style={{ marginTop: 16, padding: 16, background: colors.surface, borderRadius: 8, border: `1px solid ${colors.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Button onClick={handleAdd} disabled={archived || types.length === 0}>
               {t('components.add')}
             </Button>
-            <Space>
+            <Space wrap>
               <Typography.Text type={sumValid ? undefined : 'danger'} style={{ color: sumValid ? colors.success : colors.error }}>
                 {t('components.totalWeight', { sum: sum.toFixed(3) })}
               </Typography.Text>

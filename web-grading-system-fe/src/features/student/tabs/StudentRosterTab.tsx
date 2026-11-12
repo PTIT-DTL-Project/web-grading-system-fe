@@ -1,3 +1,4 @@
+import { Tooltip } from 'antd'
 import { useTranslation } from 'react-i18next'
 import type { TableColumnsType } from 'antd'
 import { useCallback } from 'react'
@@ -18,8 +19,14 @@ export function StudentRosterTab({ classId }: StudentRosterTabProps) {
   )
 
   const columns: TableColumnsType<StudentRoster> = [
-    { title: t('students.code'), dataIndex: 'studentCode', key: 'studentCode', ellipsis: true },
-    { title: t('students.name'), dataIndex: 'studentName', key: 'studentName', ellipsis: true },
+    {
+      title: t('students.code'), dataIndex: 'studentCode', key: 'studentCode', width: 200,
+      render: (value: string) => <Tooltip title={value}>{value}</Tooltip>,
+    },
+    {
+      title: t('students.name'), dataIndex: 'studentName', key: 'studentName',
+      render: (value: string) => <Tooltip title={value}>{value}</Tooltip>,
+    },
   ]
 
   return (
@@ -28,6 +35,8 @@ export function StudentRosterTab({ classId }: StudentRosterTabProps) {
       filters={[]}
       initialFilters={{}}
       columns={columns}
+      tableLayout="fixed"
+      tableScrollX={480}
       rowKey="studentCode"
       headerTitle={t('students.title')}
       emptyTitle={t('students.empty')}

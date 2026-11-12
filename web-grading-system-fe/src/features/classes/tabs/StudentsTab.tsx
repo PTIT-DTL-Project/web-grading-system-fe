@@ -1,6 +1,6 @@
 "use client"
 
-import { Button, Space, Table, Typography, Upload, message } from 'antd'
+import { Button, Space, Table, Tooltip, Typography, Upload, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { importStudents } from '../../../shared/api/endpoints/classes'
@@ -34,9 +34,18 @@ export function StudentsTab({ classId, archived = false, refreshToken, onSaved }
   }, [refreshToken, reload])
 
   const columns = [
-    { title: t('students.code'), dataIndex: 'studentCode', key: 'studentCode', ellipsis: true },
-    { title: t('students.name'), dataIndex: 'studentName', key: 'studentName', ellipsis: true },
-    { title: t('students.email'), dataIndex: 'email', key: 'email', render: (v: string | null) => v || t('common.empty') },
+    {
+      title: t('students.code'), dataIndex: 'studentCode', key: 'studentCode', width: 180,
+      render: (value: string) => <Tooltip title={value}>{value}</Tooltip>,
+    },
+    {
+      title: t('students.name'), dataIndex: 'studentName', key: 'studentName', width: 280,
+      render: (value: string) => <Tooltip title={value}>{value}</Tooltip>,
+    },
+    {
+      title: t('students.email'), dataIndex: 'email', key: 'email',
+      render: (v: string | null) => v ? <Tooltip title={v}>{v}</Tooltip> : t('common.empty'),
+    },
   ]
 
   const errorMessage = error ? (toMessage(error) as string) : ''
@@ -65,7 +74,7 @@ export function StudentsTab({ classId, archived = false, refreshToken, onSaved }
     <Space orientation="vertical" style={{ width: '100%' }} size={24}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography.Title level={4} style={{ margin: 0 }}>{t('students.title')}</Typography.Title>
-        <Space size={12}>
+        <Space size={12} wrap>
             <Upload
               accept=".csv"
               showUploadList={false}
@@ -118,6 +127,8 @@ export function StudentsTab({ classId, archived = false, refreshToken, onSaved }
         <Table<ClassStudentResponse>
           rowKey="id"
           columns={columns}
+          tableLayout="fixed"
+          scroll={{ x: 'max-content' }}
           dataSource={rows}
           loading={loading}
           pagination={{

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Button, Spin, Tree, Typography } from 'antd'
+import { Alert, Button, Drawer, Grid, Spin, Tree, Typography } from 'antd'
 import type { DataNode } from 'antd/es/tree'
-import { DownloadOutlined, FileOutlined, FolderOpenOutlined, FolderOutlined } from '@ant-design/icons'
+import { DownloadOutlined, FileOutlined, FolderOpenOutlined, FolderOutlined, MenuOutlined } from '@ant-design/icons'
 import { Editor } from '@monaco-editor/react'
 import { editor } from 'monaco-editor'
 import { getSubmissionDownloadUrl, getSubmissionTree, getSubmissionFile } from '../../shared/api/endpoints/submissions'
@@ -60,7 +60,9 @@ function findNode(nodes: ZipTreeNode[] | undefined, path: string): ZipTreeNode |
 export function SubmissionZipViewer() {
   const { submissionId } = useParams<{ submissionId: string }>()
   const { t } = useTranslation()
+  const screens = Grid.useBreakpoint()
   const [tree, setTree] = useState<SubmissionZipTreeResponse | null>(null)
+  const [treeOpen, setTreeOpen] = useState(false)
   const [treeError, setTreeError] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
   const [fileContent, setFileContent] = useState<SubmissionZipFileResponse | null>(null)
@@ -207,6 +209,7 @@ export function SubmissionZipViewer() {
     >
       <aside
         style={{
+          display: screens.md ? 'block' : 'none',
           width: 280,
           flex: '0 0 280px',
           overflow: 'auto',
@@ -242,7 +245,7 @@ export function SubmissionZipViewer() {
           minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
-          padding: 16,
+          padding: screens.md ? 16 : 8,
           overflow: 'hidden',
         }}
       >
@@ -250,22 +253,32 @@ export function SubmissionZipViewer() {
           style={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 16,
+            alignItems: 'flex-start',
+            flexWrap: 'wrap',
+            gap: 12,
             marginBottom: 12,
           }}
         >
-          <div style={{ minWidth: 0 }}>
-            <Typography.Title level={5} style={{ margin: 0 }}>
+          <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {!screens.md && (
+              <Button
+                icon={<MenuOutlined />}
+                aria-label={t('submission.zipTree', 'Directory tree')}
+                onClick={() => setTreeOpen(true)}
+              />
+            )}
+            <div style={{ minWidth: 0 }}>
+              <Typography.Title level={5} style={{ margin: 0 }}>
               {t('submission.fileContent', 'File content')}
             </Typography.Title>
-            {fileContent ? (
-              <Typography.Text type="secondary" style={{ fontSize: 12 }} ellipsis>
-                {fileContent.path}
-              </Typography.Text>
-            ) : null}
+              {fileContent ? (
+                <Typography.Text type="secondary" style={{ fontSize: 12 }} ellipsis>
+                  {fileContent.path}
+                </Typography.Text>
+              ) : null}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end', width: screens.md ? undefined : '100%' }}>
             <Button icon={<DownloadOutlined />} onClick={handleDownloadZip}>
               {t('submission.downloadZip', 'Download entire zip')}
             </Button>
@@ -348,6 +361,30 @@ export function SubmissionZipViewer() {
           </div>
         )}
       </section>
+      <Drawer
+        title={t('submission.zipTree', 'Directory tree')}
+        placement="left"
+        open={treeOpen}
+        onClose={() => setTreeOpen(false)}
+        width="min(320px, 85vw)"
+        styles={{ body: { padding: 12 } }}
+      >
+        <Tree
+          showIcon
+          blockNode
+          showLine={{ showLeafIcon: false }}
+          expandedKeys={expandedKeys}
+          onExpand={(keys) => setExpandedKeys(keys)}
+          treeData={treeData}
+          selectedKeys={selectedKey ? [selectedKey] : []}
+          onSelect={(keys) => {
+            if (keys.length > 0) {
+              handleSelect(String(keys[0]))
+              setTreeOpen(false)
+            }
+          }}
+        />
+      </Drawer>
     </div>
   )
 }

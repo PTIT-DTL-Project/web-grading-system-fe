@@ -13,7 +13,7 @@
 }
 
 .app-chat-panel {
-  width: clamp(380px, 38vw, 560px);
+  width: clamp(320px, 38vw, 560px);
   flex: none;
   height: 100vh;
   position: sticky;
@@ -24,4 +24,19 @@
   min-width: 0;
   border-left: 1px solid;
   box-shadow: -2px 0 10px rgb(0 0 0 / 5%);
+}
+
+@media (max-width: 767px) {
+  .app-main-layout--chat-open .ant-layout-content > div {
+    min-width: 0;
+  }
+
+  .app-chat-panel {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    z-index: 20;
+  }
 }

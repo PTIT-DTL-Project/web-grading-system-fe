@@ -96,8 +96,7 @@ export function LandingPage() {
       </Flex>
 
       <Flex vertical align="center" justify="center" style={{ padding: '80px 24px 48px', textAlign: 'center' }}>
-        <Typography.Title level={1} style={{ marginBottom: 8 }}>{t('landing.hero')}</Typography.Title>
-        <Typography.Title level={3} type="secondary" style={{ marginBottom: 32, fontWeight: 400 }}>{t('landing.hero')}</Typography.Title>
+        <Typography.Title level={1} style={{ marginBottom: 32 }}>{t('landing.hero')}</Typography.Title>
         <Button type="primary" size="large" icon={<LoginOutlined />} onClick={handleLogin} style={{ minWidth: 200 }}>
           {t('landing.login')}
         </Button>

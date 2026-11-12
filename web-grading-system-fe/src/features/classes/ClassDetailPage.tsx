@@ -1,4 +1,4 @@
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Alert, Button, Result, Space, Spin, Tabs, Typography, Tag } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
@@ -14,6 +14,7 @@ import { useState, useCallback } from 'react'
 export function ClassDetailPage() {
   const { t } = useTranslation()
   const { classId } = useParams()
+  const navigate = useNavigate()
   const { klass, loading, error, reload } = useClassDetail(classId ?? '')
   const toMessage = useApiErrorMessage()
   const [refreshToken, setRefreshToken] = useState(0)
@@ -40,7 +41,7 @@ export function ClassDetailPage() {
         extra={
           <Space direction="horizontal" size={12}>
             <Button onClick={reload}>{t('common.retry')}</Button>
-            <Button onClick={() => window.history.back()}>{t('common.back')}</Button>
+            <Button onClick={() => navigate('/classes')}>{t('common.back')}</Button>
           </Space>
         }
       />
@@ -55,17 +56,21 @@ export function ClassDetailPage() {
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography.Title level={3} style={{ margin: 0 }}>
-          <Button type="text" onClick={() => window.history.back()} style={{ marginRight: 12 }} icon={<ArrowLeftOutlined />}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, minWidth: 0, flex: '1 1 320px' }}>
+          <Button type="text" onClick={() => navigate('/classes')} icon={<ArrowLeftOutlined />}>
             {t('detail.back')}
           </Button>
-          {klass.name}
-        </Typography.Title>
-        <Typography.Text type="secondary">
-          {t('classes.semester')}: {klass.semester} ·{' '}
-          {t('classes.status')}: <Tag color={isArchived ? colors.statusArchived : colors.statusActive}>{isArchived ? t('classes.statusArchived') : t('classes.statusActive')}</Tag>
-        </Typography.Text>
+          <Typography.Title level={3} style={{ margin: 0, minWidth: 0, overflowWrap: 'anywhere' }}>
+            {klass.name}
+          </Typography.Title>
+        </div>
+        <Space wrap size={[8, 8]}>
+          <Typography.Text type="secondary">{t('classes.semester')}: {klass.semester}</Typography.Text>
+          <Tag color={isArchived ? colors.statusArchived : colors.statusActive}>
+            {isArchived ? t('classes.statusArchived') : t('classes.statusActive')}
+          </Tag>
+        </Space>
       </div>
 
       {isArchived && (

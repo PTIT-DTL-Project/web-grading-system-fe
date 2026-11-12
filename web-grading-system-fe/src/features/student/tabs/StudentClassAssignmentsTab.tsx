@@ -1,4 +1,4 @@
-import { Button, Tag, Typography } from 'antd'
+import { Button, Tag, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -35,24 +35,33 @@ export function StudentClassAssignmentsTab({ classId, archived = false }: Studen
       title: t('assignments.title'),
       dataIndex: 'title',
       key: 'title',
+      width: 300,
       render: (title: string, record) => (
-        <Typography.Link style={{ overflowWrap: 'anywhere' }} onClick={() => navigate(`/student/assignments/${record.id}`)}>
-          {title}
-        </Typography.Link>
+        <Tooltip title={title}>
+          <Typography.Link style={{ overflowWrap: 'anywhere' }} onClick={() => navigate(`/student/assignments/${record.id}`)}>
+            {title}
+          </Typography.Link>
+        </Tooltip>
       ),
     },
     {
       title: t('assignment.topic'),
       dataIndex: 'topic',
       key: 'topic',
-      width: 150,
-      render: (v: string) => <span style={{ overflowWrap: 'anywhere' }}>{v || '—'}</span>,
+      width: 480,
+      render: (v: string) => (
+        <Tooltip title={v || '—'}>
+          <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0, overflowWrap: 'anywhere' }}>
+            {v || '—'}
+          </Typography.Paragraph>
+        </Tooltip>
+      ),
     },
     {
       title: t('assignments.published'),
       dataIndex: 'published',
       key: 'published',
-      width: 140,
+      width: 160,
       render: (published: boolean) => (
         <Tag color={published ? colors.success : colors.neutral}>
           {published ? t('assignments.published') : t('assignments.unpublished')}
@@ -62,7 +71,7 @@ export function StudentClassAssignmentsTab({ classId, archived = false }: Studen
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 200,
+      width: 240,
       render: (_, record) => (
         <div style={{ display: 'flex', gap: 8, whiteSpace: 'nowrap' }}>
           <Button
@@ -93,7 +102,8 @@ export function StudentClassAssignmentsTab({ classId, archived = false }: Studen
       filters={filters}
       initialFilters={{}}
       columns={columns}
-      tableScrollX={680}
+      tableLayout="fixed"
+      tableScrollX={1180}
       rowKey="id"
       headerTitle={t('assignments.title')}
       emptyTitle={t('assignments.empty')}

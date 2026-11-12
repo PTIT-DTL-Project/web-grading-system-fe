@@ -1,6 +1,6 @@
 "use client"
 
-import { Alert, Button, Space, Table, Tag, Typography } from 'antd'
+import { Alert, Button, Space, Table, Tag, Tooltip, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTranscript } from '../useTranscript'
@@ -39,23 +39,26 @@ export function TranscriptTab({ classId, refreshToken, onSaved }: TranscriptTabP
   }, [refreshToken, reload])
 
   const columns = [
-    { title: t('transcript.code'), dataIndex: 'studentCode', key: 'studentCode' },
-    { title: t('transcript.name'), dataIndex: 'studentName', key: 'studentName' },
+    { title: t('transcript.code'), dataIndex: 'studentCode', key: 'studentCode', width: 160, fixed: 'left' as const },
+    { title: t('transcript.name'), dataIndex: 'studentName', key: 'studentName', width: 240, fixed: 'left' as const,
+      render: (name: string) => <Tooltip title={name}>{name}</Tooltip>,
+    },
     ...(rows.length > 0 && rows[0].entries
       ? rows[0].entries.filter(e => e.type !== 'EXERCISE').map((colEntry) => ({
           title: `${colEntry.type} (${(colEntry.weight * 100).toFixed(0)}%)`,
+          width: 130,
           dataIndex: 'entries',
           key: colEntry.type,
-          render: (entries: any[]) => {
+          render: (entries: TranscriptEntryResponse['entries']) => {
             const match = entries.find(e => e.type === colEntry.type)
             return match?.score !== null && match?.score !== undefined ? match.score : t('common.empty')
           },
         }))
       : []),
-    { title: t('transcript.total'), dataIndex: 'total', key: 'total', render: (v: number | null) => v !== null ? v : t('common.empty') },
-    { title: t('transcript.letterGrade'), dataIndex: 'letterGrade', key: 'letterGrade', render: (v: string | null) => v ? <Tag color={GRADE_COLORS[v] || 'default'}>{v}</Tag> : t('common.empty') },
-    { title: t('transcript.gpa'), dataIndex: 'gpa', key: 'gpa', render: (v: number | null) => v !== null ? v : t('common.empty') },
-    { title: t('common.actions'), key: 'actions', render: (_: unknown, record: TranscriptEntryResponse) => (
+    { title: t('transcript.total'), dataIndex: 'total', key: 'total', width: 110, render: (v: number | null) => v !== null ? v : t('common.empty') },
+    { title: t('transcript.letterGrade'), dataIndex: 'letterGrade', key: 'letterGrade', width: 130, render: (v: string | null) => v ? <Tag color={GRADE_COLORS[v] || 'default'}>{v}</Tag> : t('common.empty') },
+    { title: t('transcript.gpa'), dataIndex: 'gpa', key: 'gpa', width: 90, render: (v: number | null) => v !== null ? v : t('common.empty') },
+    { title: t('common.actions'), key: 'actions', width: 180, fixed: 'right' as const, render: (_: unknown, record: TranscriptEntryResponse) => (
       <Button type="primary" size="small" onClick={() => setDrawerStudent({ code: record.studentCode, name: record.studentName })}>
         {t('transcript.enterScores')}
       </Button>
@@ -86,6 +89,8 @@ export function TranscriptTab({ classId, refreshToken, onSaved }: TranscriptTabP
         rowKey="studentCode"
         columns={columns}
         dataSource={rows}
+        tableLayout="fixed"
+        scroll={{ x: 'max-content' }}
         loading={loading}
         pagination={{
           current: meta.page + 1,
