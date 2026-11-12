@@ -136,6 +136,7 @@ export function StudentClassesPage() {
       initialFilters={{ rules: [] }}
       columns={columns}
       tableLayout="fixed"
+      tableScrollX={840}
       pageSize={PAGE_SIZE}
       rowKey="id"
       headerTitle={t('classes.title')}

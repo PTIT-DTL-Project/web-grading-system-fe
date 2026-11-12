@@ -137,7 +137,7 @@ export function ClassesPage() {
         </div>
       ),
     },
-  ], [t, i18n, navigate, sortField, sortOrder])
+  ], [t, i18n, navigate, sortField, sortOrder, archivingId, handleArchive])
 
   const columnSorter = useMemo(() => ({
     status: (a: ClassResponse, b: ClassResponse) => {
@@ -180,6 +180,7 @@ export function ClassesPage() {
         initialFilters={{ rules: [] }}
         columns={columns}
         tableLayout="fixed"
+        tableScrollX={890}
         pageSize={PAGE_SIZE}
         rowKey="id"
         headerTitle={t('classes.title')}
