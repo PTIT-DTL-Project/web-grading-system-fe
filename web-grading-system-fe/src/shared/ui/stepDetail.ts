@@ -13,7 +13,8 @@ export interface StepDetailModel {
   stepType: string
   weight: number
   timeoutMs: number | null
-  required: boolean
+  /** Lecturer-only: absent on student payloads (see StepResponse). */
+  required?: boolean
   /** Parsed config object, or null when absent/unparseable. */
   config: Record<string, any> | null
 }
@@ -72,6 +73,9 @@ export function normalizeLecturerStep(step: TestStep): StepDetailModel {
   }
 }
 
+// Student steps never carry `required` (executor-only flag); the detail view
+// renders that tag for lecturers only, so the field stays undefined here.
+// Review: 2026-11-12.
 export function normalizeStudentStep(step: StepResponse): StepDetailModel {
   return {
     order: step.stepOrder,
@@ -80,7 +84,6 @@ export function normalizeStudentStep(step: StepResponse): StepDetailModel {
     stepType: step.type,
     weight: step.weight,
     timeoutMs: step.timeoutMs,
-    required: step.required,
     config: parseConfig(step.config),
   }
 }

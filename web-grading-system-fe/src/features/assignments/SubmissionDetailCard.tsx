@@ -54,6 +54,24 @@ function prettyJson(raw: string): string {
   }
 }
 
+/**
+ * Evidence-driven expansion gate: anything the evidence panel can render makes the
+ * step expandable. Shared by the expand-all toggle and `rowExpandable` so a step the
+ * button expands is always one the table allows to expand.
+ */
+function hasEvidence(step: StepResultResponse): boolean {
+  return !!(
+    step.actualValue ||
+    step.expectedValue ||
+    step.errorMessage ||
+    step.assertionDetails ||
+    step.extractedVars ||
+    step.requestUrl ||
+    step.requestBody ||
+    step.responseStatus != null
+  )
+}
+
 function StepEvidence({ step }: { step: StepResultResponse }) {
   const { t } = useTranslation()
   const assertions = parseAssertions(step.assertionDetails)
@@ -449,11 +467,7 @@ export function SubmissionDetailCard({
             <Button
               size="small"
               onClick={() => {
-                const expandable = result.steps.filter((s) =>
-                  !!(s.actualValue || s.expectedValue || s.errorMessage ||
-                     s.assertionDetails || s.extractedVars || s.requestUrl ||
-                     s.requestBody || s.responseStatus != null),
-                )
+                const expandable = result.steps.filter(hasEvidence)
                 const allExpanded = expandable.length > 0 && expandable.every((s) => expandedKeys.includes(s.id))
                 if (allExpanded) {
                   const keySet = new Set(result.steps.map((s) => s.id))
@@ -467,15 +481,8 @@ export function SubmissionDetailCard({
                 }
               }}
             >
-              {result.steps.filter((s) =>
-                !!(s.actualValue || s.expectedValue || s.errorMessage ||
-                   s.assertionDetails || s.extractedVars || s.requestUrl ||
-                   s.requestBody || s.responseStatus != null),
-              ).every((s) => expandedKeys.includes(s.id)) && result.steps.some((s) =>
-                !!(s.actualValue || s.expectedValue || s.errorMessage ||
-                   s.assertionDetails || s.extractedVars || s.requestUrl ||
-                   s.requestBody || s.responseStatus != null),
-              )
+              {result.steps.some(hasEvidence) &&
+              result.steps.filter(hasEvidence).every((s) => expandedKeys.includes(s.id))
                 ? t('common.collapseAll')
                 : t('common.expandAll')}
             </Button>
@@ -490,10 +497,7 @@ export function SubmissionDetailCard({
             size="small"
             expandable={{
               expandedRowRender: (step) => <StepEvidence step={step} />,
-              rowExpandable: (step) =>
-                !!(step.actualValue || step.expectedValue || step.errorMessage ||
-                   step.assertionDetails || step.extractedVars || step.requestUrl ||
-                   step.requestBody || step.responseStatus != null),
+              rowExpandable: hasEvidence,
               expandedRowKeys: expandedKeys,
               onExpandedRowsChange: (keys) => setExpandedKeys([...keys]),
             }}
