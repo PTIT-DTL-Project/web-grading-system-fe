@@ -66,6 +66,24 @@ function prettyJson(raw: string): string {
   }
 }
 
+/**
+ * Evidence-driven expansion gate: a step is expandable when anything the evidence
+ * panel can render was captured (a 204/empty body with request details still counts).
+ * Shared by the expand-all toggle and `rowExpandable` so they can never disagree.
+ */
+function hasEvidence(step: StepResultResponse): boolean {
+  return !!(
+    step.actualValue ||
+    step.expectedValue ||
+    step.errorMessage ||
+    step.assertionDetails ||
+    step.extractedVars ||
+    step.requestUrl ||
+    step.requestBody ||
+    step.responseStatus != null
+  )
+}
+
 function StepEvidence({ step }: { step: StepResultResponse }) {
   const { t } = useTranslation()
   const assertions = parseAssertions(step.assertionDetails)
@@ -472,11 +490,7 @@ export function SubmissionResultPage() {
             <Button
               size="small"
               onClick={() => {
-                const expandable = result.steps.filter((s) =>
-                  !!(s.actualValue || s.expectedValue || s.errorMessage ||
-                     s.assertionDetails || s.extractedVars || s.requestUrl ||
-                     s.requestBody || s.responseStatus != null),
-                )
+                const expandable = result.steps.filter(hasEvidence)
                 const allExpanded = expandable.length > 0 && expandable.every((s) => expandedKeys.includes(s.id))
                 if (allExpanded) {
                   const keySet = new Set(result.steps.map((s) => s.id))
@@ -490,15 +504,8 @@ export function SubmissionResultPage() {
                 }
               }}
             >
-              {result.steps.filter((s) =>
-                !!(s.actualValue || s.expectedValue || s.errorMessage ||
-                   s.assertionDetails || s.extractedVars || s.requestUrl ||
-                   s.requestBody || s.responseStatus != null),
-              ).every((s) => expandedKeys.includes(s.id)) && result.steps.some((s) =>
-                !!(s.actualValue || s.expectedValue || s.errorMessage ||
-                   s.assertionDetails || s.extractedVars || s.requestUrl ||
-                   s.requestBody || s.responseStatus != null),
-              )
+              {result.steps.some(hasEvidence) &&
+              result.steps.filter(hasEvidence).every((s) => expandedKeys.includes(s.id))
                 ? t('common.collapseAll')
                 : t('common.expandAll')}
             </Button>
@@ -516,10 +523,7 @@ export function SubmissionResultPage() {
               // Review: 2026-10-11, Pullfrog — every evidence field gates
               // expansion (a 204/empty body with request details must open);
               // undefined pre-BE-#42 stays falsy so nothing changes early.
-              rowExpandable: (step) =>
-                !!(step.actualValue || step.expectedValue || step.errorMessage ||
-                   step.assertionDetails || step.extractedVars || step.requestUrl ||
-                   step.requestBody || step.responseStatus != null),
+              rowExpandable: hasEvidence,
               expandedRowKeys: expandedKeys,
               // Multi-expand: keep all keys so users can open several steps
               // at once while comparing evidence across them.

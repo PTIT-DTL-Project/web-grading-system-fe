@@ -39,7 +39,12 @@ export interface StepResponseDto {
   required: boolean
 }
 
-/** course-service StepResponse — nested in PlanResponse */
+/**
+ * course-service StudentStepResponse — nested in StudentPlanResponse.
+ * No `required`: that flag is executor cascade-skip semantics, not "this step is
+ * mandatory", so the student payload omits it (the AI assistant forwards it verbatim).
+ * Review: 2026-11-12.
+ */
 export interface StepResponse {
   id: string
   stepOrder: number
@@ -47,10 +52,8 @@ export interface StepResponse {
   description: string | null
   type: string
   config: unknown
-  expectedResult: unknown
   weight: number
   timeoutMs: number | null
-  required: boolean
 }
 
 export interface StepCreateBody {

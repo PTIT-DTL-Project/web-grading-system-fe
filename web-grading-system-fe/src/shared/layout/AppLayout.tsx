@@ -13,6 +13,10 @@ import './app-layout.css'
 
 const { Sider, Header, Content } = Layout
 
+const SIDER_WIDTH = 224
+/** icon-only rail; antd's collapsed inline Menu pins to ~80px, so the rail matches it */
+const SIDER_COLLAPSED_WIDTH = 80
+
 function menuKeyFor(role: Role): string {
   if (role === 'LECTURER') return '/classes'
   if (role === 'ADMIN') return '/admin/users'
@@ -80,14 +84,18 @@ export function AppLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
+        {/* Collapse keeps a narrow rail instead of collapsing to width 0: the only
+            toggle lives inside the Sider, so a 0-width rail removed the very control
+            needed to open it again ("thụt vào và mất luôn"). Below lg the rail is 0
+            because navigation moves into the header Drawer. Review: 2026-11-12. */}
         <Sider
-          width={224}
-          breakpoint="lg"
-          collapsedWidth={0}
+          width={SIDER_WIDTH}
+          // `screens.lg === false` (not `!screens.lg`): the breakpoint is undefined on
+          // the first render, and defaulting to collapsed flashed the rail on desktop.
+          collapsedWidth={screens.lg === false ? 0 : SIDER_COLLAPSED_WIDTH}
           trigger={null}
           style={{ background: colors.surface }}
-          collapsed={sidebarCollapsed}
-          onCollapse={(collapsed: boolean) => setSidebarCollapsed(collapsed)}
+          collapsed={screens.lg === false || sidebarCollapsed}
         >
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
           {/* Review: 2026-10-05, Pullfrog — keep signed-in users inside the app shell instead of ejecting them to the public landing page. */}
@@ -105,7 +113,7 @@ export function AppLayout() {
               textDecoration: 'none',
             }}
           >
-            <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {sidebarCollapsed ? t('app.shortName') : t('app.name')}
             </div>
             {!sidebarCollapsed && (
