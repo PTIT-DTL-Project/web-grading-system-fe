@@ -57,6 +57,10 @@ export function RowActions({ actions, primary, disabled = false, align = 'center
   }
 
   const run = (action: RowAction) => {
+    // antd already blocks clicks on a disabled menu item; re-check here so the
+    // guard survives a future render path that is not a Dropdown (or a test that
+    // calls run through a keyboard handler). Review: 2026-11-21, Pullfrog.
+    if (action.disabled) return
     if (!action.confirmTitle) {
       action.onClick()
       return

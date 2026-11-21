@@ -96,6 +96,23 @@ describe('RowActions', () => {
     await waitFor(() => expect(onDelete).toHaveBeenCalledTimes(1))
   })
 
+  it('never runs a disabled action, even if its handler is reached', async () => {
+    const onArchive = vi.fn()
+    renderActions(
+      <RowActions
+        actions={[
+          { key: 'a', label: 'Đang mở', onClick: vi.fn() },
+          { key: 'archive', label: 'Lưu trữ', disabled: true, onClick: onArchive },
+        ]}
+      />,
+    )
+    openMenu()
+
+    const item = await screen.findByText('Lưu trữ')
+    fireEvent.click(item)
+    expect(onArchive).not.toHaveBeenCalled()
+  })
+
   it('renders no trigger when every action is hidden', () => {
     renderActions(
       <RowActions actions={[{ key: 'a', label: 'A', hidden: true, onClick: vi.fn() }]} />,
