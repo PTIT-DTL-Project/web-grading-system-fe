@@ -71,8 +71,8 @@ export function DbStepForm({
       <Alert
         type="info"
         showIcon
-        message={t('step.dbConnectionRequired') || 'Kết nối DB là bắt buộc'}
-        description={t('step.dbConnectionRequiredDesc') || 'Cần điền database, username, password. Sandbox sẽ dùng credentials này để reset DB giữa các plan.'}
+        message={t('step.dbConnectionRequired')}
+        description={t('step.dbConnectionRequiredDesc')}
         style={{ marginBottom: 12 }}
       />
       <Form.Item name="name" label={t('step.name')} rules={[{ required: true }]}>

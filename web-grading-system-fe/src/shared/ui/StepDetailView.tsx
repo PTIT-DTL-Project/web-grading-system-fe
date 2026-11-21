@@ -42,34 +42,74 @@ function PairsTable({ rows }: { rows: [string, string][] }) {
   )
 }
 
-function AssertionBlock({ assertion }: { assertion: unknown }) {
+/** Field key -> existing label key; unknown fields fall back to the raw key. */
+const ASSERTION_FIELD_LABELS: Record<string, string> = {
+  path: 'step.assertionPath',
+  equals: 'step.assertionEquals',
+  text: 'step.assertionText',
+  exists: 'step.assertionExists',
+  value: 'step.assertionValue',
+  pattern: 'step.assertionPattern',
+  json: 'step.assertionJson',
+}
+
+/**
+ * Renders whatever fields the assertion carries instead of a per-kind switch.
+ * The switch silently dropped `json_path_equals`, `array_length`, `contains_item`,
+ * `greater_than`, `less_than`, `matches_regex` and `any_of`: those assertions showed
+ * only their kind tag, so "Giá trị tại đường dẫn bằng" appeared with no path/expected
+ * value at all. Review: 2026-11-21, user report on the step detail view.
+ */
+function AssertionBlock({ assertion, depth = 0 }: { assertion: unknown; depth?: number }) {
   const { t } = useTranslation()
   if (!isRecord(assertion) || typeof assertion.kind !== 'string') {
     return <Typography.Text type="secondary">{JSON.stringify(assertion)}</Typography.Text>
   }
   const kind: string = assertion.kind
   const rows: [string, string][] = []
-  if (kind === 'status') rows.push([t('step.assertionEquals'), String(assertion.equals ?? '')])
-  if (kind === 'contains') rows.push([t('step.assertionText'), String(assertion.text ?? '')])
-  if (kind === 'json_path') {
-    rows.push([t('step.assertionPath'), String(assertion.path ?? '')])
-    rows.push([t('step.assertionExists'), String(assertion.exists ?? true)])
+  const jsonFields: { label: string; value: unknown }[] = []
+  const nested: unknown[] = []
+
+  Object.entries(assertion).forEach(([key, value]) => {
+    if (key === 'kind' || value === undefined || value === null) return
+    if (key === 'assertions') {
+      if (Array.isArray(value)) nested.push(...value)
+      return
+    }
+    const label = t(ASSERTION_FIELD_LABELS[key] ?? key, { defaultValue: key })
+    if (isRecord(value) || Array.isArray(value)) {
+      jsonFields.push({ label, value })
+      return
+    }
+    rows.push([label, typeof value === 'boolean' ? (value ? t('common.yes') : t('common.no')) : String(value)])
+  })
+  // The grader treats a missing `exists` on json_path as "must exist"; say so instead
+  // of dropping the row and leaving the assertion looking half-configured.
+  if (kind === 'json_path' && !('exists' in assertion)) {
+    rows.push([t('step.assertionExists'), t('common.yes')])
   }
-  if (kind === 'field_equals') {
-    rows.push([t('step.assertionPath'), String(assertion.path ?? '')])
-    rows.push([t('step.assertionEquals'), String(assertion.equals ?? '')])
-  }
+
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size={4}>
-      <Tag>{kind}</Tag>
-      {rows.length > 0 && <PairsTable rows={rows} />}
-      {(kind === 'body_structure' || kind === 'body_equals') && assertion.json !== undefined && (
-        <>
-          <Typography.Text type="secondary">{t('step.assertionJson')}</Typography.Text>
-          <JsonBlock text={JSON.stringify(assertion.json, null, 2)} />
-        </>
-      )}
-    </Space>
+    <div style={{ paddingLeft: depth * 16 }}>
+      <Space direction="vertical" style={{ width: '100%' }} size={4}>
+        <Tag>{t(`step.assertionKindOptions.${kind}`, { defaultValue: kind })}</Tag>
+        {rows.length > 0 && <PairsTable rows={rows} />}
+        {jsonFields.map(({ label, value }) => (
+          <div key={label}>
+            <Typography.Text type="secondary">{label}</Typography.Text>
+            <JsonBlock text={JSON.stringify(value, null, 2)} />
+          </div>
+        ))}
+        {nested.length > 0 && (
+          <>
+            <Typography.Text type="secondary">{t('step.assertionAnyOfHint')}</Typography.Text>
+            {nested.map((inner, index) => (
+              <AssertionBlock key={index} assertion={inner} depth={depth + 1} />
+            ))}
+          </>
+        )}
+      </Space>
+    </div>
   )
 }
 
@@ -136,8 +176,16 @@ export function StepDetailView({ model, variant }: StepDetailViewProps) {
             {extracts.map((entry: unknown, index: number) => {
               const row = isRecord(entry) ? entry : {}
               return (
-                <Typography.Text key={index} style={{ display: 'block' }} code>
-                  {String(row.name ?? '')} ← {String(row.from ?? '')} : {String(row.expression ?? '')}
+                // Was `bookId ← response_body : body.id`; the grader-facing triple says
+                // nothing to a student, so spell out where the value comes from.
+                <Typography.Text key={index} style={{ display: 'block' }}>
+                  {t('step.extractSentence', {
+                    name: String(row.name ?? ''),
+                    source: t(`step.extractSource.${String(row.from ?? '')}`, {
+                      defaultValue: String(row.from ?? ''),
+                    }),
+                    expression: String(row.expression ?? ''),
+                  })}
                 </Typography.Text>
               )
             })}
@@ -159,9 +207,43 @@ export function StepDetailView({ model, variant }: StepDetailViewProps) {
         {full && isRecord(config.expected) && (
           <div>
             <Typography.Text strong>{t('step.expectedResult')}</Typography.Text>
-            <JsonBlock text={JSON.stringify(config.expected, null, 2)} />
+            <PairsTable rows={expectedQueryRows(config.expected, t)} />
           </div>
         )}
+      </Space>
+    )
+  }
+
+  const renderDelay = () => {
+    if (!config) return null
+    const duration = config.duration_ms
+    return (
+      <Typography.Text>
+        {t('step.delaySentence', { ms: String(duration ?? '?') })}
+      </Typography.Text>
+    )
+  }
+
+  const renderExtract = () => {
+    if (!config) return null
+    const rows = Array.isArray(config.extract) ? config.extract : []
+    if (rows.length === 0) return null
+    return (
+      <Space direction="vertical" style={{ width: '100%' }} size={4}>
+        {rows.map((entry: unknown, index: number) => {
+          const row = isRecord(entry) ? entry : {}
+          return (
+            <Typography.Text key={index}>
+              {t('step.extractSentence', {
+                name: String(row.name ?? ''),
+                source: t(`step.extractSource.${String(row.from ?? '')}`, {
+                  defaultValue: String(row.from ?? ''),
+                }),
+                expression: String(row.expression ?? ''),
+              })}
+            </Typography.Text>
+          )
+        })}
       </Space>
     )
   }
@@ -174,10 +256,24 @@ export function StepDetailView({ model, variant }: StepDetailViewProps) {
         {full && <ConnectionBlock config={config} />}
         <div>
           <Typography.Text strong>{t('step.checks')}</Typography.Text>
+          {checks.length === 0 && (
+            <Typography.Text type="secondary">{t('step.noChecksDeclared')}</Typography.Text>
+          )}
           {checks.map((check: unknown, index: number) => (
-            <Typography.Text key={index} style={{ display: 'block' }} code>
-              {checkText(check)}
-            </Typography.Text>
+            <div key={index} style={{ marginTop: 6 }}>
+              <Typography.Text>
+                <Tag color="geekblue">{t('step.checkLabel', { index: index + 1 })}</Tag>
+                {checkSentence(check, t)}
+              </Typography.Text>
+              {full && (
+                <PairsTable
+                  rows={checkFields(check).map(([key, value]) => [
+                    t(`step.checkField.${key}`, { defaultValue: key }),
+                    value,
+                  ])}
+                />
+              )}
+            </div>
           ))}
         </div>
       </Space>
@@ -193,10 +289,12 @@ export function StepDetailView({ model, variant }: StepDetailViewProps) {
         <div>
           <Typography.Text strong>{t('step.statements')}</Typography.Text>
           {statements.map((statement: unknown, index: number) => (
-            <JsonBlock
-              key={index}
-              text={typeof statement === 'string' ? statement : JSON.stringify(statement)}
-            />
+            <div key={index} style={{ marginTop: 6 }}>
+              <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>
+                {t('step.statementLabel', { index: index + 1 })}
+              </Typography.Text>
+              <JsonBlock text={typeof statement === 'string' ? statement : JSON.stringify(statement)} />
+            </div>
           ))}
         </div>
       </Space>
@@ -208,7 +306,7 @@ export function StepDetailView({ model, variant }: StepDetailViewProps) {
       <Space wrap>
         <Tag>#{model.order}</Tag>
         <Typography.Text strong>{model.name}</Typography.Text>
-        <Tag>{model.stepType}</Tag>
+        <Tag>{t(`step.typeOptions.${model.stepType}`, { defaultValue: model.stepType })}</Tag>
         <Typography.Text type="secondary">
           {t('step.weight')}: {model.weight}
         </Typography.Text>
@@ -229,6 +327,8 @@ export function StepDetailView({ model, variant }: StepDetailViewProps) {
       {model.stepType === 'DB_QUERY' && renderDbQuery()}
       {model.stepType === 'DB_SCHEMA_CHECK' && renderSchemaCheck()}
       {model.stepType === 'DB_MIGRATION' && renderMigration()}
+      {model.stepType === 'DELAY' && renderDelay()}
+      {model.stepType === 'EXTRACT' && renderExtract()}
     </Space>
   )
 }
@@ -253,20 +353,60 @@ function ConnectionBlock({ config }: { config: Record<string, any> }) {
   )
 }
 
-function checkText(check: unknown): string {
+type Translate = (key: string, options?: Record<string, unknown>) => string
+
+/** `expected: {row_count, columns:[...]}` described in words instead of raw JSON. */
+function expectedQueryRows(expected: Record<string, any>, t: Translate): [string, string][] {
+  const rows: [string, string][] = []
+  if (expected.row_count !== undefined && expected.row_count !== null) {
+    rows.push([t('step.expectedRowCount'), String(expected.row_count)])
+  }
+  if (Array.isArray(expected.columns) && expected.columns.length > 0) {
+    rows.push([t('step.expectedColumns'), expected.columns.map((c: unknown) => String(c)).join(', ')])
+  }
+  const known = new Set(['row_count', 'columns'])
+  Object.entries(expected)
+    .filter(([key]) => !known.has(key))
+    .forEach(([key, value]) => rows.push([key, String(value ?? '')]))
+  return rows
+}
+
+
+/**
+ * One-line, human sentence per DB schema check, e.g.
+ * `TABLE_EXISTS books` → "Bảng «books» phải tồn tại".
+ * The raw check kind and field names are grader vocabulary; students used to see
+ * nothing but `COLUMN_EXISTS books.id bigint`, which is unreadable.
+ * Review: 2026-11-21, user report on the step detail view.
+ */
+function checkSentence(check: unknown, t: Translate): string {
   if (!isRecord(check) || typeof check.kind !== 'string') return JSON.stringify(check)
+  const table = String(check.table_name ?? '')
   switch (check.kind) {
     case 'TABLE_EXISTS':
-      return `TABLE_EXISTS ${String(check.table_name ?? '')}`
+      return t('step.checkSentenceTable', { table })
     case 'COLUMN_EXISTS':
-      return `COLUMN_EXISTS ${String(check.table_name ?? '')}.${String(check.column_name ?? '')}${
-        check.data_type ? ` ${String(check.data_type)}` : ''
-      }`
+      return check.data_type
+        ? t('step.checkSentenceColumnType', {
+            table,
+            column: String(check.column_name ?? ''),
+            type: String(check.data_type),
+          })
+        : t('step.checkSentenceColumn', { table, column: String(check.column_name ?? '') })
     case 'INDEX_EXISTS':
-      return `INDEX_EXISTS ${String(check.index_name ?? '')}`
+      return t('step.checkSentenceIndex', {
+        table,
+        index: String(check.index_name ?? ''),
+      })
     case 'PRIMARY_KEY':
-      return `PRIMARY_KEY ${String(check.table_name ?? '')}(${String(check.column ?? '')})`
+      return t('step.checkSentencePrimaryKey', { table, column: String(check.column ?? '') })
     default:
       return JSON.stringify(check)
   }
+}
+
+/** Technical view of the same check, for the lecturer variant. */
+function checkFields(check: unknown): [string, string][] {
+  if (!isRecord(check)) return []
+  return Object.entries(check).map(([key, value]) => [key, String(value ?? '')])
 }

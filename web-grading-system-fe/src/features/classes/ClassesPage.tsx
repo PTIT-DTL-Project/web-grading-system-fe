@@ -72,7 +72,13 @@ export function ClassesPage() {
       dataIndex: 'name',
       key: 'name',
       width: 280,
-      render: (name: string) => <Tooltip title={name}><Typography.Text>{name}</Typography.Text></Tooltip>,
+      // Review: 2026-11-21, user request — the class name is the navigation target, so the
+      // "Mở" button in the action column became redundant and was removed.
+      render: (name: string, row) => (
+        <Tooltip title={name}>
+          <Typography.Link onClick={() => navigate(`/classes/${row.id}`)}>{name}</Typography.Link>
+        </Tooltip>
+      ),
       sorter: true,
       sortOrder: sortField === 'name' ? sortOrder : null,
     },
@@ -116,26 +122,24 @@ export function ClassesPage() {
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 170,
-      align: 'right',
-      render: (_value, row) => (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4, whiteSpace: 'nowrap' }}>
-          <Button type="link" onClick={() => navigate(`/classes/${row.id}`)}>
-            {t('classes.open')}
-          </Button>
-          {row.status === 'ACTIVE' && (
-            <Popconfirm
-              title={t('classes.confirmArchive')}
-              okText={t('classes.archive')}
-              cancelText={t('common.cancel')}
-              okButtonProps={{ danger: true }}
-              onConfirm={() => handleArchive(row.id)}
-            >
-              <Button type="link" loading={archivingId === row.id}>{t('classes.archive')}</Button>
-            </Popconfirm>
-          )}
-        </div>
-      ),
+      width: 120,
+      align: 'center' as const,
+      // Review: 2026-11-21 — opening a class moved to the name column, leaving one
+      // action here, so it stays a visible button (no "..." menu for a single item).
+      render: (_value, row) =>
+        row.status === 'ACTIVE' ? (
+          <Popconfirm
+            title={t('classes.confirmArchive')}
+            okText={t('classes.archive')}
+            cancelText={t('common.cancel')}
+            okButtonProps={{ danger: true }}
+            onConfirm={() => handleArchive(row.id)}
+          >
+            <Button type="link" danger loading={archivingId === row.id}>
+              {t('classes.archive')}
+            </Button>
+          </Popconfirm>
+        ) : null,
     },
   ], [t, i18n, navigate, sortField, sortOrder, archivingId, handleArchive])
 
@@ -180,7 +184,7 @@ export function ClassesPage() {
         initialFilters={{ rules: [] }}
         columns={columns}
         tableLayout="fixed"
-        tableScrollX={890}
+        tableScrollX={840}
         pageSize={PAGE_SIZE}
         rowKey="id"
         headerTitle={t('classes.title')}

@@ -104,7 +104,7 @@ export function ImportModal({ open, onClose, onImport }: ImportModalProps) {
   const handleImport = () => {
     const text = rawText.trim()
     if (!text) {
-      message.warning(t('importInvalidFile') || 'Please paste JSON content')
+      message.warning(t('importInvalidFile'))
       return
     }
     try {
@@ -133,27 +133,27 @@ export function ImportModal({ open, onClose, onImport }: ImportModalProps) {
   return (
     <Modal
       open={open}
-      title={t('importTitle') || 'Import Postman / OpenAPI'}
+      title={t('importTitle')}
       onCancel={onClose}
       onOk={handleConfirm}
-      okText={t('common.import') || 'Import'}
+      okText={t('common.import')}
       cancelText={t('common.cancel')}
       width={720}
     >
-      <Typography.Text>{t('importPlaceholder') || 'Paste JSON collection or spec here'}</Typography.Text>
+      <Typography.Text>{t('importPlaceholder')}</Typography.Text>
       <div style={{ marginTop: 8 }}>
         <Input.TextArea
           rows={10}
           value={rawText}
           onChange={handlePaste}
-          placeholder={t('importPlaceholder') || 'Paste JSON collection or spec here'}
+          placeholder={t('importPlaceholder')}
           allowClear
         />
       </div>
       {preview.length > 0 && (
         <Alert
           type="info"
-          message={t('importPreview', { count: preview.length }) || `{{count}} steps generated`}
+          message={t('importPreview', { count: preview.length })}
           showIcon
           style={{ marginTop: 16 }}
         />

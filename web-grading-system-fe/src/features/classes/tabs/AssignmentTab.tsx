@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Table, Button, Space, Popconfirm, message, Tag, Select, Tooltip, Typography } from 'antd'
+import { Drawer, Table, Button, Space, message, Tag, Select, Tooltip, Typography } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAssignments } from '../../assignments/useAssignments'
@@ -11,6 +11,7 @@ import { EditAssignmentModal } from '../../assignments/EditAssignmentModal'
 import { TestPlanEditor } from '../../assignments/TestPlanEditor'
 import { useTopicOptions } from '../../assignments/useTopicOptions'
 import { filterOptionByLabel } from '../../../shared/ui/selectSearch'
+import { RowActions } from '../../../shared/ui/RowActions'
 import { useApiErrorMessage } from '../../../shared/api/errors'
 import { standardPagination } from '../../../shared/ui/StandardPagination'
 import { colors } from '../../../shared/theme/tokens'
@@ -44,6 +45,11 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
     refreshToken,
   })
   const [modalOpen, setModalOpen] = useState(false)
+  // Plans/steps open in a drawer, not in an expanded table row: the table scrolls
+  // horizontally (scroll.x = 1420), and editing inside that scroll container made the
+  // browser pan it whenever a field took focus, so every label looked clipped.
+  // Review: 2026-11-21, user-reported "chọn là bị lệch".
+  const [plansFor, setPlansFor] = useState<AssignmentResponse | null>(null)
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<AssignmentResponse | null>(null)
   const [saving, setSaving] = useState(false)
@@ -178,39 +184,54 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 440,
+      // Was width 440 for five inline links; the menu needs a single trigger cell.
+      // Review: 2026-11-21, user request — actions moved behind a "..." menu.
+      width: 110,
+      align: 'center' as const,
       render: (_: unknown, record: AssignmentResponse) => (
-        <Space size={8} wrap={false}>
-          {record.published && (
-            <>
-              <Button type="link" size="small" onClick={() => navigate(`/classes/${classId}/assignments/${record.id}/results`)}>
-                {t('assignment.results')}
-              </Button>
-              <Button type="link" size="small" onClick={() => navigate(`/classes/${classId}/assignments/${record.id}/submissions`)}>
-                {t('assignment.submissions')}
-              </Button>
-            </>
-          )}
-          {!record.published && (
-            <Button type="link" size="small" disabled={archived} loading={pendingId === record.id} onClick={() => handlePublish(record.id)}>
-              {t('assignment.publish')}
-            </Button>
-          )}
-          <Popconfirm
-            title={t('common.confirmDelete')}
-            okText={t('common.delete')}
-            cancelText={t('common.cancel')}
-            okButtonProps={{ danger: true }}
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Button type="link" danger size="small" disabled={archived} loading={pendingId === record.id}>
-              {t('common.delete')}
-            </Button>
-          </Popconfirm>
-          <Button type="link" size="small" disabled={archived} onClick={() => setEditing(record)}>
-            {t('common.edit')}
-          </Button>
-        </Space>
+        <RowActions
+          disabled={pendingId === record.id}
+          actions={[
+            {
+              key: 'plans',
+              label: t('plan.title'),
+              onClick: () => setPlansFor(record),
+            },
+            {
+              key: 'results',
+              label: t('assignment.results'),
+              hidden: !record.published,
+              onClick: () => navigate(`/classes/${classId}/assignments/${record.id}/results`),
+            },
+            {
+              key: 'submissions',
+              label: t('assignment.submissionList'),
+              hidden: !record.published,
+              onClick: () => navigate(`/classes/${classId}/assignments/${record.id}/submissions`),
+            },
+            {
+              key: 'publish',
+              label: t('assignment.publish'),
+              hidden: record.published,
+              disabled: archived,
+              onClick: () => handlePublish(record.id),
+            },
+            {
+              key: 'edit',
+              label: t('common.edit'),
+              disabled: archived,
+              onClick: () => setEditing(record),
+            },
+            {
+              key: 'delete',
+              label: t('common.delete'),
+              danger: true,
+              disabled: archived,
+              confirmTitle: t('common.confirmDelete'),
+              onClick: () => handleDelete(record.id),
+            },
+          ]}
+        />
       ),
     },
   ]
@@ -266,20 +287,28 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
           columns={columns}
           dataSource={dataSource}
           // UI review: 2026-11-11, user-reported lecturer table layout — use fixed columns and horizontal scrolling instead of crushing the title column.
+          // The action column shrank 440 -> 110, so the fixed width is now the sum of
+          // the declared widths (260+420+140+150+110); 1420 left a phantom scrollbar.
+          // Review: 2026-11-21.
           tableLayout="fixed"
-          scroll={{ x: 1420 }}
+          scroll={{ x: 1080 }}
           loading={loading}
           pagination={data ? standardPagination({ meta: data.meta, currentPage: page, onPageChange: setPage }) : false}
           size="middle"
-          expandable={{
-            expandedRowRender: (record) => (
-              // Review: 2026-10-05, Pullfrog — archived classes must not stay editable through the expanded plan editor.
-              <TestPlanEditor assignmentId={record.id} archived={archived} />
-            ),
-            rowExpandable: () => true,
-          }}
         />
       )}
+
+      <Drawer
+        open={!!plansFor}
+        onClose={() => setPlansFor(null)}
+        title={plansFor ? `${plansFor.title} — ${t('plan.title')}` : t('plan.title')}
+        width="min(880px, 94vw)"
+        destroyOnHidden
+        styles={{ body: { paddingTop: 12 } }}
+      >
+        {/* Review: 2026-10-05, Pullfrog — archived classes must not stay editable through this editor. */}
+        {plansFor && <TestPlanEditor assignmentId={plansFor.id} archived={archived} />}
+      </Drawer>
 
       <CreateAssignmentModal
         open={modalOpen}

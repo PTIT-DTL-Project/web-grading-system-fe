@@ -27,7 +27,12 @@
     "collapse": "Collapse",
     "expand": "Expand",
     "expandAll": "Expand all",
-    "collapseAll": "Collapse all"
+    "collapseAll": "Collapse all",
+    "copy": "Copy JSON",
+    "copied": "Copied to clipboard",
+    "import": "Import",
+    "yes": "Yes",
+    "no": "No"
   },
   "nav": {
     "classes": "Classes",
@@ -96,6 +101,7 @@
     "empty": "No assignments yet",
     "results": "Grading results",
     "submissions": "Submissions",
+    "submissionList": "Submission list",
     "noResults": "No results yet",
     "noStudentResults": "No results for this student",
     "noSubmissions": "No submissions yet",
@@ -246,13 +252,60 @@
     "configPlaceholder": "JSON",
     "timeoutPlaceholder": "Default",
     "typeOptions": {
-      "HTTP_REQUEST": "HTTP Request",
-      "DB_QUERY": "DB Query",
-      "DB_SCHEMA_CHECK": "DB Schema Check",
-      "DB_MIGRATION": "DB Migration",
-      "EXTRACT": "Extract",
-      "DELAY": "Delay"
-    }
+      "HTTP_REQUEST": "HTTP call",
+      "DB_QUERY": "Database query",
+      "DB_SCHEMA_CHECK": "Database schema check",
+      "DB_MIGRATION": "Database script",
+      "EXTRACT": "Extract variable",
+      "DELAY": "Wait"
+    },
+    "dbConnectionRequired": "A database connection is required",
+    "dbConnectionRequiredDesc": "Fill in database, username and password. The sandbox uses these credentials to reset the DB between questions.",
+    "autoInjectInfo": "auto_inject_headers applies to the following steps only",
+    "autoInjectInfoDesc": "Headers declared on this step are not applied to the step itself. Negative checks (401/403) should set their own headers.",
+    "autoInjectPlacement": "Applies to the following steps only",
+    "autoInjectPlacementDesc": "Declare it on the login/token step. It does not apply to that step itself. Negative checks (401/403) should set their own headers.",
+    "validationIssues": "Configuration has issues",
+    "properties": "Properties",
+    "checkSentenceTable": "Table \"{{table}}\" must exist in the database.",
+    "checkSentenceColumn": "Table \"{{table}}\" must have a column \"{{column}}\".",
+    "checkSentenceColumnType": "Table \"{{table}}\" must have a column \"{{column}}\" of type \"{{type}}\".",
+    "checkSentenceIndex": "Table \"{{table}}\" must have an index named \"{{index}}\".",
+    "checkSentencePrimaryKey": "Table \"{{table}}\" must have a primary key on \"{{column}}\".",
+    "checkLabel": "Check {{index}}",
+    "noChecksDeclared": "No check declared — this step always passes.",
+    "statementLabel": "Statement {{index}}",
+    "checkField": {
+      "kind": "Check type",
+      "table_name": "Table name",
+      "column_name": "Column name",
+      "column": "Primary-key column",
+      "data_type": "Data type",
+      "index_name": "Index name"
+    },
+    "assertionKindOptions": {
+      "status": "HTTP status",
+      "json_path": "JSON path exists",
+      "contains": "Body contains text",
+      "body_structure": "JSON structure matches",
+      "body_equals": "Whole JSON equals",
+      "field_equals": "JSON field equals",
+      "array_length": "Array length",
+      "contains_item": "Array contains item",
+      "json_path_equals": "Value at path equals",
+      "greater_than": "Value greater than",
+      "less_than": "Value less than",
+      "matches_regex": "Matches regex",
+      "any_of": "Any of the conditions"
+    },
+    "extractSentence": "Store the value at {{source}} (expression \"{{expression}}\") in the variable \"{{name}}\".",
+    "extractSource": {
+      "response_body": "the response body",
+      "response_status": "the response status code",
+      "response_headers": "the response headers"
+    },
+    "delaySentence": "Wait {{ms}} ms before the next step.",
+    "assertionAnyOfHint": "At least ONE of these conditions must hold:"
   },
   "students": {
     "title": "Students",
@@ -533,7 +586,8 @@
     "generatedAt": "Generated {{time}}",
     "fromCache": "Cached",
     "searchGoogle": "Search \"{{keyword}}\" on Google",
-    "generatingReassuring": "Almost ready, finalizing your explanation..."
+    "generatingReassuring": "Almost ready, finalizing your explanation...",
+    "assistant": "AI assistant"
   },
   "aiChat": {
     "title": "WGS AI assistant",
@@ -563,5 +617,10 @@
     "create": "Create practice exercise",
     "empty": "No practice exercises yet",
     "emptyHint": "Create your first practice exercise for students"
-  }
+  },
+  "schemaTitle": "JSON Schema standard",
+  "importTitle": "Import Postman / OpenAPI",
+  "importPlaceholder": "Paste a JSON collection or spec here",
+  "importInvalidFile": "Please paste JSON content",
+  "importPreview": "{{count}} steps generated"
 }

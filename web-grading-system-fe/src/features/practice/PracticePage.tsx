@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router'
 import type { TableColumnsType } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import { ListPage } from '../../shared/ui/ListPage'
+import { RowActions } from '../../shared/ui/RowActions'
 import { useTopicOptions } from '../assignments/useTopicOptions'
 import type { FilterConfig } from '../../shared/ui/FilterBar'
 import { useApiErrorMessage } from '../../shared/api/errors'
@@ -141,41 +142,44 @@ export function PracticePage() {
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 520,
+      // Was width 520 for the inline link row; the title cell already opens the detail
+      // page, so every remaining action fits behind a "..." menu.
+      // Review: 2026-11-21, user request — actions moved behind a "..." menu.
+      width: 110,
+      align: 'center' as const,
       render: (_, record) => (
-        <div style={{ display: 'flex', gap: 8, whiteSpace: 'nowrap' }}>
-          <Button size="small" onClick={() => navigate(`/practice/${record.id}`)}>
-            {t('assignments.details')}
-          </Button>
-          {record.published ? (
-            <>
-              <Button type="link" size="small" onClick={() => navigate(`/practice/${record.id}/results`)}>
-                {t('assignment.results')}
-              </Button>
-              <Button type="link" size="small" onClick={() => navigate(`/practice/${record.id}/submissions`)}>
-                {t('assignment.submissions')}
-              </Button>
-              <Popconfirm
-                title={t('common.confirmDelete')}
-                okText={t('common.delete')}
-                cancelText={t('common.cancel')}
-                okButtonProps={{ danger: true }}
-                onConfirm={() => handleDelete(record.id)}
-              >
-                <Button type="link" size="small" danger loading={pendingId === record.id}>
-                  {t('common.delete')}
-                </Button>
-              </Popconfirm>
-            </>
-          ) : (
-            <Button type="link" size="small" loading={pendingId === record.id} onClick={() => handlePublish(record.id)}>
-              {t('assignment.publish')}
-            </Button>
-          )}
-          <Button type="link" size="small" onClick={() => setEditing(record)}>
-            {t('common.edit')}
-          </Button>
-        </div>
+        <RowActions
+          disabled={pendingId === record.id}
+          actions={[
+            {
+              key: 'results',
+              label: t('assignment.results'),
+              hidden: !record.published,
+              onClick: () => navigate(`/practice/${record.id}/results`),
+            },
+            {
+              key: 'submissions',
+              label: t('assignment.submissionList'),
+              hidden: !record.published,
+              onClick: () => navigate(`/practice/${record.id}/submissions`),
+            },
+            {
+              key: 'publish',
+              label: t('assignment.publish'),
+              hidden: record.published,
+              onClick: () => handlePublish(record.id),
+            },
+            { key: 'edit', label: t('common.edit'), onClick: () => setEditing(record) },
+            {
+              key: 'delete',
+              label: t('common.delete'),
+              danger: true,
+              hidden: !record.published,
+              confirmTitle: t('common.confirmDelete'),
+              onClick: () => handleDelete(record.id),
+            },
+          ]}
+        />
       ),
     },
   ]
@@ -364,7 +368,7 @@ export function PracticePage() {
         columns={columns}
         // UI review: 2026-11-11, user-reported lecturer table layout — reserve the action controls and allow horizontal scrolling on smaller screens.
         tableLayout="fixed"
-        tableScrollX={1500}
+        tableScrollX={940}
         rowKey="id"
         headerTitle={undefined}
         emptyTitle={t('practice.empty')}

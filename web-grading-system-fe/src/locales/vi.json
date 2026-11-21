@@ -27,7 +27,12 @@
     "collapse": "Thu gọn",
     "expand": "Mở rộng",
     "expandAll": "Mở rộng tất cả",
-    "collapseAll": "Thu gọn tất cả"
+    "collapseAll": "Thu gọn tất cả",
+    "copy": "Sao chép JSON",
+    "copied": "Đã sao chép",
+    "import": "Nhập",
+    "yes": "Có",
+    "no": "Không"
   },
   "nav": {
     "classes": "Lớp học",
@@ -96,9 +101,10 @@
     "empty": "Chưa có bài tập nào",
     "results": "Kết quả chấm",
     "submissions": "Nộp bài",
+    "submissionList": "Danh sách bài nộp",
     "noResults": "Chưa có kết quả",
     "noStudentResults": "Không có kết quả cho sinh viên này",
-    "noSubmissions": "Chưa có nộp bài",
+    "noSubmissions": "Chưa có bài nộp nào",
     "student": "Sinh viên",
     "filterStudent": "Lọc theo sinh viên",
     "filterStudentPlaceholder": "Chọn sinh viên",
@@ -246,13 +252,60 @@
     "configPlaceholder": "JSON",
     "timeoutPlaceholder": "Mặc định",
     "typeOptions": {
-      "HTTP_REQUEST": "HTTP Request",
-      "DB_QUERY": "DB Query",
-      "DB_SCHEMA_CHECK": "DB Schema Check",
-      "DB_MIGRATION": "DB Migration",
-      "EXTRACT": "Extract",
-      "DELAY": "Delay"
-    }
+      "HTTP_REQUEST": "Gọi HTTP",
+      "DB_QUERY": "Truy vấn CSDL",
+      "DB_SCHEMA_CHECK": "Kiểm tra cấu trúc CSDL",
+      "DB_MIGRATION": "Chạy script CSDL",
+      "EXTRACT": "Trích biến",
+      "DELAY": "Chờ"
+    },
+    "dbConnectionRequired": "Kết nối DB là bắt buộc",
+    "dbConnectionRequiredDesc": "Cần điền database, username, password. Sandbox sẽ dùng thông tin này để reset DB giữa các câu.",
+    "autoInjectInfo": "auto_inject_headers chỉ áp dụng cho các bước sau",
+    "autoInjectInfoDesc": "Header khai báo ở bước này không tự áp dụng cho chính nó. Bước kiểm tra âm tính (401/403) nên tự đặt headers.",
+    "autoInjectPlacement": "Chỉ áp dụng cho các bước sau",
+    "autoInjectPlacementDesc": "Khai báo tại bước login/bước sinh token. Không áp dụng cho chính bước này. Bước kiểm tra âm tính (401/403) nên tự đặt headers.",
+    "validationIssues": "Có vấn đề với cấu hình",
+    "properties": "Thuộc tính",
+    "checkSentenceTable": "Bảng «{{table}}» phải tồn tại trong CSDL.",
+    "checkSentenceColumn": "Bảng «{{table}}» phải có cột «{{column}}».",
+    "checkSentenceColumnType": "Bảng «{{table}}» phải có cột «{{column}}» với kiểu dữ liệu «{{type}}».",
+    "checkSentenceIndex": "Bảng «{{table}}» phải có index tên «{{index}}».",
+    "checkSentencePrimaryKey": "Bảng «{{table}}» phải có khoá chính trên cột «{{column}}».",
+    "checkLabel": "Kiểm tra {{index}}",
+    "noChecksDeclared": "Chưa khai báo kiểm tra nào — bước này luôn đậu.",
+    "statementLabel": "Câu lệnh {{index}}",
+    "checkField": {
+      "kind": "Loại kiểm tra",
+      "table_name": "Tên bảng",
+      "column_name": "Tên cột",
+      "column": "Cột khoá chính",
+      "data_type": "Kiểu dữ liệu",
+      "index_name": "Tên index"
+    },
+    "assertionKindOptions": {
+      "status": "Mã HTTP trả về",
+      "json_path": "Đường dẫn JSON tồn tại",
+      "contains": "Nội dung chứa chuỗi",
+      "body_structure": "Cấu trúc JSON khớp",
+      "body_equals": "Toàn bộ JSON bằng",
+      "field_equals": "Trường JSON bằng",
+      "array_length": "Độ dài mảng",
+      "contains_item": "Mảng chứa phần tử",
+      "json_path_equals": "Giá trị tại đường dẫn bằng",
+      "greater_than": "Giá trị lớn hơn",
+      "less_than": "Giá trị nhỏ hơn",
+      "matches_regex": "Khớp biểu thức chính quy",
+      "any_of": "Một trong các điều kiện"
+    },
+    "extractSentence": "Lưu giá trị tại {{source}} (biểu thức «{{expression}}») vào biến «{{name}}».",
+    "extractSource": {
+      "response_body": "body của response",
+      "response_status": "mã trạng thái response",
+      "response_headers": "headers của response"
+    },
+    "delaySentence": "Chờ {{ms}} ms trước khi chạy bước kế tiếp.",
+    "assertionAnyOfHint": "Chỉ cần MỘT trong các điều kiện sau đúng:"
   },
   "students": {
     "title": "Sinh viên",
@@ -533,7 +586,8 @@
     "generatedAt": "Tạo lúc {{time}}",
     "fromCache": "Đã lưu",
     "searchGoogle": "Tìm kiếm \"{{keyword}}\" trên Google",
-    "generatingReassuring": "Sắp xong rồi, đang hoàn thiện giải thích cho bạn..."
+    "generatingReassuring": "Sắp xong rồi, đang hoàn thiện giải thích cho bạn...",
+    "assistant": "Trợ lý AI"
   },
   "aiChat": {
     "title": "Trợ lý AI WGS",
@@ -563,5 +617,10 @@
     "create": "Tạo bài tập luyện tập",
     "empty": "Chưa có bài tập luyện tập nào",
     "emptyHint": "Tạo bài tập luyện tập đầu tiên cho sinh viên"
-  }
+  },
+  "schemaTitle": "JSON Schema chuẩn",
+  "importTitle": "Nhập Postman / OpenAPI",
+  "importPlaceholder": "Dán JSON collection hoặc spec vào đây",
+  "importInvalidFile": "Hãy dán nội dung JSON",
+  "importPreview": "Tạo được {{count}} bước"
 }
