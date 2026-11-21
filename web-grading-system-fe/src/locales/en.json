@@ -551,7 +551,12 @@
     "cancelled": "Cancelled",
     "executing": "Executing",
     "failed": "Failed",
-    "completed": "Completed"
+    "completed": "Completed",
+    "conversationNew": "New conversation",
+    "conversationSelectPlaceholder": "Select a conversation...",
+    "conversationRename": "Rename conversation",
+    "conversationRenameFailed": "Could not rename the conversation",
+    "conversationNewButton": "New"
   },
   "practice": {
     "title": "Practice exercises",
