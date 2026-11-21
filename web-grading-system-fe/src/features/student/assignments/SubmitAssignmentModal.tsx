@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { requestUploadUrl, uploadZipToStorage } from '../../../shared/api/endpoints/submissions'
 import type { PlanResponse } from '../../../shared/types/assignment'
 import { colors } from '../../../shared/theme/tokens'
+import { filterOptionByLabel } from '../../../shared/ui/selectSearch'
 
 interface SubmitAssignmentModalProps {
   assignmentId: string
@@ -133,10 +134,17 @@ export function SubmitAssignmentModal({
               label={t('submitModal.selectPlan')}
               initialValue=""
             >
-              <Select placeholder={t('submitModal.selectPlanPlaceholder')} allowClear>
+              {/* An exercise can hold many questions; type-to-filter beats scrolling. */}
+              <Select
+                placeholder={t('submitModal.selectPlanPlaceholder')}
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                filterOption={filterOptionByLabel}
+              >
                 <Select.Option value="">{t('submitModal.allPlans')}</Select.Option>
                 {plans.map((p) => (
-                  <Select.Option key={p.id} value={p.id}>
+                  <Select.Option key={p.id} value={p.id} label={`${p.name} — ${t('assignments.planWeight', { weight: p.weight })}`}>
                     {p.name} — {t('assignments.planWeight', { weight: p.weight })}
                   </Select.Option>
                 ))}

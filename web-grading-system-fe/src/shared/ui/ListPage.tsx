@@ -53,7 +53,7 @@ export function ListPage<T, F extends ListFilters>({
 }: ListPageProps<T, F>) {
   const { t } = useTranslation()
   const hasSubmitMode = filters.some((f) => f.submitOnEnter || f.type === 'builder')
-  const { rows, meta, loading, error, reload, page, setPage, filters: activeFilters, setFilter, submitFilters, resetFilters } =
+  const { rows, meta, loading, error, reload, page, setPage, filters: activeFilters, setFilter, submitFilterValue, submitFilters, resetFilters } =
     useList<T, F>({
       fetcher,
       filters: initialFilters,
@@ -136,6 +136,7 @@ export function ListPage<T, F extends ListFilters>({
       <FilterBar
         filters={activeFilters}
         onFilterChange={setFilter}
+        onSelectSubmit={hasSubmitMode ? submitFilterValue : undefined}
         config={filters}
         onSubmit={hasSubmitMode ? submitFilters : undefined}
         onClear={hasSubmitMode ? resetFilters : undefined}

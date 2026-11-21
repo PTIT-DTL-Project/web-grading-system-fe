@@ -104,15 +104,17 @@ export function setStudentScores(
   )
 }
 
+/** `search` narrows the roster by student code or name (server-side contains match). */
 export function getTranscript(
   classId: string,
   page: number,
   size: number,
+  search?: string,
   options?: { signal?: AbortSignal },
 ): Promise<Page<TranscriptEntryResponse>> {
   return getData<Page<TranscriptEntryResponse>>(
     `/api/v1/classes/${classId}/transcript`,
-    { page, size },
+    { page, size, ...(search ? { search } : {}) },
     options,
   )
 }

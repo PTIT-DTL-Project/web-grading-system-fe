@@ -15,7 +15,17 @@ export interface TranscriptState {
   reload: () => void
 }
 
-export function useTranscript(classId: string, page: number, pageSize: number): TranscriptState {
+/**
+ * `search` is a server-side roster filter (student code or name). It is part of the
+ * effect deps, so the page re-queries on a debounced term change; callers reset the
+ * page index at the same time so a filter never lands on a stale page.
+ */
+export function useTranscript(
+  classId: string,
+  page: number,
+  pageSize: number,
+  search?: string,
+): TranscriptState {
   const [rows, setRows] = useState<TranscriptEntryResponse[]>([])
   const [meta, setMeta] = useState<PageMeta>(EMPTY_META)
   const [loading, setLoading] = useState(true)
@@ -28,7 +38,7 @@ export function useTranscript(classId: string, page: number, pageSize: number): 
     const controller = new AbortController()
     setLoading(true)
 
-    getTranscript(classId, page, pageSize, { signal: controller.signal })
+    getTranscript(classId, page, pageSize, search, { signal: controller.signal })
       .then((data) => {
         if (controller.signal.aborted) return
         // API returns { meta: { page, pageSize, pages, total }, result: [...] }
@@ -47,7 +57,7 @@ export function useTranscript(classId: string, page: number, pageSize: number): 
       })
 
     return () => controller.abort()
-  }, [classId, page, pageSize, internalVersion])
+  }, [classId, page, pageSize, search, internalVersion])
 
   return { rows, meta, loading, error, reload }
 }

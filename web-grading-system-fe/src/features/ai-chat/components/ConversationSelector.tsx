@@ -3,6 +3,7 @@ import { Select, Button, Modal, Input, message } from 'antd'
 import { PlusOutlined, MessageOutlined, EditOutlined } from '@ant-design/icons'
 import type { ConversationResponse } from '../../../shared/types/aiAgent'
 import { colors } from '../../../shared/theme/tokens'
+import { filterOptionByLabel } from '../../../shared/ui/selectSearch'
 
 interface Props {
   conversations: ConversationResponse[]
@@ -39,16 +40,12 @@ export const ConversationSelector: React.FC<Props> = ({
       setSaving(false)
     }
   }
+  // Plain-string labels (not JSX) so typing can filter them; the icon is restored in
+  // optionRender below. Conversation titles grow without bound, so the list needs
+  // type-to-filter instead of a raw dropdown. Review: 2026-11-12.
   const options = conversations.map((c) => ({
     value: c.id,
-    label: (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <MessageOutlined style={{ fontSize: 12, color: colors.primary }} />
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {c.title || 'Hội thoại mới'}
-        </span>
-      </div>
-    ),
+    label: c.title || 'Hội thoại mới',
   }))
 
   return (
@@ -60,6 +57,17 @@ export const ConversationSelector: React.FC<Props> = ({
         placeholder="Chọn cuộc trò chuyện..."
         disabled={disabled}
         style={{ flex: 1, minWidth: 0 }}
+        showSearch
+        optionFilterProp="label"
+        filterOption={filterOptionByLabel}
+        optionRender={(option) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <MessageOutlined style={{ fontSize: 12, color: colors.primary }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {String(option.label ?? '')}
+            </span>
+          </div>
+        )}
       />
       <Button
         icon={<EditOutlined />}

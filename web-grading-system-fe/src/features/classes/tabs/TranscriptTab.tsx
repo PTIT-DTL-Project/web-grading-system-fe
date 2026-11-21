@@ -1,7 +1,8 @@
 "use client"
 
-import { Alert, Button, Space, Table, Tag, Tooltip, Typography } from 'antd'
+import { Alert, Button, Input, Space, Table, Tag, Tooltip, Typography } from 'antd'
 import { useEffect, useState } from 'react'
+import { SearchOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useTranscript } from '../useTranscript'
 import { StudentScoreDrawer } from './StudentScoreDrawer'
@@ -28,8 +29,22 @@ const GRADE_COLORS: Record<string, string> = {
 export function TranscriptTab({ classId, refreshToken, onSaved }: TranscriptTabProps) {
   const { t } = useTranslation()
   const [page, setPage] = useState(0)
+  const [search, setSearch] = useState('')
+  // Debounced term actually sent to the server: typing a student code should not fire
+  // one request per keystroke, and the roster filter is a server-side contains match.
+  const [appliedSearch, setAppliedSearch] = useState('')
   const PAGE_SIZE = 20
-  const { rows, meta, loading, error, reload } = useTranscript(classId, page, PAGE_SIZE)
+  const { rows, meta, loading, error, reload } = useTranscript(classId, page, PAGE_SIZE, appliedSearch)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAppliedSearch(search.trim())
+      // A new filter must start at page 1, otherwise the first page of the filtered
+      // roster is skipped (or the page index lands past the end and shows "empty").
+      setPage(0)
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [search])
   const [drawerStudent, setDrawerStudent] = useState<{ code: string; name: string } | null>(null)
 
   useEffect(() => {
@@ -69,7 +84,18 @@ export function TranscriptTab({ classId, refreshToken, onSaved }: TranscriptTabP
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
-      <Typography.Title level={4} style={{ margin: 0 }}>{t('transcript.title')}</Typography.Title>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <Typography.Title level={4} style={{ margin: 0 }}>{t('transcript.title')}</Typography.Title>
+        <Input
+          allowClear
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          prefix={<SearchOutlined />}
+          placeholder={t('transcript.searchPlaceholder')}
+          aria-label={t('transcript.searchPlaceholder')}
+          style={{ width: 280 }}
+        />
+      </div>
 
       {hasError && (
         <Alert type="error" showIcon message={t('transcript.loadFailed')} description={error instanceof Error ? error.message : String(error)} action={<Button onClick={reload}>{t('common.retry')}</Button>} style={{ marginBottom: 16 }} />
@@ -79,8 +105,8 @@ export function TranscriptTab({ classId, refreshToken, onSaved }: TranscriptTabP
         <Alert
           type="info"
           showIcon
-          message={t('transcript.empty')}
-          description={t('transcript.emptyHint')}
+          message={appliedSearch ? t('transcript.noMatch') : t('transcript.empty')}
+          description={appliedSearch ? t('transcript.noMatchHint', { search: appliedSearch }) : t('transcript.emptyHint')}
           style={{ marginBottom: 16 }}
         />
       )}

@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Table, Button, Space, Popconfirm, message, Tag, Input, Tooltip, Typography } from 'antd'
+import { Table, Button, Space, Popconfirm, message, Tag, Select, Tooltip, Typography } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useAssignments } from '../../assignments/useAssignments'
 import { CreateAssignmentModal } from '../../assignments/CreateAssignmentModal'
 import { EditAssignmentModal } from '../../assignments/EditAssignmentModal'
 import { TestPlanEditor } from '../../assignments/TestPlanEditor'
+import { useTopicOptions } from '../../assignments/useTopicOptions'
+import { filterOptionByLabel } from '../../../shared/ui/selectSearch'
 import { useApiErrorMessage } from '../../../shared/api/errors'
 import { standardPagination } from '../../../shared/ui/StandardPagination'
 import { colors } from '../../../shared/theme/tokens'
@@ -28,6 +30,11 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
   const toMessage = useApiErrorMessage()
   const [page, setPage] = useState(0)
   const [topic, setTopic] = useState<string>('')
+  // Topic is an exact-match server filter, so it must be chosen from the topics that
+  // actually exist — a free-text box answered 0 rows for "quản lý" against
+  // "quản lý sinh viên". The picker is type-to-filter (FilterBar matcher).
+  // Review: 2026-11-12, lecturer report on this tab.
+  const { options: topicOptions } = useTopicOptions({ role: 'LECTURER', purpose: 'GRADED', classId })
   // Review: 2026-10-05, Pullfrog — refresh classroom-wide mutations into this tab instead of leaving it stale.
   const { data, loading, error, refetch, create, update, remove, publish } = useAssignments({
     classId,
@@ -217,12 +224,22 @@ export function AssignmentTab({ classId, ownerId, archived = false, refreshToken
         <Button onClick={refetch} disabled={loading || archived} icon={<ReloadOutlined />} title={t('common.refresh')} aria-label={t('common.refresh')}>
           {t('common.refresh')}
         </Button>
-        <Input
+        <Select
           placeholder={t('assignment.topicPlaceholder')}
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          onPressEnter={() => refetch()}
-          style={{ width: 240 }}
+          value={topic || undefined}
+          onChange={(value) => {
+            setTopic(value ?? '')
+            // Filtering resets to the first page, otherwise a stale page index shows
+            // an empty table for a topic that does have rows.
+            setPage(0)
+          }}
+          options={topicOptions}
+          showSearch
+          optionFilterProp="label"
+          filterOption={filterOptionByLabel}
+          allowClear
+          style={{ width: 260 }}
+          aria-label={t('assignment.topic')}
         />
       </div>
 
