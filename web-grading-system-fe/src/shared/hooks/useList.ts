@@ -25,6 +25,13 @@ export interface UseListResult<T, F extends ListFilters> {
   filters: F
   submittedFilters: F
   setFilter: <K extends keyof F>(key: K, value: F[K]) => void
+  /**
+   * Applies one filter value and refetches immediately, even on pages in submit mode
+   * (submitOnEnter). Used by discrete controls such as selects: picking an option is a
+   * decision, not typing, so it must not wait for the Filter button. Doing it through
+   * setFilter + submitFilters would submit the previous value — state is not updated yet.
+   */
+  submitFilterValue: <K extends keyof F>(key: K, value: F[K]) => void
   submitFilters: () => void
   resetFilters: () => void
 }
@@ -116,6 +123,13 @@ export function useList<T, F extends ListFilters>({
     }
   }, [submitOnEnter])
 
+  const submitFilterValue = useCallback(<K extends keyof F>(key: K, value: F[K]) => {
+    setLocalFilters((prev) => ({ ...prev, [key]: value }))
+    setSubmittedFilters((prev) => ({ ...prev, [key]: value }))
+    setSubmitVersion((v) => v + 1)
+    setPage(0)
+  }, [])
+
   const resetFilters = useCallback(() => {
     const next = { ...filters }
     setLocalFilters(next)
@@ -192,6 +206,7 @@ export function useList<T, F extends ListFilters>({
     filters: localFilters,
     submittedFilters,
     setFilter,
+    submitFilterValue,
     submitFilters,
     resetFilters,
   }

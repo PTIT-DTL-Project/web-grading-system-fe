@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Select, Button, Modal, Input, message } from 'antd'
 import { PlusOutlined, MessageOutlined, EditOutlined } from '@ant-design/icons'
 import type { ConversationResponse } from '../../../shared/types/aiAgent'
 import { colors } from '../../../shared/theme/tokens'
+import { filterOptionByLabel } from '../../../shared/ui/selectSearch'
 
 interface Props {
   conversations: ConversationResponse[]
@@ -21,6 +23,7 @@ export const ConversationSelector: React.FC<Props> = ({
   onRename,
   disabled,
 }) => {
+  const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState('')
   const [saving, setSaving] = useState(false)
@@ -34,21 +37,18 @@ export const ConversationSelector: React.FC<Props> = ({
       await onRename(activeId, trimmed)
       setEditing(false)
     } catch {
-      message.error('Không thể đổi tên cuộc trò chuyện')
+      message.error(t('aiChat.conversationRenameFailed'))
     } finally {
       setSaving(false)
     }
   }
+  // Plain-string labels (not JSX) so typing can filter them; the icon is restored in
+  // optionRender below. Conversation titles grow without bound, so the list needs
+  // type-to-filter instead of a raw dropdown. Review: 2026-11-12.
   const options = conversations.map((c) => ({
     value: c.id,
-    label: (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <MessageOutlined style={{ fontSize: 12, color: colors.primary }} />
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {c.title || 'Hội thoại mới'}
-        </span>
-      </div>
-    ),
+    // String label (see above) built through i18n so the fallback title is translated too.
+    label: c.title || t('aiChat.conversationNew'),
   }))
 
   return (
@@ -57,9 +57,20 @@ export const ConversationSelector: React.FC<Props> = ({
         value={activeId || undefined}
         onChange={onSelect}
         options={options}
-        placeholder="Chọn cuộc trò chuyện..."
+        placeholder={t('aiChat.conversationSelectPlaceholder')}
         disabled={disabled}
         style={{ flex: 1, minWidth: 0 }}
+        showSearch
+        optionFilterProp="label"
+        filterOption={filterOptionByLabel}
+        optionRender={(option) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <MessageOutlined style={{ fontSize: 12, color: colors.primary }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {String(option.label ?? '')}
+            </span>
+          </div>
+        )}
       />
       <Button
         icon={<EditOutlined />}
@@ -68,25 +79,25 @@ export const ConversationSelector: React.FC<Props> = ({
           setEditing(true)
         }}
         disabled={disabled || !activeConversation}
-        title="Đổi tên cuộc trò chuyện"
-        aria-label="Đổi tên cuộc trò chuyện"
+        title={t('aiChat.conversationRename')}
+        aria-label={t('aiChat.conversationRename')}
       />
       <Button
         type="dashed"
         icon={<PlusOutlined />}
         onClick={onNew}
         disabled={disabled}
-        title="Tạo hội thoại mới"
+        title={t('aiChat.conversationNew')}
       >
-        Mới
+        {t('aiChat.conversationNewButton')}
       </Button>
       <Modal
-        title="Đổi tên cuộc trò chuyện"
+        title={t('aiChat.conversationRename')}
         open={editing}
         onOk={saveTitle}
         onCancel={() => setEditing(false)}
-        okText="Lưu"
-        cancelText="Hủy"
+        okText={t('common.save')}
+        cancelText={t('common.cancel')}
         okButtonProps={{ disabled: !title.trim() || title.trim().length > 255, loading: saving }}
       >
         <Input

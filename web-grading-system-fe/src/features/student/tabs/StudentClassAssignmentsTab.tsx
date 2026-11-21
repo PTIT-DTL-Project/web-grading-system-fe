@@ -8,6 +8,7 @@ import { listStudentAssignments } from '../../../shared/api/endpoints/studentAss
 import type { AssignmentResponse } from '../../../shared/types/assignment'
 import { colors } from '../../../shared/theme/tokens'
 import { ListPage } from '../../../shared/ui/ListPage'
+import { useTopicOptions } from '../../assignments/useTopicOptions'
 import type { FilterConfig } from '../../../shared/ui/FilterBar'
 
 interface StudentClassAssignmentsTabProps {
@@ -25,9 +26,20 @@ export function StudentClassAssignmentsTab({ classId, archived = false }: Studen
     [classId],
   )
 
+  const { options: topicOptions } = useTopicOptions({ role: 'STUDENT', purpose: 'GRADED', classId })
+
   const filters: FilterConfig<{ search?: string; topic?: string }>[] = [
     { key: 'search', type: 'text', label: t('assignments.search'), placeholder: t('assignments.search'), submitOnEnter: true },
-    { key: 'topic', type: 'text', label: t('assignment.topic'), placeholder: t('assignment.topicPlaceholder'), submitOnEnter: true },
+    // Topic is an exact-match server filter, so it must be a pick-list of topics that
+    // exist; free text never matched a longer topic ("quản lý" vs "quản lý sinh viên").
+    // Review: 2026-11-12, lecturer report on the class Assignments tab.
+    {
+      key: 'topic',
+      type: 'select',
+      label: t('assignment.topic'),
+      placeholder: t('assignment.topicPlaceholder'),
+      options: topicOptions,
+    },
   ]
 
   const columns: TableColumnsType<AssignmentResponse> = [

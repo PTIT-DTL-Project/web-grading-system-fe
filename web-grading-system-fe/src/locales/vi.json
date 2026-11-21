@@ -318,7 +318,10 @@
     "exerciseHighestHint": "Điểm bài tập lấy lần cao nhất của mỗi câu.",
     "action": "Thao tác",
     "enterScores": "Nhập điểm",
-    "totalStudents": "Tổng số sinh viên: {{total}}"
+    "totalStudents": "Tổng số sinh viên: {{total}}",
+    "searchPlaceholder": "Tìm theo mã SV hoặc tên",
+    "noMatch": "Không có sinh viên phù hợp",
+    "noMatchHint": "Không tìm thấy sinh viên nào khớp \"{{search}}\". Thử mã sinh viên hoặc tên khác."
   },
   "scores": {
     "title": "Nhập điểm",
@@ -548,7 +551,12 @@
     "cancelled": "Đã dừng",
     "executing": "Đang thực thi",
     "failed": "Thất bại",
-    "completed": "Đã thực thi"
+    "completed": "Đã thực thi",
+    "conversationNew": "Hội thoại mới",
+    "conversationSelectPlaceholder": "Chọn cuộc trò chuyện...",
+    "conversationRename": "Đổi tên cuộc trò chuyện",
+    "conversationRenameFailed": "Không thể đổi tên cuộc trò chuyện",
+    "conversationNewButton": "Mới"
   },
   "practice": {
     "title": "Bài tập luyện tập",

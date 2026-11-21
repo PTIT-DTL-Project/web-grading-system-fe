@@ -1,6 +1,7 @@
 import { Button, Input, Select, Space, Tag } from 'antd'
 import { useTranslation } from 'react-i18next'
 import type { ListFilters } from '../hooks/useList'
+import { filterOptionByLabel } from './selectSearch'
 
 export interface FilterConfig<F extends ListFilters> {
   key: keyof F
@@ -21,6 +22,12 @@ interface FilterBarProps<F extends ListFilters> {
   filters: F
   onFilterChange: <K extends keyof F>(key: K, value: F[K]) => void
   config: FilterConfig<F>[]
+  /**
+   * Pages in submit mode (typed search needs Enter/Filter) still apply a `select`
+   * choice immediately: picking an option is discrete, and waiting for the Filter
+   * button looks like the filter is broken. Falls back to `onFilterChange` when absent.
+   */
+  onSelectSubmit?: <K extends keyof F>(key: K, value: F[K]) => void
   onSubmit?: () => void
   onClear?: () => void
   showActions?: boolean
@@ -31,7 +38,16 @@ interface FilterRule {
   value: string
 }
 
-export function FilterBar<F extends ListFilters>({ filters, onFilterChange, config, onSubmit, onClear, showActions }: FilterBarProps<F>) {
+
+export function FilterBar<F extends ListFilters>({
+  filters,
+  onFilterChange,
+  config,
+  onSelectSubmit,
+  onSubmit,
+  onClear,
+  showActions,
+}: FilterBarProps<F>) {
   const { t } = useTranslation()
   const hasSubmitMode = config.some((c) => c.submitOnEnter || c.type === 'builder')
 
@@ -151,9 +167,21 @@ export function FilterBar<F extends ListFilters>({ filters, onFilterChange, conf
               key={String(key)}
               placeholder={placeholder || label}
               value={value || undefined}
-              onChange={(val) => onFilterChange(key, val as F[typeof key])}
+              onChange={(val) => {
+                if (onSelectSubmit) {
+                  onSelectSubmit(key, val as F[typeof key])
+                } else {
+                  onFilterChange(key, val as F[typeof key])
+                }
+              }}
               options={options}
-              style={{ width: 180 }}
+              // Long option lists (a full class roster) are unusable as a plain dropdown:
+              // type-to-search on code or name, accent-insensitive, and wide enough to read
+              // the selected "code — name" label. Review: 2026-11-12, lecturer request.
+              showSearch
+              optionFilterProp="label"
+              filterOption={filterOptionByLabel}
+              style={{ width: 260 }}
               allowClear
             />
           )

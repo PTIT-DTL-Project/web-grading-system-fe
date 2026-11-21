@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router'
 import type { TableColumnsType } from 'antd'
 import { useCallback, useEffect, useState } from 'react'
 import { ListPage } from '../../shared/ui/ListPage'
+import { useTopicOptions } from '../assignments/useTopicOptions'
 import type { FilterConfig } from '../../shared/ui/FilterBar'
 import { useApiErrorMessage } from '../../shared/api/errors'
 import {
@@ -83,9 +84,20 @@ export function PracticePage() {
     [],
   )
 
+  const { options: topicOptions } = useTopicOptions({ role: 'LECTURER', purpose: 'PRACTICE' })
+
   const filters: FilterConfig<{ search?: string; topic?: string }>[] = [
     { key: 'search', type: 'text', label: t('assignments.search'), placeholder: t('assignments.search'), submitOnEnter: true },
-    { key: 'topic', type: 'text', label: t('assignment.topic'), placeholder: t('assignment.topicPlaceholder'), submitOnEnter: true },
+    // Topic is an exact-match server filter, so it must be a pick-list of topics that
+    // exist; free text never matched a longer topic ("quản lý" vs "quản lý sinh viên").
+    // Review: 2026-11-12, lecturer report on the class Assignments tab.
+    {
+      key: 'topic',
+      type: 'select',
+      label: t('assignment.topic'),
+      placeholder: t('assignment.topicPlaceholder'),
+      options: topicOptions,
+    },
   ]
 
   const columns: TableColumnsType<AssignmentResponse> = [

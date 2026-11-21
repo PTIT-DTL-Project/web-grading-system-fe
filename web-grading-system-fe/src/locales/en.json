@@ -318,7 +318,10 @@
     "exerciseHighestHint": "Exercise score takes the best attempt of each question.",
     "action": "Action",
     "enterScores": "Enter scores",
-    "totalStudents": "Total students: {{total}}"
+    "totalStudents": "Total students: {{total}}",
+    "searchPlaceholder": "Search by student code or name",
+    "noMatch": "No matching students",
+    "noMatchHint": "No student matches \"{{search}}\". Try another code or name."
   },
   "scores": {
     "title": "Enter scores",
@@ -548,7 +551,12 @@
     "cancelled": "Cancelled",
     "executing": "Executing",
     "failed": "Failed",
-    "completed": "Completed"
+    "completed": "Completed",
+    "conversationNew": "New conversation",
+    "conversationSelectPlaceholder": "Select a conversation...",
+    "conversationRename": "Rename conversation",
+    "conversationRenameFailed": "Could not rename the conversation",
+    "conversationNewButton": "New"
   },
   "practice": {
     "title": "Practice exercises",
