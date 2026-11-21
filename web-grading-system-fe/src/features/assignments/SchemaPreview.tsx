@@ -19,7 +19,7 @@ export function SchemaPreview({ schema, open = false, onClose }: SchemaPreviewPr
   return (
     <Modal
       open={open}
-      title={t('schemaTitle') || 'JSON Schema standard'}
+      title={t('schemaTitle')}
       onCancel={onClose}
       width={900}
       footer={null}
@@ -39,7 +39,7 @@ export function SchemaPreview({ schema, open = false, onClose }: SchemaPreviewPr
       </Card>
 
       <Space style={{ marginBottom: 16 }}>
-        <Typography.Text strong>{t('step.properties', 'Properties')}</Typography.Text>
+        <Typography.Text strong>{t('step.properties')}</Typography.Text>
         {Object.entries(schema.properties || {}).map(([key, value]) => (
           <div key={key} style={{ marginBottom: 12 }}>
             <Typography.Text strong style={{ fontSize: 12 }}>{key}</Typography.Text>
@@ -54,11 +54,11 @@ export function SchemaPreview({ schema, open = false, onClose }: SchemaPreviewPr
         <Button
           onClick={() => {
             navigator.clipboard.writeText(schemaJson)
-            message.success(t('common.copied', 'Copied to clipboard'))
+            message.success(t('common.copied'))
           }}
           icon={<CopyOutlined />}
         >
-          {t('common.copy', 'Copy JSON')}
+          {t('common.copy')}
         </Button>
       </Space>
     </Modal>

@@ -842,6 +842,10 @@ export function StepEditor({
   return (
     // Review: 2026-10-05, Pullfrog — edit mode opens in Advanced JSON prefilled
     // from the stored step (`config` -> `configRaw`), instead of an empty form.
+    // min-width: 0 + local overflow keep a wide guided row (assertions, connection
+    // fields) from widening the page: the old layout made the whole shell scroll right,
+    // so every label looked clipped once a control was focused. Review: 2026-11-21.
+    <div style={{ minWidth: 0, maxWidth: '100%', overflowX: 'auto' }}>
     <Form
       form={form}
       layout="vertical"
@@ -851,7 +855,7 @@ export function StepEditor({
         <Alert
           type="warning"
           showIcon
-          message={t('step.validationIssues') || 'Có vấn đề với cấu hình'}
+          message={t('step.validationIssues')}
           description={
             <ul style={{ margin: 0, paddingLeft: 16 }}>
               {validation.errors.slice(0, 5).map((e, idx) => (
@@ -866,8 +870,8 @@ export function StepEditor({
         <Alert
           type="info"
           showIcon
-          message={t('step.dbConnectionRequired') || 'Kết nối DB là bắt buộc'}
-          description={t('step.dbConnectionRequiredDesc') || 'Cần điền database, username, password. Sandbox sẽ dùng credentials này để reset DB giữa các plan.'}
+          message={t('step.dbConnectionRequired')}
+          description={t('step.dbConnectionRequiredDesc')}
           style={{ marginBottom: 12 }}
         />
       )}
@@ -875,8 +879,8 @@ export function StepEditor({
         <Alert
           type="info"
           showIcon
-          message={t('step.autoInjectInfo') || 'auto_inject_headers chỉ áp dụng cho các bước sau'}
-          description={t('step.autoInjectInfoDesc') || 'Header khai báo ở bước này không tự áp dụng cho chính nó. Bước kiểm tra âm tính (401/403) nên tự đặt headers.'}
+          message={t('step.autoInjectInfo')}
+          description={t('step.autoInjectInfoDesc')}
           style={{ marginBottom: 12 }}
         />
       )}
@@ -911,7 +915,7 @@ export function StepEditor({
 
       {guided && stepType === 'HTTP_REQUEST' && (
         <>
-          <Space style={{ width: '100%' }} align="start">
+          <Space style={{ width: '100%' }} align="start" wrap>
             <Form.Item name="httpMethod" label={t('step.httpMethod')} rules={[{ required: true }]} style={{ width: 130 }}>
               <Select options={HTTP_METHODS.map((method) => ({ value: method, label: method }))} />
             </Form.Item>
@@ -1036,7 +1040,7 @@ export function StepEditor({
                               key={key}
                               style={{ border: '1px dashed #d9d9d9', borderRadius: 8, padding: 12, marginBottom: 8 }}
                             >
-                              <Space align="baseline">
+                              <Space align="baseline" wrap>
                                 <Form.Item
                                   {...restField}
                                   name={[name, 'kind']}
@@ -1152,7 +1156,7 @@ export function StepEditor({
               <>
                 {fields.map(({ key, name, ...restField }) => (
                   <div key={key} style={{ border: '1px dashed #d9d9d9', borderRadius: 8, padding: 12, marginBottom: 8 }}>
-                    <Space align="baseline">
+                    <Space align="baseline" wrap>
                       <Form.Item
                         {...restField}
                         name={[name, 'kind']}
@@ -1240,7 +1244,22 @@ export function StepEditor({
       {guided && previewText() !== '' && (
         <>
           <Typography.Text strong>{t('step.preview')}</Typography.Text>
-          <pre style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, overflow: 'auto' }}>
+          {/* JSON must wrap: a single long line used to widen the whole content column,
+              which made the page scroll horizontally and every field look shifted. */}
+          <pre
+            style={{
+              background: '#fafafa',
+              border: '1px solid #f0f0f0',
+              borderRadius: 8,
+              padding: 12,
+              margin: '4px 0 12px',
+              maxWidth: '100%',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              overflowX: 'auto',
+              fontSize: 12,
+            }}
+          >
             {previewText()}
           </pre>
         </>
@@ -1248,7 +1267,7 @@ export function StepEditor({
 
       {schema && (
         <>
-          <Typography.Text strong style={{ marginTop: 16 }}>{t('schemaTitle') || 'JSON Schema'}</Typography.Text>
+          <Typography.Text strong style={{ marginTop: 16 }}>{t('schemaTitle')}</Typography.Text>
           <SchemaPreview schema={schema} open={true} onClose={() => setSchema(null)} />
         </>
       )}
@@ -1269,5 +1288,6 @@ export function StepEditor({
         <Button onClick={onCancel}>{t('common.cancel')}</Button>
       </Space>
     </Form>
+    </div>
   )
 }

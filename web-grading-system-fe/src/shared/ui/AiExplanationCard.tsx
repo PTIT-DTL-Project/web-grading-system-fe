@@ -52,7 +52,9 @@ function StepAnalysisRow({ step }: { step: StepAnalysis }) {
           <CloseCircleOutlined style={{ color: colors.error, fontSize: 16 }} />
         )}
         <Typography.Text strong>{step.stepName ?? '—'}</Typography.Text>
-        {step.stepType ? <Tag>{step.stepType}</Tag> : null}
+        {step.stepType ? (
+          <Tag>{t(`step.typeOptions.${step.stepType}`, { defaultValue: step.stepType })}</Tag>
+        ) : null}
       </Space>
       {step.diagnosis ? (
         <Typography.Paragraph style={{ margin: 0, whiteSpace: 'pre-wrap' }}>

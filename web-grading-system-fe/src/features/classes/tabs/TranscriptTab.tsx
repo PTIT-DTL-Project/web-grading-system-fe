@@ -73,7 +73,9 @@ export function TranscriptTab({ classId, refreshToken, onSaved }: TranscriptTabP
     { title: t('transcript.total'), dataIndex: 'total', key: 'total', width: 110, render: (v: number | null) => v !== null ? v : t('common.empty') },
     { title: t('transcript.letterGrade'), dataIndex: 'letterGrade', key: 'letterGrade', width: 130, render: (v: string | null) => v ? <Tag color={GRADE_COLORS[v] || 'default'}>{v}</Tag> : t('common.empty') },
     { title: t('transcript.gpa'), dataIndex: 'gpa', key: 'gpa', width: 90, render: (v: number | null) => v !== null ? v : t('common.empty') },
-    { title: t('common.actions'), key: 'actions', width: 180, fixed: 'right' as const, render: (_: unknown, record: TranscriptEntryResponse) => (
+    // Review: 2026-11-21 — action cells are centered across every table so the column
+    // header and its content line up.
+    { title: t('common.actions'), key: 'actions', width: 180, fixed: 'right' as const, align: 'center' as const, render: (_: unknown, record: TranscriptEntryResponse) => (
       <Button type="primary" size="small" onClick={() => setDrawerStudent({ code: record.studentCode, name: record.studentName })}>
         {t('transcript.enterScores')}
       </Button>

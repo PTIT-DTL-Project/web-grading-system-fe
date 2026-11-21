@@ -176,7 +176,7 @@ export function AppLayout() {
             onClick={() => setAiChatOpen(true)}
             style={{ borderRadius: 6 }}
           >
-            {screens.md ? t('ai.assistant', 'Trợ lý AI') : null}
+            {screens.md ? t('ai.assistant') : null}
           </Button>
 
           <Segmented

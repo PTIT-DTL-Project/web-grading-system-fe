@@ -1,9 +1,10 @@
 import { Tag, Button, Tooltip, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { EyeOutlined, UploadOutlined } from '@ant-design/icons'
+import { UploadOutlined } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import { ListPage } from '../../../shared/ui/ListPage'
+import { RowActions } from '../../../shared/ui/RowActions'
 import { useTopicOptions } from '../../assignments/useTopicOptions'
 import type { FilterConfig } from '../../../shared/ui/FilterBar'
 import { listStudentAssignments } from '../../../shared/api/endpoints/studentAssignments'
@@ -81,26 +82,27 @@ export function StudentAssignmentsPage() {
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 240,
+      // Review: 2026-11-21, user request — only the primary CTA is left in this column.
+      width: 200,
+      align: 'center' as const,
       render: (_, record) => (
-        <div style={{ display: 'flex', gap: 8, whiteSpace: 'nowrap' }}>
-          <Button
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => navigate(`/student/assignments/${record.id}`)}
-          >
-            {t('assignments.details')}
-          </Button>
-          <Button
-            size="small"
-            type="primary"
-            icon={<UploadOutlined />}
-            style={{ background: colors.primary, borderColor: colors.primary }}
-            onClick={() => navigate(`/student/assignments/${record.id}?submit=1`)}
-          >
-            {t('assignments.submit')}
-          </Button>
-        </div>
+        <RowActions
+          primary={
+            <Button
+              size="small"
+              type="primary"
+              icon={<UploadOutlined />}
+              style={{ background: colors.primary, borderColor: colors.primary }}
+              onClick={() => navigate(`/student/assignments/${record.id}?submit=1`)}
+            >
+              {t('assignments.submit')}
+            </Button>
+          }
+          // The title cell already opens the detail page, so a "Chi tiết" entry here
+          // only duplicated it; with no secondary action left the row shows the
+          // primary button alone. Review: 2026-11-21, user request.
+          actions={[]}
+        />
       ),
     },
   ]
@@ -112,7 +114,7 @@ export function StudentAssignmentsPage() {
       initialFilters={{}}
       columns={columns}
       tableLayout="fixed"
-      tableScrollX={1180}
+      tableScrollX={1140}
       rowKey="id"
       headerTitle={t('assignments.title')}
       emptyTitle={t('assignments.empty')}

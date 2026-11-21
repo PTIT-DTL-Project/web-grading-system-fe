@@ -1,4 +1,4 @@
-import { Button, Tag, Tooltip } from 'antd'
+import { Tag, Tooltip, Typography } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -48,7 +48,13 @@ export function StudentClassesPage() {
       dataIndex: 'name',
       key: 'name',
       width: 280,
-      render: (name: string) => <Tooltip title={name}>{name}</Tooltip>,
+      // Review: 2026-11-21, user request — the class name is the navigation target, so the
+      // action column ("Mở") was removed entirely.
+      render: (name: string, row) => (
+        <Tooltip title={name}>
+          <Typography.Link onClick={() => navigate(`/student/classes/${row.id}`)}>{name}</Typography.Link>
+        </Tooltip>
+      ),
       sorter: true,
       sortOrder: sortField === 'name' ? sortOrder : null,
     },
@@ -82,17 +88,6 @@ export function StudentClassesPage() {
       sorter: true,
       sortOrder: sortField === 'createdAt' ? sortOrder : null,
       render: (createdAt: string | null) => formatDateTime(createdAt, i18n.language),
-    },
-    {
-      title: t('common.actions'),
-      key: 'actions',
-      width: 120,
-      align: 'right',
-      render: (_value, row) => (
-        <Button type="link" onClick={() => navigate(`/student/classes/${row.id}`)}>
-          {t('classes.open')}
-        </Button>
-      ),
     },
   ], [t, i18n, navigate, sortField, sortOrder])
 
@@ -136,7 +131,9 @@ export function StudentClassesPage() {
       initialFilters={{ rules: [] }}
       columns={columns}
       tableLayout="fixed"
-      tableScrollX={840}
+      // 280+110+150+180 — the action column was removed once the name became the link.
+      // Review: 2026-11-21.
+      tableScrollX={720}
       pageSize={PAGE_SIZE}
       rowKey="id"
       headerTitle={t('classes.title')}

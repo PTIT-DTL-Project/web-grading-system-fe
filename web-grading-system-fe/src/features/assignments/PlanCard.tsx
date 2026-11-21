@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { App, Space, Typography, Tag, Button, Popconfirm, Modal, Form, Input } from 'antd'
+import { App, Space, Typography, Tag, Button, Modal, Form, Input } from 'antd'
 import { useTranslation } from 'react-i18next'
 import type { TestPlan, TestStep } from '../../shared/types/assignment'
 import { StepEditor } from './StepEditor'
@@ -9,6 +9,7 @@ import { useTestSteps } from './useTestSteps'
 import { useApiErrorMessage } from '../../shared/api/errors'
 import { colors } from '../../shared/theme/tokens'
 import { StepDetailView } from '../../shared/ui/StepDetailView'
+import { RowActions } from '../../shared/ui/RowActions'
 import { normalizeLecturerStep } from '../../shared/ui/stepDetail'
 
 interface PlanCardProps {
@@ -156,27 +157,27 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete, onRen
           <Tag>#{plan.sequenceOrder}</Tag>
           <Tag>{t('step.weight')}: {plan.weight}</Tag>
         </Space>
-        <Space size={8} wrap>
-          <Button type="link" size="small" disabled={archived} onClick={openCreate}>
-            {t('step.create')}
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            disabled={archived}
-            onClick={() => {
-              renameForm.setFieldsValue({ name: plan.name, description: plan.description })
-              setRenameOpen(true)
-            }}
-          >
-            {t('common.edit')}
-          </Button>
-          <Popconfirm title={t('common.delete')} onConfirm={() => onDelete(plan.id)}>
-            <Button type="link" danger size="small" disabled={archived}>
-              {t('common.delete')}
-            </Button>
-          </Popconfirm>
-        </Space>
+        <RowActions
+          disabled={archived}
+          actions={[
+            { key: 'create', label: t('step.create'), onClick: openCreate },
+            {
+              key: 'edit',
+              label: t('common.edit'),
+              onClick: () => {
+                renameForm.setFieldsValue({ name: plan.name, description: plan.description })
+                setRenameOpen(true)
+              },
+            },
+            {
+              key: 'delete',
+              label: t('common.delete'),
+              danger: true,
+              confirmTitle: t('common.confirmDelete'),
+              onClick: () => onDelete(plan.id),
+            },
+          ]}
+        />
       </div>
       <Modal
         open={renameOpen}
@@ -237,36 +238,45 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete, onRen
             const isStepExpanded = expandedStepIds.has(step.id)
             return (
               <div key={step.id} style={{ padding: '8px 0', borderBottom: `1px solid ${colors.border}` }}>
-                <Space wrap>
-                  <Tag>{step.stepType}</Tag>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <Tag>{t(`step.typeOptions.${step.stepType}`, { defaultValue: step.stepType })}</Tag>
                   <Typography.Text>{step.name}</Typography.Text>
                   <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t('step.weight')}: {step.weight}</Typography.Text>
-                  <Button
-                    type="link"
-                    size="small"
-                    onClick={() => {
-                      setExpandedStepIds((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(step.id)) {
-                          next.delete(step.id)
-                        } else {
-                          next.add(step.id)
-                        }
-                        return next
-                      })
-                    }}
-                  >
-                    {isStepExpanded ? t('common.collapse') : t('common.expand')}
-                  </Button>
-                  <Button type="link" size="small" disabled={archived} onClick={() => openEdit(step)}>
-                    {t('common.edit')}
-                  </Button>
-                  <Popconfirm title={t('common.delete')} onConfirm={() => handleDeleteStep(step.id)}>
-                    <Button type="link" danger size="small" disabled={archived}>
-                      {t('common.delete')}
-                    </Button>
-                  </Popconfirm>
-                </Space>
+                  <div style={{ marginLeft: 'auto' }}>
+                    <RowActions
+                      actions={[
+                        {
+                          key: 'expand',
+                          label: isStepExpanded ? t('common.collapse') : t('common.expand'),
+                          onClick: () =>
+                            setExpandedStepIds((prev) => {
+                              const next = new Set(prev)
+                              if (next.has(step.id)) {
+                                next.delete(step.id)
+                              } else {
+                                next.add(step.id)
+                              }
+                              return next
+                            }),
+                        },
+                        {
+                          key: 'edit',
+                          label: t('common.edit'),
+                          disabled: archived,
+                          onClick: () => openEdit(step),
+                        },
+                        {
+                          key: 'delete',
+                          label: t('common.delete'),
+                          danger: true,
+                          disabled: archived,
+                          confirmTitle: t('common.confirmDelete'),
+                          onClick: () => handleDeleteStep(step.id),
+                        },
+                      ]}
+                    />
+                  </div>
+                </div>
                 {isStepExpanded && (
                   <div style={{ marginTop: 8 }}>
                     <StepDetailView model={normalizeLecturerStep(step)} variant="full" />
@@ -283,6 +293,10 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete, onRen
       </Button>
 
       {stepEditorOpen && (
+        // min-width: 0 lets the editor shrink to the card; without it a wide step form
+        // (long JSON preview, assertion rows) widened the page and every label looked
+        // clipped once a control got focus. Review: 2026-11-21.
+        <div style={{ minWidth: 0, maxWidth: '100%' }}>
         <StepEditor
           step={editingStep ?? undefined}
           onSave={editingStep ? handleUpdateStep : handleCreateStep}
@@ -291,6 +305,7 @@ export function PlanCard({ plan, assignmentId, archived = false, onDelete, onRen
           disabled={archived}
           availableVariables={editorVariables}
         />
+        </div>
       )}
     </div>
   )

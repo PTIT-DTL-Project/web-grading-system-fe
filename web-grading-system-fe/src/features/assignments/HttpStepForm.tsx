@@ -555,8 +555,8 @@ export function HttpStepForm({
       <Alert
         type="info"
         showIcon
-        message={t('step.autoInjectPlacement') || 'Chỉ áp dụng cho các bước sau'}
-        description={t('step.autoInjectPlacementDesc') || 'Khai báo tại bước login/bước sinh token. Không áp dụng cho chính bước này. Bước kiểm tra âm tính (401/403) nên tự đặt headers.'}
+        message={t('step.autoInjectPlacement')}
+        description={t('step.autoInjectPlacementDesc')}
         style={{ marginBottom: 8 }}
       />
       <Form.List name="autoInjectHeaders">

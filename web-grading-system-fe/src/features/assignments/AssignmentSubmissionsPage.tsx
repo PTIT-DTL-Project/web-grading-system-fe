@@ -6,6 +6,7 @@ import { DownloadOutlined } from '@ant-design/icons'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { ListPage } from '../../shared/ui/ListPage'
+import { RowActions } from '../../shared/ui/RowActions'
 import type { FilterConfig } from '../../shared/ui/FilterBar'
 import { useAssignmentStudents } from './useAssignmentStudents'
 import { listSubmissions } from '../../shared/api/endpoints/assignments'
@@ -90,22 +91,25 @@ export function AssignmentSubmissionsPage() {
       {
         title: t('common.actions'),
         key: 'actions',
-        width: 150,
+        // Review: 2026-11-21, user request — actions moved behind a "..." menu.
+        width: 110,
+        align: 'center' as const,
         render: (_: unknown, r: SubmissionResponse) => (
-          <Space>
-            <Button
-              type="link"
-              size="small"
-              onClick={() =>
-                navigate(`${base}/results?student=${r.studentId}&submission=${r.id}`)
-              }
-            >
-              {t('submission.viewResult')}
-            </Button>
-            <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => navigate(`${base}/submissions/${r.id}/viewer`)}>
-              {t('submission.viewZip')}
-            </Button>
-          </Space>
+          <RowActions
+            actions={[
+              {
+                key: 'result',
+                label: t('submission.viewResult'),
+                onClick: () => navigate(`${base}/results?student=${r.studentId}&submission=${r.id}`),
+              },
+              {
+                key: 'zip',
+                label: t('submission.viewZip'),
+                icon: <DownloadOutlined />,
+                onClick: () => navigate(`${base}/submissions/${r.id}/viewer`),
+              },
+            ]}
+          />
         ),
       },
     ],
@@ -134,10 +138,10 @@ export function AssignmentSubmissionsPage() {
        initialFilters={EMPTY_FILTERS}
        columns={columns}
        tableLayout="fixed"
-       tableScrollX={1120}
+       tableScrollX={1000}
        pageSize={20}
        rowKey="id"
-       headerTitle={t('assignment.submissions')}
+       headerTitle={t('assignment.submissionList')}
        headerActions={
          <Space wrap>
            <Button onClick={() => navigate(-1)}>← {t('common.back')}</Button>

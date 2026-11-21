@@ -70,7 +70,8 @@ function StepTable({ steps }: { steps: AssignmentResultStepResponse[] | null | u
         dataSource={rows}
         columns={[
           { title: t('result.stepName'), dataIndex: 'stepName', key: 'stepName' },
-          { title: t('result.stepType'), dataIndex: 'stepType', key: 'stepType', width: 120 },
+          { title: t('result.stepType'), dataIndex: 'stepType', key: 'stepType', width: 140,
+      render: (v: string) => t(`step.typeOptions.${v}`, { defaultValue: v }) },
           {
             title: t('result.passed'),
             dataIndex: 'passed',
@@ -231,7 +232,7 @@ export function AssignmentResultsPage() {
         submissionId={focusedSubmission}
         assignmentId={assignmentId}
         onBack={() => navigate(`${base}/submissions`)}
-         backLabelKey="assignment.submissions"
+         backLabelKey="assignment.submissionList"
          planName={planName}
          title={assignment?.title}
        />

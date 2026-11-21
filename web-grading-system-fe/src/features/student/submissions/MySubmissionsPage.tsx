@@ -1,10 +1,11 @@
-import { Badge, Button, Skeleton, Space, Tag, Tooltip, Typography } from 'antd'
+import { Badge, Skeleton, Tag, Tooltip, Typography } from 'antd'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import type { TableColumnsType } from 'antd'
 import { DownloadOutlined, EyeOutlined } from '@ant-design/icons'
 import { useQuery } from '@tanstack/react-query'
 import { ListPage } from '../../../shared/ui/ListPage'
+import { RowActions } from '../../../shared/ui/RowActions'
 import type { FilterConfig } from '../../../shared/ui/FilterBar'
 import { listMySubmissions } from '../../../shared/api/endpoints/submissions'
 import { getStudentAssignment, listStudentAssignments } from '../../../shared/api/endpoints/studentAssignments'
@@ -192,24 +193,30 @@ export function MySubmissionsPage() {
     {
       title: t('common.actions'),
       key: 'actions',
-      width: 260,
+      // Review: 2026-11-21, user request — actions moved behind a "..." menu.
+      width: 110,
+      align: 'center' as const,
       render: (_, record) => (
-          <Space>
-            <Button
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => navigate(`/student/submissions/${record.id}/results`)}
+        <RowActions
+          actions={[
+            {
+              key: 'result',
+              label: t('submission.viewResult'),
+              icon: <EyeOutlined />,
               // Review: 2026-10-10 — backend terminal states are DONE (graded)
               // and FAILED (run failed but still writes a result row); only
               // non-terminal PENDING/GRADING stay locked.
-              disabled={record.status !== 'DONE' && record.status !== 'FAILED'}
-            >
-              {t('submission.viewResult')}
-            </Button>
-            <Button size="small" icon={<DownloadOutlined />} onClick={() => navigate(`/student/submissions/${record.id}/viewer`)}>
-              {t('submission.viewZip')}
-            </Button>
-          </Space>
+              disabled: record.status !== 'DONE' && record.status !== 'FAILED',
+              onClick: () => navigate(`/student/submissions/${record.id}/results`),
+            },
+            {
+              key: 'zip',
+              label: t('submission.viewZip'),
+              icon: <DownloadOutlined />,
+              onClick: () => navigate(`/student/submissions/${record.id}/viewer`),
+            },
+          ]}
+        />
       ),
     },
   ]
@@ -222,9 +229,10 @@ export function MySubmissionsPage() {
       columns={columns}
       tableLayout="fixed"
       // UI review: 2026-11-11, user-reported overlap — sum of column widths
-      // (260+240+220+240+170+260 = 1390) so the table scrolls horizontally
-      // instead of squeezing cells and overlapping content.
-      tableScrollX={1390}
+      // (260+240+220+240+170+110 = 1240) so the table scrolls horizontally
+      // instead of squeezing cells and overlapping content. The action column
+      // shrank 260 -> 110 when its buttons moved behind a "..." menu (2026-11-21).
+      tableScrollX={1240}
       rowKey="id"
       headerTitle={t('submission.title')}
       emptyTitle={t('submission.empty')}
