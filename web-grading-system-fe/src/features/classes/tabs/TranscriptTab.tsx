@@ -58,17 +58,43 @@ export function TranscriptTab({ classId, refreshToken, onSaved }: TranscriptTabP
     { title: t('transcript.name'), dataIndex: 'studentName', key: 'studentName', width: 240, fixed: 'left' as const,
       render: (name: string) => <Tooltip title={name}>{name}</Tooltip>,
     },
+    // Every configured component gets a column, EXERCISE included: it used to be
+    // filtered out, so a class weighted 10/30/60 showed only two columns and the
+    // transcript silently looked like it was missing the assignment score.
+    // Review: 2026-11-21, user report.
     ...(rows.length > 0 && rows[0].entries
-      ? rows[0].entries.filter(e => e.type !== 'EXERCISE').map((colEntry) => ({
-          title: `${colEntry.type} (${(colEntry.weight * 100).toFixed(0)}%)`,
-          width: 130,
-          dataIndex: 'entries',
-          key: colEntry.type,
-          render: (entries: TranscriptEntryResponse['entries']) => {
-            const match = entries.find(e => e.type === colEntry.type)
-            return match?.score !== null && match?.score !== undefined ? match.score : t('common.empty')
-          },
-        }))
+      ? rows[0].entries.map((colEntry) => {
+          const auto = colEntry.type === 'EXERCISE'
+          const label = t(`components.typeLabel.${colEntry.type}`, { defaultValue: colEntry.type })
+          return {
+            // Header now uses the translated component name instead of the raw enum.
+            title: (
+              <Tooltip title={auto ? t('transcript.exerciseHighestHint') : undefined}>
+                <span>{`${label} (${(colEntry.weight * 100).toFixed(0)}%)`}</span>
+              </Tooltip>
+            ),
+            width: 140,
+            dataIndex: 'entries',
+            key: colEntry.type,
+            render: (entries: TranscriptEntryResponse['entries']) => {
+              const match = entries.find(e => e.type === colEntry.type)
+              const score = match?.score
+              // Auto-graded component with nothing to grade yet reads 0, not "no data":
+              // a missing submission IS a zero exercise score, and the lecturer needs a
+              // number in the column to scan the class. Manual components keep the empty
+              // state — there the "0" would be a lie (nothing was ever entered).
+              // Review: 2026-11-21, user request.
+              if (auto) {
+                return (
+                  <Tooltip title={score === null || score === undefined ? t('transcript.exerciseUnscored') : t('components.autoGraded')}>
+                    <Typography.Text strong>{score ?? 0}</Typography.Text>
+                  </Tooltip>
+                )
+              }
+              return score === null || score === undefined ? t('common.empty') : score
+            },
+          }
+        })
       : []),
     { title: t('transcript.total'), dataIndex: 'total', key: 'total', width: 110, render: (v: number | null) => v !== null ? v : t('common.empty') },
     { title: t('transcript.letterGrade'), dataIndex: 'letterGrade', key: 'letterGrade', width: 130, render: (v: string | null) => v ? <Tag color={GRADE_COLORS[v] || 'default'}>{v}</Tag> : t('common.empty') },

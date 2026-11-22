@@ -368,13 +368,14 @@
     "total": "Total",
     "letterGrade": "Grade",
     "gpa": "GPA",
-    "exerciseHighestHint": "Exercise score takes the best attempt of each question.",
+    "exerciseHighestHint": "Exercise score averages every assignment; inside an assignment it uses the best attempt per question, weighted by question weight.",
     "action": "Action",
     "enterScores": "Enter scores",
     "totalStudents": "Total students: {{total}}",
     "searchPlaceholder": "Search by student code or name",
     "noMatch": "No matching students",
-    "noMatchHint": "No student matches \"{{search}}\". Try another code or name."
+    "noMatchHint": "No student matches \"{{search}}\". Try another code or name.",
+    "exerciseUnscored": "No exercise score yet (nothing submitted) — counting as 0."
   },
   "scores": {
     "title": "Enter scores",
