@@ -54,6 +54,15 @@ function readFiltersFromUrl(): Record<string, unknown> {
   return out
 }
 
+/** Value comparison for parent-supplied initial filters (keys + primitive values). */
+function shallowEqualFilters(a: ListFilters, b: ListFilters): boolean {
+  const aRecord = a as Record<string, unknown>
+  const bRecord = b as Record<string, unknown>
+  const aKeys = Object.keys(aRecord)
+  if (aKeys.length !== Object.keys(bRecord).length) return false
+  return aKeys.every((key) => aRecord[key] === bRecord[key])
+}
+
 function writeFiltersToUrl(filters: Record<string, unknown>) {
   if (typeof window === 'undefined') return
   const params = new URLSearchParams()
@@ -97,7 +106,6 @@ export function useList<T, F extends ListFilters>({
   const [submitVersion, setSubmitVersion] = useState(0)
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const isInitialMount = useRef(true)
 
   const reload = useCallback(() => {
     setSubmitVersion((v) => v + 1)
@@ -141,12 +149,17 @@ export function useList<T, F extends ListFilters>({
     }
   }, [filters, persistFilters])
 
-  // Sync when parent-provided initial filters change (only after initial mount)
+  // Sync only when the parent hands over genuinely different initial filters.
+  // A "first mount" ref flag cannot be used here: the app mounts under <StrictMode>,
+  // which re-runs every effect once more, and that second run looked like a parent
+  // update and reset the filters hydrated from the URL — deep links such as
+  // /student/submissions?assignmentId=… fell back to "all submissions" because of it.
+  // Comparing values (not object identity) also stops inline `initialFilters={{…}}`
+  // literals from re-applying on every render. Review: 2026-11-22, user report.
+  const lastFiltersRef = useRef(filters)
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false
-      return
-    }
+    if (shallowEqualFilters(lastFiltersRef.current, filters)) return
+    lastFiltersRef.current = filters
     setLocalFilters(filters)
     setSubmittedFilters(filters)
     setSubmitVersion((v) => v + 1)

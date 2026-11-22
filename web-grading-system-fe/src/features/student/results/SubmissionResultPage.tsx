@@ -253,6 +253,12 @@ export function SubmissionResultPage() {
   })
   const planName = (planId: string | null) => plans?.find((p) => p.id === planId)?.name ?? null
 
+  // "Về lịch sử nộp" keeps the assignment scope of this submission: the history
+  // page opens pre-filtered instead of listing every submission of the student.
+  // Review: 2026-11-22, user report — history must be filtered by its assignment.
+  const backToHistory = () =>
+    navigate(assignmentId ? `/student/submissions?assignmentId=${assignmentId}` : '/student/submissions')
+
   // Điểm cả bài (weighted, câu chưa nộp = 0) — khác với điểm của riêng bài nộp này.
   // Nộp 1 câu thì trang này từng chỉ hiện điểm của câu đó, dễ tưởng là điểm cả bài.
   const { data: assignmentResults, isLoading: assignmentResultsLoading } = useQuery({
@@ -285,7 +291,7 @@ export function SubmissionResultPage() {
         title={t('result.loadFailed')}
         subTitle={toMessage(error)}
         extra={
-          <Button onClick={() => navigate('/student/submissions')}>
+          <Button onClick={backToHistory}>
             {t('result.backToSubmissions')}
           </Button>
         }
@@ -304,7 +310,7 @@ export function SubmissionResultPage() {
             <Button type="primary" onClick={retry}>
               {t('common.retry')}
             </Button>
-            <Button onClick={() => navigate('/student/submissions')}>
+            <Button onClick={backToHistory}>
               {t('result.backToSubmissions')}
             </Button>
           </Space>
@@ -394,7 +400,7 @@ export function SubmissionResultPage() {
         <Button
           type="text"
           icon={<ArrowLeftOutlined />}
-          onClick={() => navigate('/student/submissions')}
+          onClick={backToHistory}
           aria-label={t('result.backToSubmissions')}
         >
           {t('result.backToSubmissions')}
