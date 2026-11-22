@@ -368,13 +368,14 @@
     "total": "Tổng điểm",
     "letterGrade": "Xếp loại",
     "gpa": "GPA",
-    "exerciseHighestHint": "Điểm bài tập lấy lần cao nhất của mỗi câu.",
+    "exerciseHighestHint": "Điểm bài tập = trung bình điểm từng bài; trong mỗi bài lấy lần cao nhất của từng câu, tính theo trọng số câu.",
     "action": "Thao tác",
     "enterScores": "Nhập điểm",
     "totalStudents": "Tổng số sinh viên: {{total}}",
     "searchPlaceholder": "Tìm theo mã SV hoặc tên",
     "noMatch": "Không có sinh viên phù hợp",
-    "noMatchHint": "Không tìm thấy sinh viên nào khớp \"{{search}}\". Thử mã sinh viên hoặc tên khác."
+    "noMatchHint": "Không tìm thấy sinh viên nào khớp \"{{search}}\". Thử mã sinh viên hoặc tên khác.",
+    "exerciseUnscored": "Chưa có điểm bài tập (chưa nộp bài nào) — đang tính 0."
   },
   "scores": {
     "title": "Nhập điểm",
